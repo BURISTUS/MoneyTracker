@@ -1,0 +1,159 @@
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { Prisma, CategoryType } from '@prisma/client';
+
+// Доступные иконки для категорий
+const AVAILABLE_ICONS = [
+  'wallet', 'cash', 'card', 'laptop', 'phone-portrait',
+  'cart', 'basket', 'storefront', 'pricetag', 'gift',
+  'home', 'car', 'bus', 'train', 'airplane', 'boat',
+  'restaurant', 'cafe', 'wine', 'pizza', 'beer',
+  'medical', 'fitness', 'eye', 'bandage', 'thermometer',
+  'game-controller', 'musical-notes', 'film', 'book', 'school',
+  'shirt', 'watch', 'glasses', 'diamond', 'flower',
+  'pet', 'leaf', 'water', 'flash', 'power',
+  'call', 'mail', 'globe', 'wifi', ' Bluetooth',
+  'game-controller', 'tennisball', 'football', 'basketball', 'walk',
+  'bed', 'cut', 'brush', 'happy', 'sad',
+];
+
+@Injectable()
+export class CategoriesService implements OnModuleInit {
+  constructor(private prisma: PrismaService) {}
+
+  // При запуске приложения - создаём системные категории если их нет
+  async onModuleInit() {
+    await this.seedSystemCategories();
+  }
+
+  // Получить все доступные иконки
+  getAvailableIcons() {
+    return AVAILABLE_ICONS.map(icon => ({ name: icon }));
+  }
+
+  // Получить все категории для пользователя (системные + персональные)
+  async findAll(userId: string) {
+    return this.prisma.category.findMany({
+      where: {
+        OR: [
+          { userId: null }, // Системные
+          { userId }, // Персональные
+        ],
+      },
+      orderBy: [
+        { userId: 'desc' }, // Системные first (null сортируется первым)
+        { order: 'asc' },
+        { name: 'asc' },
+      ],
+    });
+  }
+
+  // Получить только персональные категории пользователя
+  async findPersonal(userId: string) {
+    return this.prisma.category.findMany({
+      where: { userId },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async findById(id: string, userId: string) {
+    const category = await this.prisma.category.findFirst({
+      where: {
+        id,
+        OR: [
+          { userId: null }, // Системные
+          { userId }, // Персональные
+        ],
+      },
+    });
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+    return category;
+  }
+
+  // Создать персональную категорию
+  async create(userId: string, data: { name: string; type: CategoryType; icon?: string; color?: string; isBaseNeed?: boolean }) {
+    // Проверяем, нет ли уже такой системной категории
+    const existingSystem = await this.prisma.category.findFirst({
+      where: { name: data.name, userId: null },
+    });
+    if (existingSystem) {
+      throw new Error('Категория с таким названием уже существует в системных');
+    }
+
+    return this.prisma.category.create({
+      data: {
+        userId,
+        name: data.name,
+        type: data.type,
+        icon: data.icon,
+        color: data.color,
+        isBaseNeed: data.isBaseNeed ?? false,
+      },
+    });
+  }
+
+  async update(id: string, userId: string, data: Prisma.CategoryUpdateInput) {
+    // Нельзя редактировать системные категории
+    const category = await this.prisma.category.findFirst({
+      where: { id, userId: { not: null } }, // Только персональные
+    });
+    if (!category) {
+      throw new NotFoundException('Category not found or is system category');
+    }
+    return this.prisma.category.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async delete(id: string, userId: string) {
+    // Нельзя удалять системные категории
+    const category = await this.prisma.category.findFirst({
+      where: { id, userId: { not: null } }, // Только персональные
+    });
+    if (!category) {
+      throw new NotFoundException('Category not found or is system category');
+    }
+    return this.prisma.category.delete({
+      where: { id },
+    });
+  }
+
+  // Заполнить системные категории (сид)
+  private async seedSystemCategories() {
+    const systemCategories = [
+      // Доходы
+      { name: 'Зарплата', type: CategoryType.INCOME, icon: 'wallet', color: '#34C759', isBaseNeed: false, order: 1 },
+      { name: 'Фриланс', type: CategoryType.INCOME, icon: 'laptop', color: '#007AFF', isBaseNeed: false, order: 2 },
+      { name: 'Инвестиции', type: CategoryType.INCOME, icon: 'trending-up', color: '#5856D6', isBaseNeed: false, order: 3 },
+      { name: 'Подарки', type: CategoryType.INCOME, icon: 'gift', color: '#FF2D55', isBaseNeed: false, order: 4 },
+      { name: 'Другое', type: CategoryType.INCOME, icon: 'ellipsis-horizontal', color: '#8E8E93', isBaseNeed: false, order: 5 },
+      // Расходы - базовые потребности
+      { name: 'Продукты', type: CategoryType.EXPENSE, icon: 'cart', color: '#34C759', isBaseNeed: true, order: 10 },
+      { name: 'Транспорт', type: CategoryType.EXPENSE, icon: 'bus', color: '#007AFF', isBaseNeed: true, order: 11 },
+      { name: 'Жильё', type: CategoryType.EXPENSE, icon: 'home', color: '#FF9500', isBaseNeed: true, order: 12 },
+      { name: 'Коммунальные', type: CategoryType.EXPENSE, icon: 'flash', color: '#FFCC00', isBaseNeed: true, order: 13 },
+      { name: 'Связь', type: CategoryType.EXPENSE, icon: 'call', color: '#5856D6', isBaseNeed: true, order: 14 },
+      { name: 'Здоровье', type: CategoryType.EXPENSE, icon: 'medical', color: '#FF2D55', isBaseNeed: true, order: 15 },
+      // Расходы - не базовые
+      { name: 'Развлечения', type: CategoryType.EXPENSE, icon: 'game-controller', color: '#AF52DE', isBaseNeed: false, order: 20 },
+      { name: 'Одежда', type: CategoryType.EXPENSE, icon: 'shirt', color: '#5AC8FA', isBaseNeed: false, order: 21 },
+      { name: 'Рестораны', type: CategoryType.EXPENSE, icon: 'restaurant', color: '#FF3B30', isBaseNeed: false, order: 22 },
+      { name: 'Подарки', type: CategoryType.EXPENSE, icon: 'gift', color: '#FF2D55', isBaseNeed: false, order: 23 },
+    ];
+
+    for (const cat of systemCategories) {
+      await this.prisma.category.upsert({
+        where: { id: cat.name.toLowerCase().replace(/\s/g, '-') },
+        update: {},
+        create: {
+          id: cat.name.toLowerCase().replace(/\s/g, '-'),
+          userId: null, // Системная категория
+          ...cat,
+        },
+      });
+    }
+  }
+}

@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+bower_components/
+
+# Backend build outputs
+backend/dist/
+backend/build/
+backend/node_modules/
+
+# Mobile build outputs
+mobile/dist/
+mobile/build/
+mobile/.expo/
+mobile/.expo-shared/
+mobile/android/
+mobile/ios/
+mobile/*.apk
+mobile/*.aab
+mobile/*.ipa
+
+# Environment files (keep .env.example)
+backend/.env
+backend/.env.local
+backend/.env.* 
+mobile/.env
+mobile/.env.*
+!mobile/.env.example
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+.cache/
+*.tsbuildinfo
+
+# Docker
+.dockerignore
+
+# Redis
+redis-data/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Prisma (keep schema.prisma and migrations folder, but ignore generated client)
+backend/node_modules/.prisma/
