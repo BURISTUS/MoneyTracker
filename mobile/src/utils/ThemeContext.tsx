@@ -16,8 +16,8 @@ const ThemeContext = createContext<ThemeContextType | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemColorScheme = useColorScheme();
-  const [mode, setMode] = useState<ThemeMode>('light');
-  const [colors, setColors] = useState<ThemeColors>(lightTheme);
+  const [mode, setMode] = useState<ThemeMode>('dark'); // Dark mode by default for modern look
+  const [colors, setColors] = useState<ThemeColors>(darkTheme);
 
   // Apply theme when mode changes
   useEffect(() => {
@@ -25,10 +25,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setColors(newColors);
   }, [mode]);
 
-  // Also sync with system theme on mount
+  // Sync with system theme on mount
   useEffect(() => {
     if (systemColorScheme === 'dark') {
       setMode('dark');
+    } else if (systemColorScheme === 'light') {
+      setMode('light');
     }
   }, [systemColorScheme]);
 
@@ -40,7 +42,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setMode(newMode);
   }, []);
 
-  // Always provide a valid value
   const value: ThemeContextType = {
     mode,
     colors,
@@ -59,11 +60,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 export function useTheme(): ThemeContextType {
   const context = useContext(ThemeContext);
   if (!context) {
-    // Return light theme as fallback if context is not available
+    // Return dark theme as fallback (modern default)
     return {
-      mode: 'light',
-      colors: lightTheme,
-      isDark: false,
+      mode: 'dark',
+      colors: darkTheme,
+      isDark: true,
       toggleTheme: () => {},
       setTheme: () => {},
     };
