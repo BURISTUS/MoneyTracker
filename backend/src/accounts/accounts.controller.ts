@@ -5,12 +5,20 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Accounts')
 @Controller('accounts')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class AccountsController {
   constructor(private accountsService: AccountsService) {}
 
+  @Get('public')
+  @ApiOperation({ summary: 'Get public accounts info' })
+  async getPublicInfo() {
+    return {
+      availableTypes: ['CASH', 'BANK', 'CREDIT', 'INVESTMENT', 'DEBT'],
+    };
+  }
+
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all accounts' })
   async findAll(@Request() req: any) {
     return this.accountsService.findAll(req.user.id);

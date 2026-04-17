@@ -2,7 +2,12 @@ import { apiGet, apiPost, apiPatch, apiDelete } from './api';
 import type { Account } from '../types';
 
 export const accountsService = {
-  // Get all accounts
+  // Get public accounts info (no auth required)
+  async getPublicInfo(): Promise<{ availableTypes: string[] }> {
+    return apiGet<{ availableTypes: string[] }>('/accounts/public');
+  },
+
+  // Get all accounts (requires auth)
   async getAll(): Promise<Account[]> {
     return apiGet<Account[]>('/accounts');
   },

@@ -1,691 +1,391 @@
-/**
- * Money Tracker — Modern Create Transaction Screen (2024-2026 Design)
- * 
- * Features:
- * - Life Cost prominently displayed (always visible)
- * - Large amount input with currency
- * - Modern category picker
- * - Spring animations
- */
-
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  SafeAreaView,
-  Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  interpolate,
-  Extrapolation,
-} from 'react-native-reanimated';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Pressable, Alert, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useDataStore } from '../../../src/stores/dataStore';
-import { TransactionType, CategoryType } from '../../../src/types';
-import { useTheme } from '../../../src/utils/ThemeContext';
-import { spacing, borderRadius, fontSize, fontWeight } from '../../../src/utils/theme';
-import { Button, LifeCostBadge } from '../../../src/components/ui';
+import { Screen } from '../../../src/components/ui/Screen';
+import { Text } from '../../../src/components/ui/Text';
+import { Icon } from '../../../src/components/ui/Icon';
+import { useTheme } from '../../../src/theme';
+import type { TransactionType } from '../../../src/types';
+import { TransactionType as TransactionTypeEnum } from '../../../src/types';
 
-const TRANSACTION_TYPES = [
-  { 
-    id: TransactionType.EXPENSE, 
-    label: 'Расход', 
-    icon: 'arrow-up-circle' as const, 
-    color: '#F87171',
-    bgColor: 'rgba(248,113,113,0.15)',
-    sign: '-' as const,
-  },
-  { 
-    id: TransactionType.INCOME, 
-    label: 'Доход', 
-    icon: 'arrow-down-circle' as const, 
-    color: '#34D399',
-    bgColor: 'rgba(52,211,153,0.15)',
-    sign: '+' as const,
-  },
-  { 
-    id: TransactionType.TRANSFER, 
-    label: 'Перевод', 
-    icon: 'swap-horizontal' as const, 
-    color: '#38BDF8',
-    bgColor: 'rgba(56,189,248,0.15)',
-    sign: '' as const,
-  },
-];
+const EXPENSE_COLORS = {
+  primary: '#FF3B30',
+  background: 'rgba(255, 59, 48, 0.1)',
+  light: 'rgba(255, 59, 48, 0.05)',
+};
+
+const INCOME_COLORS = {
+  primary: '#34C759',
+  background: 'rgba(52, 199, 89, 0.1)',
+  light: 'rgba(52, 199, 89, 0.05)',
+};
+
+const AMOUNT_PRESETS = [100, 500, 1000, 5000, 10000, 50000];
 
 export default function CreateTransactionScreen() {
-  const { colors } = useTheme();
   const router = useRouter();
-  
-  const { 
-    categories, 
-    accounts, 
-    addTransaction, 
-    calculateLifeCost, 
-    fetchAccounts, 
-    fetchCategories,
-    gamification,
-  } = useDataStore();
+  const { spacing } = useTheme();
+  const addTransaction = useDataStore((s) => s.addTransaction);
+  const accounts = useDataStore((s) => s.accounts);
+  const categories = useDataStore((s) => s.categories);
 
-  const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
+  const [type, setType] = useState<TransactionType>(TransactionTypeEnum.EXPENSE);
   const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [accountId, setAccountId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<string>(
+    accounts.length > 0 ? accounts[0].id : '',
+  );
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Animation values
-  const amountScale = useSharedValue(1);
-  const lifeCostOpacity = useSharedValue(0);
-
-  useEffect(() => {
-    fetchAccounts();
-    fetchCategories();
-  }, [fetchAccounts, fetchCategories]);
-
-  // Filter categories by type
-  const filteredCategories = useMemo(() => {
-    return categories.filter(c => {
-      if (type === TransactionType.INCOME) return c.type === CategoryType.INCOME;
-      if (type === TransactionType.EXPENSE) return c.type === CategoryType.EXPENSE;
-      return true;
-    });
+  const displayCategories = useMemo(() => {
+    return categories.filter((c) =>
+      type === 'INCOME' ? c.type === 'INCOME' : c.type === 'EXPENSE',
+    );
   }, [categories, type]);
 
-  // Parse amount
-  const numericAmount = useMemo(() => {
-    const val = parseFloat(amount.replace(',', '.'));
-    return isNaN(val) ? 0 : val;
+  const colors = type === 'EXPENSE' ? EXPENSE_COLORS : INCOME_COLORS;
+
+  const handleNumberPress = useCallback((num: string) => {
+    if (amount === '0') {
+      setAmount(num);
+    } else {
+      setAmount(amount + num);
+    }
   }, [amount]);
 
-  // Calculate life cost
-  const lifeCost = useMemo(() => {
-    return calculateLifeCost(numericAmount * 100);
-  }, [numericAmount, calculateLifeCost]);
+  const handleDecimalPress = useCallback(() => {
+    if (!amount.includes('.')) {
+      setAmount(amount + '.');
+    }
+  }, [amount]);
 
-  // Current transaction type config
-  const currentTypeConfig = TRANSACTION_TYPES.find(t => t.id === type) || TRANSACTION_TYPES[0];
-
-  // Show life cost when there's a meaningful amount
-  const showLifeCost = numericAmount >= 100; // Show for 100+ rubles
-
-  useEffect(() => {
-    if (showLifeCost) {
-      lifeCostOpacity.value = withTiming(1, { duration: 300 });
+  const handleDeletePress = useCallback(() => {
+    if (amount.length > 1) {
+      setAmount(amount.slice(0, -1));
     } else {
-      lifeCostOpacity.value = withTiming(0, { duration: 200 });
+      setAmount('');
     }
-  }, [showLifeCost, lifeCostOpacity]);
+  }, [amount]);
 
-  const handleAmountChange = useCallback((text: string) => {
-    // Allow only numbers and one decimal point
-    const cleaned = text.replace(/[^0-9.,]/g, '');
-    const parts = cleaned.split(/[.,]/);
-    if (parts.length > 2) return;
-    if (parts[1] && parts[1].length > 2) return;
-    
-    setAmount(cleaned);
-    amountScale.value = withSpring(1.02, { damping: 10, stiffness: 200 }, () => {
-      amountScale.value = withSpring(1, { damping: 15, stiffness: 150 });
-    });
-  }, [amountScale]);
-
-  const handleTypeChange = useCallback((newType: TransactionType) => {
-    setType(newType);
-    setCategoryId(null);
-  }, []);
-
-  const handleCategorySelect = useCallback((id: string) => {
-    setCategoryId(id);
-  }, []);
-
-  const handleAccountSelect = useCallback((id: string) => {
-    setAccountId(id);
-  }, []);
-
-  const handleSubmit = async () => {
-    if (!amount || numericAmount <= 0) {
-      Alert.alert('Ошибка', 'Введите сумму');
-      return;
-    }
-    if (!categoryId) {
-      Alert.alert('Ошибка', 'Выберите категорию');
-      return;
-    }
-    if (!accountId) {
-      Alert.alert('Ошибка', 'Выберите счёт');
+  const handleSubmit = useCallback(async () => {
+    if (!amount || !selectedCategory || !selectedAccount) {
+      Alert.alert('Ошибка', 'Заполните все поля');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const newTransaction = {
-        id: Date.now().toString(),
-        userId: '1',
-        accountId,
-        categoryId,
-        amount: numericAmount * 100,
+      const amountNum = Math.round(parseFloat(amount) * 100);
+
+      await addTransaction({
+        id: `temp_${Date.now()}`,
+        userId: '',
+        accountId: selectedAccount,
+        categoryId: selectedCategory,
+        amount: amountNum,
         type,
-        description: description || undefined,
-        date: new Date().toISOString(),
+        description: note || null,
+        date: date.toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      };
+      });
 
-      await addTransaction(newTransaction as any);
-      Alert.alert('Успех', 'Транзакция добавлена!', [
-        { text: 'OK', onPress: () => router.back() }
+      Alert.alert('Успешно!', 'Транзакция добавлена', [
+        { text: 'OK', onPress: () => router.back() },
       ]);
-    } catch (error) {
+    } catch {
       Alert.alert('Ошибка', 'Не удалось добавить транзакцию');
-    } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [amount, type, selectedCategory, selectedAccount, note, date, addTransaction, router]);
 
-  const handleClose = useCallback(() => {
-    router.back();
-  }, [router]);
-
-  // Animated styles
-  const amountAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: amountScale.value }],
-  }));
-
-  const lifeCostAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: lifeCostOpacity.value,
-    transform: [{ 
-      translateY: interpolate(
-        lifeCostOpacity.value,
-        [0, 1],
-        [10, 0],
-        Extrapolation.CLAMP
-      ),
-    }],
-  }));
+  const formattedAmount = amount ? parseFloat(amount).toLocaleString('ru-RU') : '0';
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface }]}>
-        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-          <Ionicons name="close" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Новая транзакция</Text>
-        <View style={styles.headerPlaceholder} />
-      </View>
-
-      <ScrollView 
-        style={styles.scrollView} 
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Type Selector */}
-        <Animated.View entering={FadeInDown.duration(400)} style={styles.typeSelector}>
-          {TRANSACTION_TYPES.map((t, index) => (
-            <TouchableOpacity
-              key={t.id}
-              style={[
-                styles.typeButton,
-                { backgroundColor: colors.surface },
-                type === t.id && { backgroundColor: t.bgColor, borderColor: t.color },
-              ]}
-              onPress={() => handleTypeChange(t.id)}
-              activeOpacity={0.7}
-            >
-              <View style={[
-                styles.typeIconContainer,
-                { backgroundColor: type === t.id ? t.color + '20' : colors.surfaceHighlight }
-              ]}>
-                <Ionicons 
-                  name={t.icon} 
-                  size={24} 
-                  color={type === t.id ? t.color : colors.textSecondary} 
-                />
-              </View>
-              <Text style={[
-                styles.typeLabel,
-                { color: type === t.id ? t.color : colors.textSecondary },
-              ]}>
-                {t.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </Animated.View>
-
-        {/* Amount Input - Hero Section */}
-        <Animated.View 
-          entering={FadeInDown.duration(400).delay(100)} 
-          style={[styles.amountSection, { backgroundColor: colors.surface }]}
-        >
-          <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>
-            Сумма
-          </Text>
-          
-          <View style={styles.amountRow}>
-            <Text style={[styles.currencySymbol, { color: currentTypeConfig.color }]}>
-              ₽
+    <Screen style={{ padding: 0 }}>
+      <View style={{ flex: 1 }}>
+        {/* Header with type toggle */}
+        <View style={{
+          flexDirection: 'row',
+          padding: 16,
+          gap: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+        }}>
+          <TouchableOpacity
+            onPress={() => setType(TransactionTypeEnum.EXPENSE)}
+            style={{
+              flex: 1,
+              backgroundColor: type === 'EXPENSE' ? EXPENSE_COLORS.background : 'transparent',
+              borderRadius: 12,
+              paddingVertical: 12,
+              alignItems: 'center',
+              borderWidth: 2,
+              borderColor: type === 'EXPENSE' ? EXPENSE_COLORS.primary : 'transparent',
+            }}
+          >
+            <Text size="lg" weight="semibold" style={{ color: EXPENSE_COLORS.primary }}>
+              − Расход
             </Text>
-            <Animated.View style={amountAnimatedStyle}>
-              <TextInput
-                style={[styles.amountInput, { color: colors.text }]}
-                placeholder="0"
-                placeholderTextColor={colors.textTertiary}
-                value={amount}
-                onChangeText={handleAmountChange}
-                keyboardType="numeric"
-                autoFocus
-                maxLength={12}
-              />
-            </Animated.View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setType(TransactionTypeEnum.INCOME)}
+            style={{
+              flex: 1,
+              backgroundColor: type === 'INCOME' ? INCOME_COLORS.background : 'transparent',
+              borderRadius: 12,
+              paddingVertical: 12,
+              alignItems: 'center',
+              borderWidth: 2,
+              borderColor: type === 'INCOME' ? INCOME_COLORS.primary : 'transparent',
+            }}
+          >
+            <Text size="lg" weight="semibold" style={{ color: INCOME_COLORS.primary }}>
+              + Доход
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView contentContainerStyle={{ paddingBottom: 320 }}>
+          {/* Amount display */}
+          <View style={{
+            alignItems: 'center',
+            paddingVertical: 32,
+            borderBottomWidth: 1,
+            borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+          }}>
+            <Text
+              size="display"
+              weight="bold"
+              style={{
+                color: colors.primary,
+                fontSize: 56,
+                lineHeight: 64,
+                letterSpacing: -1,
+              }}
+            >
+              {formattedAmount}
+            </Text>
+            <Text size="md" style={{ color: '#8E8E93', marginTop: 8 }}>
+              рублей
+            </Text>
           </View>
 
-          {/* Life Cost Display - PROMINENT */}
-          <Animated.View style={[styles.lifeCostSection, lifeCostAnimatedStyle]}>
-            <View style={[styles.lifeCostCard, { backgroundColor: colors.lifeCostBg }]}>
-              <View style={styles.lifeCostHeader}>
-                <Ionicons name="time" size={20} color={colors.lifeCost} />
-                <Text style={[styles.lifeCostTitle, { color: colors.lifeCost }]}>
-                  Цена покупки
-                </Text>
-              </View>
-              
-              {showLifeCost ? (
-                <>
-                  <Text style={[styles.lifeCostHours, { color: colors.lifeCost }]}>
-                    {lifeCost.hours} часов
-                  </Text>
-                  <Text style={[styles.lifeCostDays, { color: colors.textSecondary }]}>
-                    = {lifeCost.days} рабочих дней
-                  </Text>
-                  <Text style={[styles.lifeCostMessage, { color: colors.textSecondary }]}>
-                    "{lifeCost.message}"
-                  </Text>
-                </>
-              ) : (
-                <Text style={[styles.lifeCostHint, { color: colors.textTertiary }]}>
-                  Введите сумму от 100₽ для расчёта
-                </Text>
-              )}
-            </View>
-          </Animated.View>
-        </Animated.View>
-
-        {/* Category Selection */}
-        <Animated.View entering={FadeInDown.duration(400).delay(200)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Категория
-          </Text>
-          
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesContainer}
-          >
-            {filteredCategories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryChip,
-                  { backgroundColor: colors.surface },
-                  categoryId === category.id && { 
-                    backgroundColor: (category.color || colors.primary) + '15',
-                    borderColor: category.color || colors.primary,
-                  },
-                ]}
-                onPress={() => handleCategorySelect(category.id)}
-                activeOpacity={0.7}
-              >
-                <View style={[
-                  styles.categoryIcon,
-                  { backgroundColor: (category.color || colors.primary) + '15' }
-                ]}>
-                  <Ionicons 
-                    name={(category.icon || 'help') as any} 
-                    size={18} 
-                    color={category.color || colors.primary} 
-                  />
-                </View>
-                <Text style={[
-                  styles.categoryLabel,
-                  { color: categoryId === category.id 
-                    ? (category.color || colors.primary) 
-                    : colors.textSecondary 
-                  },
-                ]}>
-                  {category.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </Animated.View>
-
-        {/* Account Selection */}
-        <Animated.View entering={FadeInDown.duration(400).delay(300)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Счёт
-          </Text>
-          
-          <View style={styles.accountsList}>
-            {accounts.map((account) => (
-              <TouchableOpacity
-                key={account.id}
-                style={[
-                  styles.accountItem,
-                  { backgroundColor: colors.surface },
-                  accountId === account.id && { 
-                    backgroundColor: colors.primary + '10',
-                    borderColor: colors.primary,
-                  },
-                ]}
-                onPress={() => handleAccountSelect(account.id)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.accountLeft}>
-                  <View style={[
-                    styles.accountIcon,
-                    { backgroundColor: colors.primary + '15' }
-                  ]}>
-                    <Ionicons 
-                      name={account.type === 'CASH' ? 'cash' : account.type === 'BANK' ? 'card' : 'wallet'} 
-                      size={20} 
-                      color={accountId === account.id ? colors.primary : colors.textSecondary} 
-                    />
-                  </View>
-                  <View style={styles.accountInfo}>
-                    <Text style={[styles.accountName, { color: colors.text }]}>
+          {/* Account selector */}
+          <View style={{ padding: 16 }}>
+            <Text size="sm" weight="medium" style={{ color: '#8E8E93', marginBottom: 12 }}>
+              СЧЁТ
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {accounts.map((account) => (
+                  <TouchableOpacity
+                    key={account.id}
+                    onPress={() => setSelectedAccount(account.id)}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 12,
+                      backgroundColor: selectedAccount === account.id
+                        ? colors.background
+                        : 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: selectedAccount === account.id
+                        ? colors.primary
+                        : 'rgba(255, 255, 255, 0.1)',
+                      minWidth: 120,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text size="sm" style={{ color: '#8E8E93', marginBottom: 4 }}>
                       {account.name}
                     </Text>
-                    <Text style={[styles.accountBalance, { color: colors.textSecondary }]}>
-                      {account.balance.toLocaleString('ru-RU')} ₽
+                    <Text size="md" weight="semibold" style={{ color: '#FFFFFF' }}>
+                      {(account.balance / 100).toLocaleString('ru-RU')} ₽
                     </Text>
-                  </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+
+          {/* Categories */}
+          <View style={{ padding: 16 }}>
+            <Text size="sm" weight="medium" style={{ color: '#8E8E93', marginBottom: 12 }}>
+              КАТЕГОРИЯ
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {displayCategories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  onPress={() => setSelectedCategory(category.id)}
+                  style={{
+                    width: '31%',
+                    backgroundColor: selectedCategory === category.id
+                      ? colors.background
+                      : 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: 12,
+                    paddingVertical: 16,
+                    paddingHorizontal: 8,
+                    alignItems: 'center',
+                    borderWidth: 2,
+                    borderColor: selectedCategory === category.id
+                      ? colors.primary
+                      : 'transparent',
+                  }}
+                >
+                  <Text size="xxxl" style={{ lineHeight: 32 }}>
+                    {category.icon || '💰'}
+                  </Text>
+                  <Text
+                    size="xs"
+                    weight="medium"
+                    style={{
+                      color: selectedCategory === category.id ? colors.primary : '#FFFFFF',
+                      textAlign: 'center',
+                      marginTop: 4,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Note */}
+          <View style={{ padding: 16 }}>
+            <Text size="sm" weight="medium" style={{ color: '#8E8E93', marginBottom: 12 }}>
+              ЗАМЕТКА
+            </Text>
+            <TextInput
+              value={note}
+              onChangeText={setNote}
+              placeholder="Добавить заметку..."
+              placeholderTextColor="#8E8E93"
+              multiline
+              numberOfLines={3}
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                color: '#FFFFFF',
+                fontSize: 16,
+                minHeight: 80,
+                textAlignVertical: 'top',
+              }}
+            />
+          </View>
+        </ScrollView>
+
+        {/* Fixed bottom section with Numpad and Save button */}
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#0A0A0F',
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(255, 255, 255, 0.1)',
+        }}>
+          {/* Quick amount presets */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ padding: 12 }}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {AMOUNT_PRESETS.map((value) => (
+                <TouchableOpacity
+                  key={value}
+                  onPress={() => setAmount(String(value))}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                  }}
+                >
+                  <Text size="sm" weight="semibold" style={{ color: '#FFFFFF' }}>
+                    {value} ₽
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+
+          {/* Numpad */}
+          <View style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            paddingHorizontal: 8,
+            paddingBottom: 16,
+          }}>
+            {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'].map((key) => (
+              <TouchableOpacity
+                key={key}
+                onPress={() => {
+                  if (key === '⌫') handleDeletePress();
+                  else if (key === '.') handleDecimalPress();
+                  else handleNumberPress(key);
+                }}
+                style={{
+                  width: '33.33%',
+                  aspectRatio: 1.5,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 30,
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Text
+                    size="xxl"
+                    weight="semibold"
+                    style={{
+                      color: key === '⌫' ? '#FF3B30' : '#FFFFFF',
+                      lineHeight: 32,
+                    }}
+                  >
+                    {key}
+                  </Text>
                 </View>
-                {accountId === account.id && (
-                  <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
-                )}
               </TouchableOpacity>
             ))}
           </View>
-        </Animated.View>
 
-        {/* Description */}
-        <Animated.View entering={FadeInDown.duration(400).delay(400)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Описание <Text style={{ color: colors.textTertiary }}>(необязательно)</Text>
-          </Text>
-          <TextInput
-            style={[
-              styles.descriptionInput, 
-              { 
-                backgroundColor: colors.surface, 
-                color: colors.text,
-                borderColor: colors.border,
-              }
-            ]}
-            placeholder="Куда ушли деньги?"
-            placeholderTextColor={colors.textTertiary}
-            value={description}
-            onChangeText={setDescription}
-            maxLength={100}
-          />
-        </Animated.View>
-
-        {/* Submit Button */}
-        <Animated.View 
-          entering={FadeInUp.duration(400).delay(500)} 
-          style={styles.submitSection}
-        >
-          <Button
-            title={
-              type === TransactionType.INCOME 
-                ? `Добавить ${currentTypeConfig.sign}${amount || '0'} ₽`
-                : type === TransactionType.EXPENSE 
-                  ? `Добавить ${currentTypeConfig.sign}${amount || '0'} ₽`
-                  : 'Перевести'
-            }
+          {/* Save button */}
+          <TouchableOpacity
             onPress={handleSubmit}
-            loading={isSubmitting}
-            fullWidth
-            size="lg"
-            icon={type === TransactionType.INCOME ? 'arrow-down' : type === TransactionType.EXPENSE ? 'arrow-up' : 'swap-horizontal'}
-            style={{ backgroundColor: currentTypeConfig.color }}
-          />
-        </Animated.View>
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </SafeAreaView>
+            disabled={!amount || !selectedCategory || !selectedAccount || isSubmitting}
+            style={{
+              marginHorizontal: 16,
+              marginBottom: 16,
+              backgroundColor: !amount || !selectedCategory || !selectedAccount
+                ? 'rgba(255, 255, 255, 0.1)'
+                : colors.primary,
+              borderRadius: 16,
+              paddingVertical: 16,
+              alignItems: 'center',
+              opacity: isSubmitting ? 0.6 : 1,
+            }}
+          >
+            <Text size="lg" weight="bold" style={{ color: '#FFFFFF' }}>
+              {isSubmitting ? 'Сохранение...' : 'Сохранить'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Screen>
   );
 }
-
-// ============================================
-// STYLES
-// ============================================
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: fontSize.h3,
-    fontWeight: fontWeight.semibold,
-  },
-  headerPlaceholder: {
-    width: 40,
-  },
-  
-  // Scroll
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-  },
-  
-  // Type Selector
-  typeSelector: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  typeButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  typeIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  typeLabel: {
-    fontSize: fontSize.small,
-    fontWeight: fontWeight.medium,
-  },
-  
-  // Amount Section
-  amountSection: {
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  amountLabel: {
-    fontSize: fontSize.small,
-    marginBottom: spacing.sm,
-  },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  currencySymbol: {
-    fontSize: 40,
-    fontWeight: fontWeight.bold,
-    marginRight: spacing.sm,
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: 48,
-    fontWeight: fontWeight.extrabold,
-    letterSpacing: -1,
-    padding: 0,
-  },
-  
-  // Life Cost
-  lifeCostSection: {
-    marginTop: spacing.lg,
-  },
-  lifeCostCard: {
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-  },
-  lifeCostHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  lifeCostTitle: {
-    fontSize: fontSize.small,
-    fontWeight: fontWeight.semibold,
-  },
-  lifeCostHours: {
-    fontSize: fontSize.h1,
-    fontWeight: fontWeight.extrabold,
-  },
-  lifeCostDays: {
-    fontSize: fontSize.body,
-    marginTop: spacing.xxs,
-  },
-  lifeCostMessage: {
-    fontSize: fontSize.small,
-    fontStyle: 'italic',
-    marginTop: spacing.sm,
-  },
-  lifeCostHint: {
-    fontSize: fontSize.small,
-    textAlign: 'center',
-  },
-  
-  // Section
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.md,
-  },
-  
-  // Categories
-  categoriesContainer: {
-    gap: spacing.sm,
-    paddingRight: spacing.lg,
-  },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.full,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    gap: spacing.sm,
-  },
-  categoryIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  categoryLabel: {
-    fontSize: fontSize.small,
-    fontWeight: fontWeight.medium,
-  },
-  
-  // Accounts
-  accountsList: {
-    gap: spacing.sm,
-  },
-  accountItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  accountLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  accountIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  accountInfo: {
-    gap: 2,
-  },
-  accountName: {
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.medium,
-  },
-  accountBalance: {
-    fontSize: fontSize.small,
-  },
-  
-  // Description
-  descriptionInput: {
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    fontSize: fontSize.body,
-    borderWidth: 1,
-  },
-  
-  // Submit
-  submitSection: {
-    marginTop: spacing.md,
-  },
-});

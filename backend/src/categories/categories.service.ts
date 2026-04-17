@@ -12,7 +12,7 @@ const AVAILABLE_ICONS = [
   'game-controller', 'musical-notes', 'film', 'book', 'school',
   'shirt', 'watch', 'glasses', 'diamond', 'flower',
   'pet', 'leaf', 'water', 'flash', 'power',
-  'call', 'mail', 'globe', 'wifi', ' Bluetooth',
+  'call', 'mail', 'globe', 'wifi', 'Bluetooth',
   'game-controller', 'tennisball', 'football', 'basketball', 'walk',
   'bed', 'cut', 'brush', 'happy', 'sad',
 ];
@@ -56,6 +56,18 @@ export class CategoriesService implements OnModuleInit {
     });
   }
 
+  // Получить только системные категории (публичный метод)
+  async findSystemCategories() {
+    return this.prisma.category.findMany({
+      where: { userId: null },
+      orderBy: [
+        { type: 'asc' },
+        { order: 'asc' },
+        { name: 'asc' },
+      ],
+    });
+  }
+
   async findById(id: string, userId: string) {
     const category = await this.prisma.category.findFirst({
       where: {
@@ -73,8 +85,7 @@ export class CategoriesService implements OnModuleInit {
   }
 
   // Создать персональную категорию
-  async create(userId: string, data: { name: string; type: CategoryType; icon?: string; color?: string; isBaseNeed?: boolean }) {
-    // Проверяем, нет ли уже такой системной категории
+  async create(userId: string, data: { name: string; type: CategoryType; icon?: string; color?: string; isBaseNeed?: boolean; images?: string[] }) {
     const existingSystem = await this.prisma.category.findFirst({
       where: { name: data.name, userId: null },
     });
@@ -90,12 +101,12 @@ export class CategoriesService implements OnModuleInit {
         icon: data.icon,
         color: data.color,
         isBaseNeed: data.isBaseNeed ?? false,
+        images: data.images ?? [],
       },
     });
   }
 
   async update(id: string, userId: string, data: Prisma.CategoryUpdateInput) {
-    // Нельзя редактировать системные категории
     const category = await this.prisma.category.findFirst({
       where: { id, userId: { not: null } }, // Только персональные
     });
@@ -104,7 +115,10 @@ export class CategoriesService implements OnModuleInit {
     }
     return this.prisma.category.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        images: data.images !== undefined ? data.images : undefined,
+      },
     });
   }
 

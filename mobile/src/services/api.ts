@@ -1,8 +1,10 @@
-import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3001/api';
+
+let isRedirecting = false;
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -14,26 +16,44 @@ export const api = axios.create({
 
 // Request interceptor - add auth token
 api.interceptors.request.use(
-  async (config) => {
+  async (config: InternalAxiosRequestConfig) => {
     const token = await SecureStore.getItemAsync('authToken');
     if (token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+      baseURL: config.baseURL,
+      hasToken: !!token,
+    });
     return config;
   },
   (error) => {
+    console.error('❌ Request error:', error);
     return Promise.reject(error);
   }
 );
 
 // Response interceptor - handle errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`✅ API Response: ${response.config.url}`, response.status);
+    return response;
+  },
   async (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid - logout and redirect to login
+    console.error('❌ API Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.message,
+      data: error.response?.data,
+    });
+
+    if (error.response?.status === 401 && !isRedirecting) {
+      isRedirecting = true;
       await SecureStore.deleteItemAsync('authToken');
+      console.log('🔄 Token expired, redirecting to login');
       router.replace('/auth/login');
+      setTimeout(() => { isRedirecting = false; }, 2000);
     }
     return Promise.reject(error);
   }

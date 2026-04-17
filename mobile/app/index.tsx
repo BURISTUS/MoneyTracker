@@ -1,58 +1,40 @@
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../src/stores/authStore';
 
 export default function IndexScreen() {
   const router = useRouter();
-  const { checkAuth, isAuthenticated } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
+  const checkAuth = useAuthStore((s) => s.checkAuth);
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
-    setMounted(true);
     const init = async () => {
       await checkAuth();
+      if (hasNavigated.current) return;
+      hasNavigated.current = true;
+
+      const { isAuthenticated } = useAuthStore.getState();
+      if (isAuthenticated) {
+        router.replace('/main');
+      } else {
+        router.replace('/auth/login');
+      }
     };
+
     init();
   }, []);
 
-  useEffect(() => {
-    if (!mounted) return;
-    if (isAuthenticated) {
-      router.replace('/main');
-    } else {
-      router.replace('/auth/login');
-    }
-  }, [mounted, isAuthenticated]);
-
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Money Tracker</Text>
-        <Text style={styles.subtitle}>Загрузка...</Text>
-      </View>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: '#0A0A0F',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <ActivityIndicator size="large" color="#6366F1" />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8E8E93',
-  },
-});

@@ -2,22 +2,46 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
 import authService from '../services/auth';
-import type { User, UserGamification } from '../types';
+import type { User, UserGamification, GamificationStatus } from '../types';
+
+const MOCK_USER: User = {
+  id: 'mock-user-123',
+  email: 'mock@user.com',
+  name: 'Тестовый Пользователь',
+  hourlyRate: 50000,
+  monthlyHours: 160,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const MOCK_GAMIFICATION: UserGamification = {
+  id: 'mock-gamification-123',
+  userId: MOCK_USER.id,
+  xp: 1250,
+  level: 5,
+  savedAmount: 5000000,
+  status: 'STRATEGIST' as GamificationStatus,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  hourlyRate: MOCK_USER.hourlyRate ?? undefined,
+};
 
 interface AuthState {
   user: User | null;
   gamification: UserGamification | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  
+  isDemoMode: boolean;
+
   // Actions
   setUser: (user: User | null) => void;
   setGamification: (gamification: UserGamification | null) => void;
   setLoading: (loading: boolean) => void;
-  
+
   // Auth actions
   login: (email: string, password: string) => Promise<void>;
   register: (data: { email: string; password: string; name: string; hourlyRate?: number }) => Promise<void>;
+  loginMock: () => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   updateHourlyRate: (hourlyRate: number) => void;
@@ -30,6 +54,7 @@ export const useAuthStore = create<AuthState>()(
       gamification: null,
       isLoading: false,
       isAuthenticated: false,
+      isDemoMode: false,
       
       setUser: (user) => set({ user, isAuthenticated: !!user }),
       setGamification: (gamification) => set({ gamification }),
@@ -56,17 +81,34 @@ export const useAuthStore = create<AuthState>()(
           throw error;
         }
       },
+
+      loginMock: async () => {
+        set({ isLoading: true });
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          set({ user: MOCK_USER, gamification: MOCK_GAMIFICATION, isAuthenticated: true, isDemoMode: true, isLoading: false });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
       
       logout: async () => {
         set({ isLoading: true });
         try {
           await authService.logout();
         } finally {
-          set({ user: null, gamification: null, isAuthenticated: false, isLoading: false });
+          set({ user: null, gamification: null, isAuthenticated: false, isDemoMode: false, isLoading: false });
         }
       },
       
       checkAuth: async () => {
+        const { isDemoMode } = get();
+        if (isDemoMode && get().user) {
+          set({ isAuthenticated: true });
+          return;
+        }
+
         const isLoggedIn = await authService.isLoggedIn();
         if (!isLoggedIn) {
           set({ user: null, isAuthenticated: false });
@@ -92,6 +134,12 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      partialize: (state) => ({
+        user: state.user,
+        gamification: state.gamification,
+        isAuthenticated: state.isAuthenticated,
+        isDemoMode: state.isDemoMode,
+      }),
       storage: createJSONStorage(() => ({
         getItem: async (name) => {
           const item = await SecureStore.getItemAsync(name);

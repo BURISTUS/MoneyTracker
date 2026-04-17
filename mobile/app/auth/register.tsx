@@ -1,180 +1,150 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { useState, useCallback } from 'react';
+import {
+  View,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../src/stores/authStore';
+import { Input } from '../../src/components/ui/Input';
+import { Button } from '../../src/components/ui/Button';
+import { Text } from '../../src/components/ui/Text';
+import { Icon } from '../../src/components/ui/Icon';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { register, isLoading } = useAuthStore();
+  const { register, loginMock, isLoading } = useAuthStore();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [hourlyRate, setHourlyRate] = useState('');
-  const [error, setError] = useState('');
 
-  const handleRegister = async () => {
-    setError('');
+  const handleRegister = useCallback(async () => {
     if (!name || !email || !password) {
-      setError('Пожалуйста, заполните обязательные поля');
       return;
     }
-
     try {
-      await register({
-        name,
-        email,
-        password,
-        hourlyRate: hourlyRate ? Number(hourlyRate) * 100 : undefined,
-      });
-      router.replace('/main/');
-    } catch (err) {
-      setError('Ошибка регистрации. Возможно, email уже используется.');
+      console.log('📝 Registering user:', { name, email, hourlyRate });
+      const result = await register({ email, password, name, hourlyRate: hourlyRate ? parseInt(hourlyRate) : undefined });
+      console.log('✅ Registration successful:', result);
+      router.replace('/main');
+    } catch (error: any) {
+      console.error('❌ Registration failed:', error);
+      alert('Ошибка регистрации: ' + (error.response?.data?.message || error.message || 'Неизвестная ошибка'));
     }
-  };
+  }, [name, email, password, hourlyRate, register, router]);
+
+  const handleDemo = useCallback(async () => {
+    console.log('🎮 Starting demo mode');
+    await loginMock();
+    router.replace('/main');
+  }, [loginMock, router]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Регистрация</Text>
-        <Text style={styles.subtitle}>Начните свой путь к финансовой свободе</Text>
-      </View>
-
-      <View style={styles.form}>
-        <Text style={styles.label}>Имя *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ваше имя"
-          value={name}
-          onChangeText={setName}
-        />
-
-        <Text style={styles.label}>Email *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="your@email.com"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-
-        <Text style={styles.label}>Пароль *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Минимум 6 символов"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        <Text style={styles.label}>Ваша почасовая ставка (₽)</Text>
-        <Text style={styles.hint}>Например: 1500. Это нужно для расчета "цены вашего времени"</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="1500"
-          value={hourlyRate}
-          onChangeText={setHourlyRate}
-          keyboardType="numeric"
-        />
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
-          onPress={handleRegister}
-          disabled={isLoading}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1, backgroundColor: '#0A0A0F' }}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: 24,
+            paddingTop: 80,
+            paddingBottom: 40,
+          }}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.buttonText}>
-            {isLoading ? 'Регистрация...' : 'Создать аккаунт'}
-          </Text>
-        </TouchableOpacity>
+          <View style={{ alignItems: 'center', marginBottom: 40 }}>
+            <View
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: 24,
+                backgroundColor: '#6366F1',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 20,
+              }}
+            >
+              <Icon name="wallet" size={32} color="#FFFFFF" />
+            </View>
+            <Text preset="h1" style={{ color: '#FFFFFF' }}>Money Tracker</Text>
+            <Text size="sm" style={{ color: '#71717A', marginTop: 8 }}>
+              Создайте аккаунт
+            </Text>
+          </View>
 
-        <TouchableOpacity onPress={() => router.push('/auth/login')}>
-          <Text style={styles.link}>
-            Уже есть аккаунт? <Text style={styles.linkBold}>Войти</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <View style={{ gap: 16 }}>
+            <Button onPress={handleDemo} fullWidth size="lg" variant="success">
+              <Icon name="play" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+              Начать (демо)
+            </Button>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 8 }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
+              <Text size="sm" style={{ color: '#71717A', paddingHorizontal: 16 }}>
+                или заполните форму
+              </Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
+            </View>
+
+            <Input
+              label="Имя"
+              value={name}
+              onChangeText={setName}
+              placeholder="Как вас зовут?"
+            />
+
+            <Input
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="your@email.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            <Input
+              label="Пароль"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Минимум 6 символов"
+              secureTextEntry
+            />
+
+            <Input
+              label="Часовая ставка (₽/час)"
+              value={hourlyRate}
+              onChangeText={setHourlyRate}
+              placeholder="Например: 500"
+              keyboardType="number-pad"
+            />
+
+            <Button onPress={handleRegister} loading={isLoading} fullWidth size="lg">
+              Зарегистрироваться
+            </Button>
+          </View>
+
+          <View style={{ alignItems: 'center', marginTop: 32 }}>
+            <Text size="sm" style={{ color: '#71717A' }}>
+              Уже есть аккаунт?
+            </Text>
+            <Text
+              size="sm"
+              weight="semibold"
+              style={{ color: '#6366F1', marginTop: 4 }}
+              onPress={() => router.push('/auth/login')}
+            >
+              Войти
+            </Text>
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-    maxWidth: 400,
-    alignSelf: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8E8E93',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  form: {
-    gap: 12,
-  },
-  label: {
-    fontSize: 14,
-    color: '#1C1C1E',
-    marginBottom: 4,
-  },
-  hint: {
-    fontSize: 12,
-    color: '#AEAEB2',
-    marginBottom: 4,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  error: {
-    color: '#FF3B30',
-    fontSize: 14,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  link: {
-    textAlign: 'center',
-    fontSize: 14,
-    color: '#8E8E93',
-    marginTop: 16,
-  },
-  linkBold: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-});

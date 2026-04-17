@@ -30,6 +30,12 @@ export class CategoriesController {
     });
   }
 
+  @Get('system')
+  @ApiOperation({ summary: 'Get system categories only (public)' })
+  async getSystemCategories() {
+    return this.categoriesService.findSystemCategories();
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -42,13 +48,14 @@ export class CategoriesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create personal category' })
-  async create(@Request() req: any, @Body() body: { name: string; type: string; icon?: string; color?: string; isBaseNeed?: boolean }) {
+  async create(@Request() req: any, @Body() body: { name: string; type: string; icon?: string; color?: string; isBaseNeed?: boolean; images?: string[] }) {
     return this.categoriesService.create(req.user.id, {
       name: body.name,
       type: body.type as any,
       icon: body.icon,
       color: body.color,
       isBaseNeed: body.isBaseNeed,
+      images: body.images,
     });
   }
 
@@ -56,7 +63,7 @@ export class CategoriesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update category' })
-  async update(@Param('id') id: string, @Request() req: any, @Body() body: { name?: string; icon?: string; color?: string }) {
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: { name?: string; icon?: string; color?: string; images?: string[] }) {
     return this.categoriesService.update(id, req.user.id, body);
   }
 

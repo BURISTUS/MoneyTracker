@@ -40,21 +40,33 @@ export class TransactionsService {
   }
 
   async create(userId: string, data: { accountId: string; categoryId: string; amount: bigint; type: string; description?: string; date?: Date }) {
+    console.log('📝 Creating transaction for user:', userId, 'data:', data);
+    
     // Verify account belongs to user
     const account = await this.prisma.account.findFirst({
       where: { id: data.accountId, userId },
     });
     if (!account) {
+      console.error('❌ Invalid account:', data.accountId);
       throw new BadRequestException('Invalid account');
     }
 
-    // Verify category belongs to user
+    // Verify category belongs to user OR is system category
     const category = await this.prisma.category.findFirst({
-      where: { id: data.categoryId, userId },
+      where: {
+        id: data.categoryId,
+        OR: [
+          { userId },
+          { userId: null }, // System category
+        ],
+      },
     });
     if (!category) {
+      console.error('❌ Invalid category:', data.categoryId, 'userId:', userId);
       throw new BadRequestException('Invalid category');
     }
+
+    console.log('✅ Account and category validated:', { account: account.name, category: category.name });
 
     // Create transaction
     const transaction = await this.prisma.transaction.create({
@@ -69,6 +81,8 @@ export class TransactionsService {
       },
     });
 
+    console.log('✅ Transaction created:', transaction.id);
+
     // Update account balance
     const balanceChange = data.type === 'INCOME' ? data.amount : -data.amount;
     await this.prisma.account.update({
@@ -76,6 +90,7 @@ export class TransactionsService {
       data: { balance: { increment: balanceChange } },
     });
 
+    console.log('✅ Account balance updated');
     return transaction;
   }
 

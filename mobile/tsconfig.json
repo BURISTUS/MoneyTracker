@@ -13,7 +13,7 @@
       "@/utils/*": ["src/utils/*"],
       "@/types/*": ["src/types/*"]
     },
-    "ignoreDeprecations": "6.0"
+
   },
   "include": [
     "**/*.ts",

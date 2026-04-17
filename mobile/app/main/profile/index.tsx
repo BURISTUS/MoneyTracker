@@ -1,97 +1,121 @@
-import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, Switch } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import React from 'react';
+import { View, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '../../../src/stores/authStore';
 import { useDataStore } from '../../../src/stores/dataStore';
-import { useTheme } from '../../../src/utils/ThemeContext';
+import { Screen } from '../../../src/components/ui/Screen';
+import { Text } from '../../../src/components/ui/Text';
+import { Card } from '../../../src/components/ui/Card';
+import { Avatar } from '../../../src/components/ui/Avatar';
+import { Icon } from '../../../src/components/ui/Icon';
+import { XPBar } from '../../../src/components/features/XPBar';
+import { Badge } from '../../../src/components/ui/Badge';
+import { Divider } from '../../../src/components/ui/Divider';
+import { useTheme } from '../../../src/theme';
+import { GAMIFICATION_STATUS_LABELS } from '../../../src/types';
 
 export default function ProfileScreen() {
-  const { colors, isDark, toggleTheme } = useTheme();
-  const { gamification, user } = useDataStore();
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
+  const { spacing } = useTheme();
+  const gamification = useDataStore((s) => s.gamification);
 
-  const settings = [
-    { id: 'notifications', title: 'Push-уведомления', icon: 'notifications', color: '#FF9500' },
-    { id: 'budget_alerts', title: 'Алерты бюджета', icon: 'pie-chart', color: '#007AFF' },
-    { id: 'wishlist_reminders', title: 'Напоминания о wishlist', icon: 'bulb', color: '#FFD700' },
-    { id: 'dark_mode', title: 'Темная тема', icon: 'moon', color: '#9D7BBD', hasSwitch: true, onSwitch: toggleTheme, switchValue: isDark },
+  const xp = gamification?.xp ?? 0;
+  const level = gamification?.level ?? 1;
+  const status = gamification?.status ?? 'CONSUMER_DRONE';
+  const statusLabel = GAMIFICATION_STATUS_LABELS[status as keyof typeof GAMIFICATION_STATUS_LABELS] || 'Потребитель';
+
+  const menuItems = [
+    { icon: 'wallet', label: 'Счета', path: '/main/accounts', color: '#6366F1' },
+    { icon: 'grid', label: 'Категории', path: '/main/categories', color: '#5AC8FA' },
+    { icon: 'pie-chart', label: 'Бюджеты', path: '/main/budget', color: '#FBBF24' },
+    { icon: 'flag', label: 'Цели', path: '/main/goals', color: '#34D399' },
+    { icon: 'time', label: 'Life Cost', path: '/main/life-cost', color: '#F472B6' },
   ];
 
-  const styles = StyleSheet.create({
-    container: { flex: 1 },
-    scrollView: { flex: 1 },
-    scrollContent: { padding: 20, paddingTop: 24 },
-    profileHeader: { alignItems: 'center', marginBottom: 32 },
-    avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-    userName: { fontSize: 24, fontWeight: '700', marginBottom: 4 },
-    userEmail: { fontSize: 14, marginBottom: 12 },
-    levelBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFD70020', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 6 },
-    levelText: { fontSize: 14, fontWeight: '600', color: '#FFD700' },
-    sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
-    settingItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 16, padding: 16, marginBottom: 8 },
-    settingLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    settingIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-    settingTitle: { fontSize: 16, fontWeight: '500' },
-    menuItem: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 8, gap: 12 },
-    menuItemText: { fontSize: 16, fontWeight: '500' },
-    version: { marginTop: 24, alignItems: 'center' },
-    versionText: { fontSize: 13 },
-  });
-
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <Animated.View entering={FadeInDown.duration(400)} style={styles.profileHeader}>
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={40} color="#FFFFFF" />
-          </View>
-          <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'Пользователь'}</Text>
-          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{user?.email || 'user@example.com'}</Text>
-          <View style={styles.levelBadge}>
-            <Ionicons name="star" size={14} color={colors.xpGold} />
-            <Text style={styles.levelText}>Уровень {gamification?.level || 1}</Text>
-          </View>
-        </Animated.View>
-
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Настройки</Text>
-        {settings.map((item, index) => (
-          <Animated.View key={item.id} entering={FadeInDown.duration(300).delay(index * 50)} style={[styles.settingItem, { backgroundColor: colors.surface }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.settingIcon, { backgroundColor: item.color + '15' }]}>
-                <Ionicons name={item.icon as any} size={20} color={item.color} />
-              </View>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>{item.title}</Text>
+    <Screen
+      header={
+        <View style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8 }}>
+          <Text preset="h2">Профиль</Text>
+        </View>
+      }
+    >
+      <View style={{ gap: spacing.xl }}>
+        <Card variant="glass" padding="xxl">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginBottom: spacing.xl }}>
+            <Avatar name={user?.name || 'U'} size={56} />
+            <View style={{ flex: 1 }}>
+              <Text size="xl" weight="bold">
+                {user?.name || 'Пользователь'}
+              </Text>
+              <Text size="sm" style={{ color: '#71717A', marginTop: 2 }}>
+                {user?.email}
+              </Text>
             </View>
-            {item.hasSwitch ? (
-              <Switch value={item.switchValue || false} onValueChange={item.onSwitch || (() => {})} />
-            ) : (
-              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-            )}
-          </Animated.View>
-        ))}
+            <Badge label={statusLabel} variant="primary" />
+          </View>
+          <XPBar xp={xp} level={level} />
+        </Card>
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Аккаунт</Text>
-        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface }]}>
-          <Ionicons name="create" size={20} color={colors.primary} />
-          <Text style={[styles.menuItemText, { color: colors.text }]}>Редактировать профиль</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface }]}>
-          <Ionicons name="shield-checkmark" size={20} color={colors.success} />
-          <Text style={[styles.menuItemText, { color: colors.text }]}>Безопасность</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface }]}>
-          <Ionicons name="help-circle" size={20} color={colors.info} />
-          <Text style={[styles.menuItemText, { color: colors.text }]}>Помощь</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface }]}>
-          <Ionicons name="log-out" size={20} color={colors.danger} />
-          <Text style={[styles.menuItemText, { color: colors.danger }]}>Выйти</Text>
-        </TouchableOpacity>
-
-        <View style={styles.version}>
-          <Text style={[styles.versionText, { color: colors.textTertiary }]}>Money Tracker v1.0</Text>
+        <View style={{ gap: spacing.sm }}>
+          {menuItems.map((item) => (
+            <Pressable
+              key={item.path}
+              onPress={() => router.push(item.path as any)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing.md,
+                paddingVertical: spacing.lg,
+                paddingHorizontal: spacing.lg,
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: 12,
+              }}
+            >
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  backgroundColor: `${item.color}15`,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon name={item.icon as any} size={18} color={item.color} />
+              </View>
+              <Text size="md" weight="medium" style={{ flex: 1 }}>
+                {item.label}
+              </Text>
+              <Icon name="chevron-forward" size={18} color="#71717A" />
+            </Pressable>
+          ))}
         </View>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
-    </SafeAreaView>
+        <Divider />
+
+        <Pressable
+          onPress={async () => {
+            await logout();
+            router.replace('/auth/login');
+          }}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.md,
+            paddingVertical: spacing.lg,
+            paddingHorizontal: spacing.lg,
+            backgroundColor: 'rgba(248, 113, 113, 0.06)',
+            borderRadius: 12,
+          }}
+        >
+          <Icon name="log-out-outline" size={20} color="#F87171" />
+          <Text size="md" weight="medium" style={{ color: '#F87171' }}>
+            Выйти
+          </Text>
+        </Pressable>
+      </View>
+    </Screen>
   );
 }

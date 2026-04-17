@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiDelete } from './api';
+import { apiGet, apiPost, apiPatch, apiDelete } from './api';
 import type { Transaction, TransactionSummary } from '../types';
 
 export const transactionsService = {
@@ -41,7 +41,7 @@ export const transactionsService = {
     description?: string;
     date?: string;
   }): Promise<Transaction> {
-    return apiPost<Transaction>(`/transactions/${id}`, data);
+    return apiPatch<Transaction>(`/transactions/${id}`, data);
   },
 
   // Delete transaction

@@ -23,7 +23,12 @@ export const categoriesService = {
     return apiGet<CategoryTypeOption[]>('/categories/types');
   },
 
-  // Get all categories (system + personal)
+  // Get system categories (public, no auth required)
+  async getSystemCategories(): Promise<Category[]> {
+    return apiGet<Category[]>('/categories/system');
+  },
+
+  // Get all categories (system + personal) - requires auth
   async getAll(): Promise<Category[]> {
     return apiGet<Category[]>('/categories');
   },
@@ -40,6 +45,7 @@ export const categoriesService = {
     icon?: string;
     color?: string;
     isBaseNeed?: boolean;
+    images?: string[];
   }): Promise<Category> {
     return apiPost<Category>('/categories', data);
   },
@@ -51,6 +57,7 @@ export const categoriesService = {
     icon: string;
     color: string;
     isBaseNeed: boolean;
+    images: string[];
   }>): Promise<Category> {
     return apiPatch<Category>(`/categories/${id}`, data);
   },

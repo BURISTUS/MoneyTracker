@@ -51,13 +51,14 @@ export enum AccountType {
 // Category Types
 export interface Category {
   id: string;
-  userId: string;
+  userId: string | null;
   name: string;
   type: CategoryType;
   icon: string | null;
   color: string | null;
   isSystem: boolean;
   isBaseNeed: boolean;
+  images: string[];
   createdAt: string;
   updatedAt: string;
 }
