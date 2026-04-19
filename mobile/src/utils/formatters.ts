@@ -1,13 +1,28 @@
-/**
- * Format a number as currency (RUB)
- */
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  RUB: '₽', USD: '$', EUR: '€', GBP: '£', JPY: '¥', CNY: '¥',
+  BRL: 'R$', MXN: 'MX$', INR: '₹', KRW: '₩', TRY: '₺',
+  CHF: 'CHF', CAD: 'C$', AUD: 'A$',
+};
+
+let activeCurrency = 'RUB';
+let activeSymbol = '₽';
+
+export function setCurrencyConfig(currency: string, symbol?: string) {
+  activeCurrency = currency;
+  activeSymbol = symbol || CURRENCY_SYMBOLS[currency] || currency;
+}
+
+export function getCurrencySymbol(): string {
+  return activeSymbol;
+}
+
+export function formatCurrency(amount: number, currency?: string): string {
+  const sym = currency ? (CURRENCY_SYMBOLS[currency] || currency) : activeSymbol;
+  const formatted = new Intl.NumberFormat('ru-RU', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount / 100);
+  return `${formatted} ${sym}`;
 }
 
 /**

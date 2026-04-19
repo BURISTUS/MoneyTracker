@@ -30,7 +30,7 @@ export class WishlistService {
     }));
   }
 
-  async create(userId: string, data: { name: string; price: bigint; category?: string; cooldownDays?: number }) {
+  async create(userId: string, data: { name: string; price: bigint; description?: string; category?: string; cooldownDays?: number }) {
     const cooldownDays = data.cooldownDays || 7;
     const cooldownEnds = new Date(Date.now() + cooldownDays * 24 * 60 * 60 * 1000);
 
@@ -39,6 +39,7 @@ export class WishlistService {
         userId,
         name: data.name,
         price: data.price,
+        description: data.description || '',
         category: data.category,
         cooldownDays,
         cooldownEnds,

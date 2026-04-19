@@ -11,9 +11,9 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { Screen } from '../../../src/components/ui/Screen';
 import { Text } from '../../../src/components/ui/Text';
 import { Icon } from '../../../src/components/ui/Icon';
-import { DonutChart } from '../../../src/components/ui/DonutChart';
 import { AddTransactionModal } from '../../../src/components/ui/AddTransactionModal';
 import { TransactionActionModal } from '../../../src/components/ui/TransactionActionModal';
+import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import { formatCurrency, formatDate } from '../../../src/utils/formatters';
 import type { TransactionType, Category, Transaction } from '../../../src/types';
 import { TransactionType as TransactionTypeEnum } from '../../../src/types';
@@ -272,29 +272,61 @@ export default function TransactionsDashboardScreen() {
         </ScrollView>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-          {/* Donut chart */}
-          <View style={{ alignItems: 'center', paddingVertical: 16, paddingHorizontal: 16 }}>
-            <DonutChart
-              categories={categoryData}
-              totalAmount={totalAmount}
-              onCategoryPress={handleCategoryPress}
-              type={type as 'EXPENSE' | 'INCOME'}
-            />
-            {type === 'EXPENSE' && totalLifeHours && (
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 6,
-                marginTop: 8,
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                paddingHorizontal: 16,
-                paddingVertical: 6,
-                borderRadius: 20,
-              }}>
-                <Text size="sm">⏱</Text>
-                <Text size="sm" style={{ color: '#FBBF24' }}>
-                  {totalLifeHours} работы
-                </Text>
+          {/* Summary */}
+          <View style={{ paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center' }}>
+            <Text
+              size="xxxl"
+              weight="bold"
+              style={{ color: type === 'EXPENSE' ? '#FF3B30' : '#34C759', lineHeight: 44 }}
+            >
+              {formatCurrency(totalAmount)}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 16, marginTop: 8, alignItems: 'center' }}>
+              <Text size="sm" style={{ color: '#8E8E93' }}>
+                {type === 'EXPENSE' ? 'Расходы' : 'Доходы'} за период
+              </Text>
+              {type === 'EXPENSE' && totalLifeHours && (
+                <>
+                  <Text size="sm" style={{ color: '#8E8E93' }}>·</Text>
+                  <Text size="sm" style={{ color: '#FBBF24' }}>⏱ {totalLifeHours}</Text>
+                </>
+              )}
+            </View>
+
+            {categoryData.length > 0 && (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 16 }}>
+                {categoryData.slice(0, 6).map((item) => {
+                  const isSelected = selectedCategory === item.category.id;
+                  return (
+                    <Pressable
+                      key={item.category.id}
+                      onPress={() => handleCategoryPress(item.category.id)}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6,
+                        backgroundColor: isSelected ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
+                        paddingHorizontal: 10,
+                        paddingVertical: 6,
+                        borderRadius: 16,
+                        borderWidth: 1,
+                        borderColor: isSelected ? (item.category.color || '#6366F1') : 'transparent',
+                      }}
+                    >
+                      <CategoryIcon
+                        icon={item.category.icon}
+                        color={item.category.color || '#6366F1'}
+                        size={14}
+                      />
+                      <Text size="xs" style={{ color: isSelected ? '#FFFFFF' : '#8E8E93' }}>
+                        {item.category.name}
+                      </Text>
+                      <Text size="xs" weight="semibold" style={{ color: '#FFFFFF' }}>
+                        {Math.round(item.percentage)}%
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
             )}
           </View>
@@ -374,22 +406,11 @@ export default function TransactionsDashboardScreen() {
                           }}
                         >
                           {/* Category icon */}
-                          <View
-                            style={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: 22,
-                              backgroundColor:
-                                category?.color ||
-                                (type === 'EXPENSE' ? '#FF3B30' : '#34C759'),
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <Text size="xl">
-                              {category?.icon || '💰'}
-                            </Text>
-                          </View>
+                          <CategoryIcon
+                            icon={category?.icon || ''}
+                            color={category?.color || (type === 'EXPENSE' ? '#FF3B30' : '#34C759')}
+                            size={24}
+                          />
 
                           {/* Details */}
                           <View style={{ flex: 1 }}>

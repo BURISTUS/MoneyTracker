@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CurrencyService } from '../currency/currency.service';
 
 @Injectable()
 export class AccountsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private currencyService: CurrencyService,
+  ) {}
 
   async findAll(userId: string) {
     return this.prisma.account.findMany({
@@ -47,7 +51,27 @@ export class AccountsService {
     return this.prisma.account.delete({ where: { id } });
   }
 
-  // Create default accounts for new user
+  async getTotalBalance(userId: string, targetCurrency: string = 'RUB') {
+    const accounts = await this.prisma.account.findMany({
+      where: { userId },
+    });
+
+    let total = 0;
+    for (const acc of accounts) {
+      if (acc.currency === targetCurrency) {
+        total += Number(acc.balance);
+      } else {
+        const converted = await this.currencyService.convert(
+          Number(acc.balance) / 100,
+          acc.currency,
+          targetCurrency,
+        );
+        total += Math.round(converted * 100);
+      }
+    }
+    return { total, currency: targetCurrency, accountsCount: accounts.length };
+  }
+
   async createDefaultsForUser(userId: string) {
     const defaultAccounts = [
       { name: 'Наличные', type: 'CASH' as const, isDefault: true },

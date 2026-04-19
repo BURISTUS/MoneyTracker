@@ -16,7 +16,9 @@ model User {
   email             String   @unique
   password          String
   name              String
-  hourlyRate        Int?     // Стоимость часа в копейках
+  currency          String   @default("RUB")  // Основная валюта пользователя (ISO 4217)
+  language          String   @default("en")   // Язык интерфейса
+  hourlyRate        Int?     // Стоимость часа в копейках ОСНОВНОЙ валюты
   monthlyHours      Int?     @default(176) // Рабочих часов в месяц
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -252,6 +254,7 @@ model WishlistItem {
   userId          String
   name            String
   price           BigInt
+  description     String   @default("")
   imageUrl        String?
   category        String?
   status          WishlistStatus @default(PENDING)
@@ -538,4 +541,43 @@ model ForecastScenario {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("forecast_scenarios")
+}
+
+// === EXCHANGE RATES ===
+
+enum CurrencyType {
+  FIAT
+  CRYPTO
+  METAL
+}
+
+model ExchangeRate {
+  id        String       @id @default(uuid())
+  code      String       @unique  // USD, EUR, RUB, BTC, XAU etc.
+  name      String                // "US Dollar", "Bitcoin", "Gold"
+  symbol    String       @default("$")
+  type      CurrencyType @default(FIAT)  // FIAT, CRYPTO, METAL
+  popular   Boolean      @default(false) // Показывать в первой вкладке
+  rate      Float                // Exchange rate: 1 USD = X of this currency
+  source    String       @default("exchange-api")
+  date      String                // YYYY-MM-DD from API response
+  fetchedAt DateTime     @default(now())
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@map("exchange_rates")
+}
+
+// === TRANSLATIONS CACHE ===
+
+model Translation {
+  id        String   @id @default(uuid())
+  language  String               // "en", "ru", "es"
+  group     String               // "common", "auth", "home"
+  key       String               // "login", "password"
+  value     String               // "Log In", "Пароль"
+  updatedAt DateTime @updatedAt
+
+  @@unique([language, group, key])
+  @@map("translations")
 }

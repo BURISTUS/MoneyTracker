@@ -18,9 +18,10 @@ export class WishlistController {
 
   @Post()
   @ApiOperation({ summary: 'Add item to wishlist' })
-  async create(@Request() req: any, @Body() body: { name: string; price: number; category?: string; cooldownDays?: number }) {
+  async create(@Request() req: any, @Body() body: { name: string; price: number; description?: string; category?: string; cooldownDays?: number }) {
     return this.wishlistService.create(req.user.id, {
       ...body,
+      description: body.description || '',
       price: BigInt(body.price),
     });
   }

@@ -5,6 +5,7 @@ import { useDataStore } from '../../../src/stores/dataStore';
 import { Screen } from '../../../src/components/ui/Screen';
 import { Text } from '../../../src/components/ui/Text';
 import { Icon } from '../../../src/components/ui/Icon';
+import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import { useTheme } from '../../../src/theme';
 import type { TransactionType } from '../../../src/types';
 import { TransactionType as TransactionTypeEnum } from '../../../src/types';
@@ -238,9 +239,11 @@ export default function CreateTransactionScreen() {
                       : 'transparent',
                   }}
                 >
-                  <Text size="xxxl" style={{ lineHeight: 32 }}>
-                    {category.icon || '💰'}
-                  </Text>
+                  <CategoryIcon
+                    icon={category.icon}
+                    color={category.color || '#6366F1'}
+                    size={24}
+                  />
                   <Text
                     size="xs"
                     weight="medium"

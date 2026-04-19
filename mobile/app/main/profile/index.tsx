@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../src/stores/authStore';
@@ -11,19 +11,35 @@ import { Icon } from '../../../src/components/ui/Icon';
 import { XPBar } from '../../../src/components/features/XPBar';
 import { Badge } from '../../../src/components/ui/Badge';
 import { Divider } from '../../../src/components/ui/Divider';
+import { CurrencyPicker } from '../../../src/components/ui/CurrencyPicker';
 import { useTheme } from '../../../src/theme';
+import { useTranslation } from 'react-i18next';
 import { GAMIFICATION_STATUS_LABELS } from '../../../src/types';
+import type { ExchangeRate } from '../../../src/services/currency';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const { spacing } = useTheme();
+  const { t } = useTranslation();
   const gamification = useDataStore((s) => s.gamification);
+  const userCurrency = useDataStore((s) => s.userCurrency);
+  const currencySymbol = useDataStore((s) => s.currencySymbol);
+  const setUserCurrency = useDataStore((s) => s.setUserCurrency);
+
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
 
   const xp = gamification?.xp ?? 0;
   const level = gamification?.level ?? 1;
   const status = gamification?.status ?? 'CONSUMER_DRONE';
   const statusLabel = GAMIFICATION_STATUS_LABELS[status as keyof typeof GAMIFICATION_STATUS_LABELS] || 'Потребитель';
+
+  const handleCurrencySelect = useCallback(
+    (currency: ExchangeRate) => {
+      setUserCurrency(currency.code);
+    },
+    [setUserCurrency],
+  );
 
   const menuItems = [
     { icon: 'wallet', label: 'Счета', path: '/main/accounts', color: '#6366F1' },
@@ -57,6 +73,46 @@ export default function ProfileScreen() {
           </View>
           <XPBar xp={xp} level={level} />
         </Card>
+
+        <Pressable
+          onPress={() => setShowCurrencyPicker(true)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.md,
+            paddingVertical: spacing.lg,
+            paddingHorizontal: spacing.lg,
+            backgroundColor: 'rgba(99, 102, 241, 0.08)',
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: 'rgba(99, 102, 241, 0.15)',
+          }}
+        >
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              backgroundColor: 'rgba(99, 102, 241, 0.15)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon name="cash-outline" size={18} color="#818CF8" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text size="md" weight="medium">
+              {t('profile.currency', 'Основная валюта')}
+            </Text>
+            <Text size="sm" style={{ color: '#71717A', marginTop: 2 }}>
+              {userCurrency} · {currencySymbol}
+            </Text>
+          </View>
+          <Text size="lg" weight="bold" style={{ color: '#818CF8', marginRight: spacing.xs }}>
+            {currencySymbol}
+          </Text>
+          <Icon name="chevron-forward" size={18} color="#71717A" />
+        </Pressable>
 
         <View style={{ gap: spacing.sm }}>
           {menuItems.map((item) => (
@@ -116,6 +172,14 @@ export default function ProfileScreen() {
           </Text>
         </Pressable>
       </View>
+
+      <CurrencyPicker
+        visible={showCurrencyPicker}
+        onClose={() => setShowCurrencyPicker(false)}
+        onSelect={handleCurrencySelect}
+        selectedCode={userCurrency}
+        title="Основная валюта"
+      />
     </Screen>
   );
 }

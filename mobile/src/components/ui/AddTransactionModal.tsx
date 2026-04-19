@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { useDataStore } from '../../stores/dataStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Text } from './Text';
+import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
 import type { TransactionType } from '../../types';
 import { TransactionType as TransactionTypeEnum } from '../../types';
@@ -330,13 +331,11 @@ export function AddTransactionModal({
               onPress={() => setShowCategoryPicker(true)}
               style={{ alignItems: 'center', gap: 4 }}
             >
-              <View style={{
-                width: 48, height: 48, borderRadius: 24,
-                backgroundColor: selectedCategoryData ? (selectedCategoryData.color || colors.primary) : 'rgba(255,255,255,0.05)',
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Text size="xl">{selectedCategoryData?.icon || '🏷'}</Text>
-              </View>
+              <CategoryIcon
+                icon={selectedCategoryData?.icon || ''}
+                color={selectedCategoryData?.color || colors.primary}
+                size={24}
+              />
               <Text size="xs" style={{ color: '#8E8E93' }} numberOfLines={1}>
                 {selectedCategoryData?.name || 'Категория'}
               </Text>
@@ -533,14 +532,12 @@ export function AddTransactionModal({
                             borderColor: selectedCategory === category.id ? colors.primary : 'transparent',
                           }}
                         >
-                          <View style={{
-                            width: 44, height: 44, borderRadius: 22,
-                            backgroundColor: category.color || colors.primary,
-                            alignItems: 'center', justifyContent: 'center',
-                            marginBottom: 8,
-                          }}>
-                            <Text size="xl" style={{ lineHeight: 24 }}>{category.icon || '💰'}</Text>
-                          </View>
+                          <CategoryIcon
+                            icon={category.icon}
+                            color={category.color || colors.primary}
+                            size={24}
+                            backgroundColor={selectedCategory === category.id ? colors.primary : undefined}
+                          />
                           <Text size="xs" weight="medium" style={{ color: '#FFFFFF', textAlign: 'center' }} numberOfLines={1}>
                             {category.name}
                           </Text>

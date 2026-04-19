@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { Screen } from '../../../src/components/ui/Screen';
 import { Text } from '../../../src/components/ui/Text';
+import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 
 export default function CategoriesIndexScreen() {
   const router = useRouter();
@@ -30,16 +31,11 @@ export default function CategoriesIndexScreen() {
         padding: 14,
       }}
     >
-      <View style={{
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: category.color || '#6366F1',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <Text size="xl">{category.icon || '💰'}</Text>
-      </View>
+      <CategoryIcon
+        icon={category.icon}
+        color={category.color || '#6366F1'}
+        size={24}
+      />
       <View style={{ flex: 1 }}>
         <Text size="md" weight="medium" style={{ color: '#FFFFFF' }}>
           {category.name}

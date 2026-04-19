@@ -49,4 +49,12 @@ export class UsersService {
   async updateHourlyRate(id: string, hourlyRate: number) {
     return this.update(id, { hourlyRate });
   }
+
+  async updateCurrency(id: string, currency: string) {
+    return this.update(id, { currency: currency.toUpperCase() });
+  }
+
+  async updateLanguage(id: string, language: string) {
+    return this.update(id, { language });
+  }
 }

@@ -68,6 +68,7 @@
 - **Routing:** expo-router (file-based)
 - **State:** Zustand (persist + expo-secure-store) + React Query (@tanstack/react-query)
 - **HTTP:** Axios (base config в services/api.ts)
+- **i18n:** i18next + react-i18next + expo-localization. Переводы загружаются с бэкенда (`GET /api/i18n/translations/:lang`), локальный fallback. `Accept-Language` header на каждый запрос. 8 языков: en, ru, es, pt, fr, de, ja, zh.
 - **Токен:** JWT в expo-secure-store (ключ `authToken`)
 - **SVG:** react-native-svg (без LinearGradient/stop — крашат Android)
 - **Запрещены:** react-native-reanimated и react-native-gesture-handler в компонентах (краш Android)
@@ -78,13 +79,17 @@
 ### Конвенция
 - Все ID — UUID строки
 - Все денежные суммы — BigInt (копейки). На фронт делим на 100.
-- `hourlyRate` — тоже в копейках (50000 = 500.00 ₽/час)
+- `hourlyRate` — в копейках ОСНОВНОЙ валюты пользователя (User.currency)
+- `Account.currency` — валюта счёта (ISO 4217). Счета могут быть в разных валютах
+- Общий баланс: счета в User.currency складываем напрямую, остальные конвертируем через CurrencyRate
+- USD — только как технический хаб для кросс-курсов (RUB → USD → EUR). Пользователь USD не видит
 - BigInt.toJSON monkey-patch — сериализуется как string
+- **Конвенция hourlyRate на фронте:** `getHourlyRate()` возвращает **единицы** (делит на 100). Все расчёты life-hours: `(сумма_в_единицах) / getHourlyRate()`
 
 ### Основные модели
 | Модель | Описание |
 |--------|----------|
-| User | email, password(bcrypt), name, hourlyRate, monthlyHours |
+| User | email, password(bcrypt), name, currency(ISO 4217, default RUB), language(default en), hourlyRate, monthlyHours |
 | Session | userId, token, expiresAt |
 | Account | userId, name, type(CASH/BANK/CREDIT/INVESTMENT/DEBT), balance(BigInt), currency |
 | Category | userId(nullable — null = системная), name, type(INCOME/EXPENSE), icon, color, isBaseNeed |
@@ -92,12 +97,14 @@
 | Budget | userId, categoryId, amount, period(WEEKLY/MONTHLY/YEARLY) |
 | Goal | userId, name, targetAmount, currentAmount, deadline |
 | UserGamification | userId(unique), xp, level, savedAmount, status |
-| WishlistItem | userId, name, price, status(PENDING/READY/REJECTED/PURCHASED), cooldownDays(7) |
+| WishlistItem | userId, name, price, description(String, обязательное), status(PENDING/READY/REJECTED/PURCHASED), cooldownDays(7) |
 | Achievement | code(unique), name, xpReward, conditionType, tier |
 | Deposit | userId, type, principal, annualRate, compounding |
 | Loan | userId, type, principal, currentBalance, monthlyPayment |
 | SavingsGoal | userId, name, targetAmount, currentAmount |
 | ForecastScenario | userId, monthlyIncome, monthlyExpenses, forecastYears |
+| ExchangeRate | code(unique), name, symbol, rate(1USD=X), type(FIAT/CRYPTO/METAL), popular(bool), source, date(YYYY-MM-DD) |
+| Translation | language, group, key, value (unique combo) |
 
 ### Нереализованные модели (файлы есть, модули не подключены)
 Family, FamilyMember, Notification, Challenge, UserChallenge, DepositTransaction, LoanPayment
@@ -119,6 +126,9 @@ backend/src/
 ├── wishlist/              # CRUD wishlist
 ├── gamification/          # XP, level, status
 ├── life-cost/             # Hourly rate, calculate hours
+├── currency/              # Currency rates (~300+ currencies, Redis cache, exchange-api, upsert on refresh)
+├── i18n-controller/       # GET /api/i18n/translations/:lang, GET /api/i18n/languages
+├── i18n/                  # Translation JSON files: en/, ru/, es/, pt/, fr/, de/, ja/, zh/
 └── (не подключены: notifications, family)
 ```
 
@@ -147,10 +157,10 @@ mobile/
 │   ├── services/          # API services (api.ts, auth, accounts, categories, transactions, lifeCost)
 │   ├── stores/            # Zustand stores
 │   │   ├── authStore.ts   # user, isAuthenticated, isDemoMode, login/logout/loginMock/checkAuth
-│   │   └── dataStore.ts   # accounts, transactions, categories, budgets, goals, wishlist, gamification
+│   │   └── dataStore.ts   # accounts, transactions, categories, budgets, goals, wishlist, gamification, getHourlyRate/setHourlyRate
 │   ├── hooks/             # Custom hooks (useAccounts, useTransactions, etc.)
 │   └── components/
-│       ├── ui/            # Базовые: Screen, Text, Button, Input, Card, Icon, Loading, DonutChart, AddTransactionModal, TransactionActionModal, DatePickerModal
+│       ├── ui/            # Базовые: Screen, Text, Button, Input, Card, Icon, Loading, DonutChart, SpendingChart, AddTransactionModal, TransactionActionModal, DatePickerModal
 │       ├── features/      # Составные: AccountCard, TransactionItem, WishlistCard, XPBar, etc.
 │       └── layout/        # Header, TabBar
 ```
@@ -190,11 +200,32 @@ mobile/
 | PATCH | /transactions/:id | Обновить (description, date) |
 | DELETE | /transactions/:id | Удалить (восстанавливает баланс) |
 
+### Users
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | /users/profile | Профиль юзера (с gamification) |
+| PATCH | /users/profile | Обновить name, monthlyHours |
+| PATCH | /users/hourly-rate | Установить hourlyRate (копейки) |
+
 ### Life-Cost
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | /life-cost/rate | Получить hourlyRate |
 | POST | /life-cost/calculate | Рассчитать часы |
+
+### Currency
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | /currency/list | Пагинированный список валют с поиском (?search=&type=&popular=&page=&limit=) |
+| GET | /currency/rates | Все курсы валют (Redis cache 24ч) |
+| GET | /currency/convert | Конвертация (?amount=&from=&to=) |
+| GET | /currency/fetch | Обновить с exchange-api (auth) |
+
+### i18n
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | /i18n/translations/:lang | Все переводы для языка |
+| GET | /i18n/languages | Список поддерживаемых языков |
 
 ## Демо-режим
 - Кнопка «Начать (демо)» на login/register → `loginMock()`

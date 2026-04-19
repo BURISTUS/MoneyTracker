@@ -1,0 +1,122 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import { getLocales } from 'expo-localization';
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import en from './locales/en.json';
+import ru from './locales/ru.json';
+
+const LANGUAGE_KEY = 'app_language';
+
+const SUPPORTED_LANGUAGES = ['en', 'ru', 'es', 'pt', 'fr', 'de', 'ja', 'zh'];
+
+const LOCALE_RESOURCES: Record<string, any> = { en, ru };
+
+const FALLBACK_TRANSLATIONS: Record<string, any> = {
+  en: {
+    common: {
+      cancel: 'Cancel', save: 'Save', delete: 'Delete', edit: 'Edit',
+      close: 'Close', loading: 'Loading...', error: 'Error', success: 'Success',
+      all: 'All', back: 'Back', done: 'Done',
+    },
+    home: {
+      lifeSpent: 'Life spent', saved: 'Saved', refusals: 'refusals',
+      decideNow: 'Decide now', cooling: 'Cooling down', today: 'Today',
+      daysLeft: '{{count}} days', notNeeded: 'Not needed', buy: 'Buy',
+      addIncome: 'Income', addExpense: 'Expense', freezeWish: 'Freeze desire',
+      hoursOfLife: 'hours of life', ratePerHour: '{{rate}}/h',
+      whatDoYouWant: 'What do you want?', howMuch: 'How much?',
+      why: 'Why do you need this? *', freezeFor7Days: 'Freeze for 7 days',
+      freezeExplanation: "In 7 days you'll decide — do you really need this",
+    },
+    transactions: {
+      title: 'Transactions', expenses: 'Expenses', income: 'Income',
+      day: 'Day', week: 'Week', month: 'Month', year: 'Year',
+    },
+    categories: {
+      title: 'Categories', create: 'Create category', expense: 'Expense',
+      incomeCategory: 'Income',
+    },
+    wishlist: { title: 'Wish incubator' },
+    profile: { title: 'Profile', language: 'Language', currency: 'Currency', logout: 'Log out' },
+    currencyPicker: { searchPlaceholder: 'Search by code or name...', notFound: 'Currency not found', tab_POPULAR: 'Popular', tab_ALL: 'All', tab_FIAT: 'Fiat', tab_CRYPTO: 'Crypto', tab_METAL: 'Metals' },
+    time: { minutes: '{{count}} min', hours: '{{count}}h', days: '{{count}}d' },
+  },
+  ru: {
+    common: {
+      cancel: 'Отмена', save: 'Сохранить', delete: 'Удалить', edit: 'Редактировать',
+      close: 'Закрыть', loading: 'Загрузка...', error: 'Ошибка', success: 'Успешно',
+      all: 'Все', back: 'Назад', done: 'Готово',
+    },
+    home: {
+      lifeSpent: 'Потрачено жизни', saved: 'Сохранено', refusals: 'отказов',
+      decideNow: 'Решите сейчас', cooling: 'Остывает', today: 'Сегодня',
+      daysLeft: '{{count}} дн.', notNeeded: 'Не нужно', buy: 'Купить',
+      addIncome: 'Доход', addExpense: 'Трата', freezeWish: 'Заморозить желание',
+      hoursOfLife: 'часов жизни', ratePerHour: '{{rate}}/ч',
+      whatDoYouWant: 'Что хотите?', howMuch: 'Сколько стоит?',
+      why: 'Зачем вам это? *', freezeFor7Days: 'Заморозить на 7 дней',
+      freezeExplanation: 'Через 7 дней вы решите — нужно ли это вам',
+    },
+    transactions: {
+      title: 'Транзакции', expenses: 'Расходы', income: 'Доходы',
+      day: 'День', week: 'Неделя', month: 'Месяц', year: 'Год',
+    },
+    categories: {
+      title: 'Категории', create: 'Создать категорию', expense: 'Расход',
+      incomeCategory: 'Доход',
+    },
+    wishlist: { title: 'Инкубатор желаний' },
+    profile: { title: 'Профиль', language: 'Язык', currency: 'Валюта', logout: 'Выйти' },
+    currencyPicker: { searchPlaceholder: 'Поиск по коду или названию...', notFound: 'Валюта не найдена', tab_POPULAR: 'Популярные', tab_ALL: 'Все', tab_FIAT: 'Фиат', tab_CRYPTO: 'Крипто', tab_METAL: 'Металлы' },
+    time: { minutes: '{{count}} мин', hours: '{{count}} ч', days: '{{count}} дн' },
+  },
+};
+
+function detectLanguage(): string {
+  const deviceLang = getLocales()[0]?.languageCode || 'en';
+  const code = deviceLang.split('-')[0].toLowerCase();
+  return SUPPORTED_LANGUAGES.includes(code) ? code : 'en';
+}
+
+const savedLang = typeof window !== 'undefined' && Platform.OS !== 'web'
+  ? (AsyncStorage.getItem(LANGUAGE_KEY) as any)
+  : null;
+
+i18n.use(initReactI18next).init({
+  resources: Object.fromEntries(
+    SUPPORTED_LANGUAGES.map((lang) => [
+      lang,
+      { translation: LOCALE_RESOURCES[lang] || FALLBACK_TRANSLATIONS[lang] || FALLBACK_TRANSLATIONS.en },
+    ]),
+  ),
+  lng: detectLanguage(),
+  fallbackLng: 'en',
+  interpolation: { escapeValue: false },
+  compatibilityJSON: 'v4',
+});
+
+export async function loadTranslationsFromServer(
+  apiGet: (url: string) => Promise<any>,
+) {
+  try {
+    const lang = i18n.language || 'en';
+    const data = await apiGet(`/i18n/translations/${lang}`);
+    if (data && typeof data === 'object') {
+      i18n.addResourceBundle(lang, 'translation', data, true, true);
+    }
+  } catch (error) {
+    console.warn('Failed to load translations from server, using fallback');
+  }
+}
+
+export async function changeLanguage(lang: string) {
+  if (!SUPPORTED_LANGUAGES.includes(lang)) return;
+  await i18n.changeLanguage(lang);
+  if (Platform.OS !== 'web') {
+    await AsyncStorage.setItem(LANGUAGE_KEY, lang);
+  }
+}
+
+export { SUPPORTED_LANGUAGES };
+export default i18n;

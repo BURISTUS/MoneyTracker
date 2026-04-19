@@ -1,7 +1,11 @@
+import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import '../src/i18n';
+import { loadTranslationsFromServer } from '../src/i18n';
+import { apiGet } from '../src/services/api';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +27,10 @@ const customDarkTheme = {
 };
 
 export default function RootLayout() {
+  useEffect(() => {
+    loadTranslationsFromServer(apiGet);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={customDarkTheme}>

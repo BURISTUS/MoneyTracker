@@ -3,6 +3,7 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { Screen } from '../../../src/components/ui/Screen';
 import { Text } from '../../../src/components/ui/Text';
+import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import { formatCurrency } from '../../../src/utils/formatters';
 
 type ViewMode = 'EXPENSE' | 'INCOME';
@@ -143,16 +144,11 @@ export default function CategoriesChartScreen() {
                   }}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                    <View style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 21,
-                      backgroundColor: item.category!.color || (mode === 'EXPENSE' ? '#FF3B30' : '#34C759'),
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                      <Text size="xl">{item.category!.icon || '💰'}</Text>
-                    </View>
+                    <CategoryIcon
+                      icon={item.category!.icon}
+                      color={item.category!.color || (mode === 'EXPENSE' ? '#FF3B30' : '#34C759')}
+                      size={22}
+                    />
 
                     <View style={{ flex: 1 }}>
                       <Text size="md" weight="medium" style={{ color: '#FFFFFF' }}>

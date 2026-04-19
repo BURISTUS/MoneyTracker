@@ -21,6 +21,8 @@ export class UsersController {
       id: user.id,
       email: user.email,
       name: user.name,
+      currency: user.currency,
+      language: user.language,
       hourlyRate: user.hourlyRate,
       monthlyHours: user.monthlyHours,
       gamification: user.gamification,
@@ -33,11 +35,13 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user profile' })
   async updateProfile(
     @Request() req: any,
-    @Body() body: { name?: string; monthlyHours?: number },
+    @Body() body: { name?: string; monthlyHours?: number; currency?: string; language?: string },
   ) {
     return this.usersService.update(req.user.id, {
       name: body.name,
       monthlyHours: body.monthlyHours,
+      currency: body.currency,
+      language: body.language,
     });
   }
 

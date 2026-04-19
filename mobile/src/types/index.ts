@@ -208,6 +208,7 @@ export interface WishlistItem {
   userId: string;
   name: string;
   price: number;
+  description: string;
   imageUrl: string | null;
   category: string | null;
   status: WishlistStatus;

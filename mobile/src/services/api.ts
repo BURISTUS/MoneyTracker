@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
+import i18n from '../i18n';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3001/api';
 
@@ -10,11 +11,16 @@ export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept-Language': 'en',
   },
   timeout: 30000,
 });
 
-// Request interceptor - add auth token
+const updateLanguageHeader = (config: InternalAxiosRequestConfig) => {
+  config.headers['Accept-Language'] = i18n.language || 'en';
+  return config;
+};
+
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await SecureStore.getItemAsync('authToken');
@@ -22,9 +28,11 @@ api.interceptors.request.use(
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
+    updateLanguageHeader(config);
     console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
       baseURL: config.baseURL,
       hasToken: !!token,
+      lang: config.headers['Accept-Language'],
     });
     return config;
   },

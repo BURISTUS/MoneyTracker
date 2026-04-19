@@ -8,6 +8,9 @@ import accountsService from '../services/accounts';
 import categoriesService, { CategoryTypeOption, IconOption } from '../services/categories';
 import authService from '../services/auth';
 import lifeCostService from '../services/lifeCost';
+import currencyService from '../services/currency';
+import type { ExchangeRate } from '../services/currency';
+import { setCurrencyConfig } from '../utils/formatters';
 
 // Initial empty state - data will be loaded from API
 const INITIAL_ACCOUNTS: Account[] = [];
@@ -101,11 +104,19 @@ interface DataState {
   addWishlistItem: (item: WishlistItem) => void;
   updateWishlistItem: (id: string, data: Partial<WishlistItem>) => void;
 
+  // Currency
+  userCurrency: string;
+  setUserCurrency: (currency: string) => void;
+  currencySymbol: string;
+  fetchCurrencyRates: () => Promise<void>;
+  convertToUserCurrency: (amountKopecks: number, fromCurrency: string) => number;
+
   // Helpers
   getTotalBalance: () => number;
   getMonthlyIncome: () => number;
   getMonthlyExpenses: () => number;
   getHourlyRate: () => number;
+  setHourlyRate: (rateRubles: number) => Promise<void>;
   calculateLifeCost: (amount: number) => Promise<{ hours: number; days: number; message: string }>;
   fetchHourlyRate: () => Promise<void>;
 
@@ -343,6 +354,41 @@ export const useDataStore = create<DataState>()(
         wishlist: state.wishlist.map((w) => w.id === id ? { ...w, ...data } : w)
       })),
 
+      userCurrency: 'RUB',
+      setUserCurrency: (currency: string) => {
+        const symbol = currencyService.getSymbol(currency);
+        set({ userCurrency: currency, currencySymbol: symbol });
+        setCurrencyConfig(currency, symbol);
+
+        const { isDemoMode } = useAuthStore.getState();
+        if (!isDemoMode) {
+          import('../services/api').then(({ apiPatch }) => {
+            apiPatch('/users/profile', { currency }).catch((err: unknown) => {
+              console.error('Failed to update currency on server:', err);
+            });
+          });
+        }
+      },
+      currencySymbol: '₽',
+      fetchCurrencyRates: async () => {
+        try {
+          await currencyService.fetchRates();
+          const { userCurrency } = get();
+          const symbol = currencyService.getSymbol(userCurrency);
+          set({ currencySymbol: symbol });
+          setCurrencyConfig(userCurrency, symbol);
+        } catch (error) {
+          console.error('Failed to fetch currency rates:', error);
+        }
+      },
+      convertToUserCurrency: (amountKopecks, fromCurrency) => {
+        const { userCurrency } = get();
+        if (fromCurrency === userCurrency) return amountKopecks;
+        const rubles = amountKopecks / 100;
+        const converted = currencyService.convertLocal(rubles, fromCurrency, userCurrency);
+        return Math.round(converted * 100);
+      },
+
       // Helpers
       getTotalBalance: () => {
         const { accounts } = get();
@@ -372,6 +418,24 @@ export const useDataStore = create<DataState>()(
         return gamification?.hourlyRate ? gamification.hourlyRate / 100 : 1500;
       },
 
+      setHourlyRate: async (rateRubles: number) => {
+        const rateKopecks = Math.round(rateRubles * 100);
+        set((state) => ({
+          gamification: state.gamification
+            ? { ...state.gamification, hourlyRate: rateKopecks }
+            : null,
+        }));
+
+        const { isDemoMode } = useAuthStore.getState();
+        if (!isDemoMode) {
+          try {
+            await lifeCostService.updateHourlyRate(rateKopecks);
+          } catch (error) {
+            console.error('Failed to save hourly rate to server:', error);
+          }
+        }
+      },
+
       calculateLifeCost: async (amount) => {
         try {
           const result = await lifeCostService.calculateHours(amount);
@@ -383,7 +447,8 @@ export const useDataStore = create<DataState>()(
         } catch (error) {
           console.error('Failed to calculate life cost:', error);
           const hourlyRate = get().getHourlyRate();
-          const hours = Math.round(amount / hourlyRate * 10) / 10;
+          const rubles = amount / 100;
+          const hours = Math.round(rubles / hourlyRate * 10) / 10;
           const days = Math.round(hours / 8 * 10) / 10;
 
           let message = '';
@@ -424,13 +489,14 @@ export const useDataStore = create<DataState>()(
           console.log('🎮 Demo mode — skipping API calls');
           return;
         }
-        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate } = get();
+        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate, fetchCurrencyRates } = get();
         await Promise.all([
           fetchAccounts(),
           fetchCategories(),
           fetchTransactions(),
           fetchGamification(),
           fetchHourlyRate(),
+          fetchCurrencyRates(),
         ]);
       },
     }),
@@ -445,6 +511,8 @@ export const useDataStore = create<DataState>()(
         gamification: state.gamification,
         earnedAchievements: state.earnedAchievements,
         wishlist: state.wishlist,
+        userCurrency: state.userCurrency,
+        currencySymbol: state.currencySymbol,
       }),
     }
   )

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Dimensions } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Text } from './Text';
+import { CategoryIcon } from './CategoryIcon';
 import { useTheme } from '../../theme';
 import type { Category } from '../../types';
 
@@ -120,24 +121,15 @@ export function DonutChart({
                 position: 'absolute',
                 left: x - 24,
                 top: y - 24,
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: item.category.color || colors[index % colors.length],
-                alignItems: 'center',
-                justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 4,
               }}
               onStartShouldSetResponder={() => true}
               onResponderRelease={() => onCategoryPress?.(item.category.id)}
             >
-              <Text size="xxl" style={{ lineHeight: 28 }}>
-                {item.category.icon || '💰'}
-              </Text>
+              <CategoryIcon
+                icon={item.category.icon}
+                color={item.category.color || colors[index % colors.length]}
+                size={24}
+              />
             </View>
           );
         })}

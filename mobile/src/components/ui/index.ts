@@ -12,6 +12,8 @@ export { Text } from './Text';
 export { Screen } from './Screen';
 export { Loading, Skeleton } from './Loading';
 export { DonutChart } from './DonutChart';
+export { SpendingChart } from './SpendingChart';
 export { AddTransactionModal } from './AddTransactionModal';
 export { TransactionActionModal } from './TransactionActionModal';
 export { DatePickerModal } from './DatePickerModal';
+export { CategoryIcon } from './CategoryIcon';

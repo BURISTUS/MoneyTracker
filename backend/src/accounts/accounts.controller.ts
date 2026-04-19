@@ -24,6 +24,18 @@ export class AccountsController {
     return this.accountsService.findAll(req.user.id);
   }
 
+  @Get('total-balance')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get total balance in user currency' })
+  async getTotalBalance(@Request() req: any) {
+    const user = await this.accountsService.findAll(req.user.id);
+    return this.accountsService.getTotalBalance(
+      req.user.id,
+      req.user.currency || 'RUB',
+    );
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get account by id' })
   async findById(@Param('id') id: string, @Request() req: any) {

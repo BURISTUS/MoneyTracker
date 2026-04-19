@@ -12,20 +12,27 @@ import { AccountCard } from '../../../src/components/features/AccountCard';
 import { BottomSheet } from '../../../src/components/ui/BottomSheet';
 import { Chip } from '../../../src/components/ui/Chip';
 import { Header } from '../../../src/components/layout/Header';
+import { CurrencyPicker } from '../../../src/components/ui/CurrencyPicker';
 import { useTheme } from '../../../src/theme';
+import { useTranslation } from 'react-i18next';
 import { formatCurrency } from '../../../src/utils/formatters';
 import type { AccountType } from '../../../src/types';
 import { AccountType as AccountTypeEnum } from '../../../src/types';
+import type { ExchangeRate } from '../../../src/services/currency';
 
 export default function AccountsScreen() {
   const router = useRouter();
   const { spacing } = useTheme();
+  const { t } = useTranslation();
   const accounts = useDataStore((s) => s.accounts);
   const createAccount = useDataStore((s) => s.createAccount);
+  const userCurrency = useDataStore((s) => s.userCurrency);
 
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState('');
   const [type, setType] = useState<AccountType>(AccountTypeEnum.BANK);
+  const [currency, setCurrency] = useState(userCurrency);
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
 
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
 
@@ -40,12 +47,15 @@ export default function AccountsScreen() {
   const handleAdd = useCallback(async () => {
     if (!name) return;
     try {
-      await createAccount({ name, type });
+      await createAccount({ name, type, currency });
       setName('');
       setType(AccountTypeEnum.BANK);
+      setCurrency(userCurrency);
       setShowAdd(false);
-    } catch {}
-  }, [name, type, createAccount]);
+    } catch (error) {
+      console.error('Failed to create account:', error);
+    }
+  }, [name, type, currency, userCurrency, createAccount]);
 
   return (
     <Screen scroll header={<Header title="Счета" showBack />}>
@@ -116,11 +126,44 @@ export default function AccountsScreen() {
               ))}
             </View>
           </View>
+          <Pressable
+            onPress={() => setShowCurrencyPicker(true)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.08)',
+              paddingHorizontal: 16,
+              height: 48,
+            }}
+          >
+            <Text size="sm" weight="medium" style={{ color: '#A1A1AA' }}>
+              {t('accounts.currency', 'Валюта')}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text size="md" weight="semibold">
+                {currency}
+              </Text>
+              <Icon name="chevron-forward" size={16} color="#71717A" />
+            </View>
+          </Pressable>
           <Button onPress={handleAdd} fullWidth size="lg" disabled={!name}>
             Создать
           </Button>
         </View>
       </BottomSheet>
+
+      <CurrencyPicker
+        visible={showCurrencyPicker}
+        onClose={() => setShowCurrencyPicker(false)}
+        onSelect={(c: ExchangeRate) => setCurrency(c.code)}
+        selectedCode={currency}
+        title="Валюта счёта"
+        filterType="FIAT"
+      />
     </Screen>
   );
 }

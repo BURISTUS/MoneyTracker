@@ -27,6 +27,7 @@ export default function WishlistScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newName, setNewName] = useState('');
   const [newPrice, setNewPrice] = useState('');
+  const [newDescription, setNewDescription] = useState('');
 
   const hourlyRate = useMemo(() => {
     const rate = getHourlyRate();
@@ -99,7 +100,7 @@ export default function WishlistScreen() {
   );
 
   const handleAddItem = useCallback(() => {
-    if (!newName || !newPrice) {
+    if (!newName || !newPrice || !newDescription.trim()) {
       Alert.alert('Ошибка', 'Заполните все поля');
       return;
     }
@@ -119,6 +120,7 @@ export default function WishlistScreen() {
       userId: user?.id || '',
       name: newName,
       price,
+      description: newDescription.trim(),
       imageUrl: null,
       category: null,
       status: WishlistStatusEnum.PENDING,
@@ -131,6 +133,7 @@ export default function WishlistScreen() {
 
     setNewName('');
     setNewPrice('');
+    setNewDescription('');
     setShowAddModal(false);
     Alert.alert('Добавлено!', `Подождите ${cooldownDays} дней перед покупкой`);
   }, [newName, newPrice, user?.id]);
@@ -175,6 +178,11 @@ export default function WishlistScreen() {
               <Text size="lg" weight="semibold" style={{ color: '#FFFFFF' }}>
                 {item.name}
               </Text>
+              {item.description ? (
+                <Text size="sm" style={{ color: '#8E8E93', marginTop: 2 }} numberOfLines={2}>
+                  {item.description}
+                </Text>
+              ) : null}
               <Text size="xl" weight="bold" style={{ color: '#6366F1', marginTop: 4 }}>
                 {formatCurrency(item.price)}
               </Text>
@@ -405,13 +413,35 @@ export default function WishlistScreen() {
               )}
             </View>
 
+            <View>
+              <Text size="sm" style={{ color: '#8E8E93', marginBottom: 8 }}>Зачем вам это? *</Text>
+              <TextInput
+                value={newDescription}
+                onChangeText={setNewDescription}
+                placeholder="Объясните, почему эта покупка важна..."
+                placeholderTextColor="#8E8E93"
+                multiline
+                numberOfLines={3}
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 16,
+                  color: '#FFFFFF',
+                  fontSize: 16,
+                  minHeight: 80,
+                  textAlignVertical: 'top',
+                }}
+              />
+            </View>
+
             <TouchableOpacity
               onPress={handleAddItem}
-              disabled={!newName || !newPrice}
+              disabled={!newName || !newPrice || !newDescription.trim()}
               style={{
                 paddingVertical: 16,
                 borderRadius: 16,
-                backgroundColor: !newName || !newPrice ? 'rgba(255,255,255,0.1)' : '#6366F1',
+                backgroundColor: !newName || !newPrice || !newDescription.trim() ? 'rgba(255,255,255,0.1)' : '#6366F1',
                 alignItems: 'center',
                 marginTop: 20,
               }}

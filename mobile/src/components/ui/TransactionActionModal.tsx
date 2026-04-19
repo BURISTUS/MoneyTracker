@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useDataStore } from '../../stores/dataStore';
 import { Text } from './Text';
+import { CategoryIcon } from './CategoryIcon';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import type { Transaction } from '../../types';
 
@@ -124,16 +125,11 @@ export function TransactionActionModal({
           <View style={{ paddingHorizontal: 20 }}>
             {/* Category + Amount */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-              <View style={{
-                width: 56,
-                height: 56,
-                borderRadius: 28,
-                backgroundColor: category?.color || (isExpense ? '#FF3B30' : '#34C759'),
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <Text style={{ fontSize: 28 }}>{category?.icon || '💰'}</Text>
-              </View>
+              <CategoryIcon
+                icon={category?.icon || ''}
+                color={category?.color || (isExpense ? '#FF3B30' : '#34C759')}
+                size={28}
+              />
               <View style={{ flex: 1 }}>
                 <Text size="lg" weight="semibold" style={{ color: '#FFFFFF' }}>
                   {category?.name || 'Без категории'}
