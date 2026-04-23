@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useDataStore } from '../../stores/dataStore';
 import { useAuthStore } from '../../stores/authStore';
-import { Text } from './Text';
+import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
 import type { TransactionType } from '../../types';
@@ -63,6 +63,16 @@ export function AddTransactionModal({
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
 
   const [type, setType] = useState<TransactionType>(initialType);
+
+  React.useEffect(() => {
+    if (visible) {
+      setType(initialType);
+      setAmount('');
+      setPendingOp(null);
+      setPreviousValue('');
+      setSelectedCategory(null);
+    }
+  }, [visible, initialType]);
   const [amount, setAmount] = useState('');
   const [pendingOp, setPendingOp] = useState<MathOp>(null);
   const [previousValue, setPreviousValue] = useState('');
@@ -81,7 +91,7 @@ export function AddTransactionModal({
   const colors = type === 'EXPENSE' ? EXPENSE_COLORS : INCOME_COLORS;
 
   const displayCategories = categories.filter(
-    (c) => c.type === (type as any),
+    (c) => c.type === (type as string),
   );
 
   const hourlyRate = useMemo(() => {
@@ -205,21 +215,16 @@ export function AddTransactionModal({
 
   return (
     <RNModal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-        <Pressable style={{ flex: 1 }} onPress={onClose} />
+      <View className="flex-1 bg-[rgba(0,0,0,0.5)] justify-end">
+        <Pressable className="flex-1" onPress={onClose} />
 
-        <View style={{
-          backgroundColor: '#1C1C1E',
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-          maxHeight: '95%',
-        }}>
-          {/* Handle */}
-          <View style={{ width: 36, height: 4, backgroundColor: '#3A3A3C', borderRadius: 2, alignSelf: 'center', marginTop: 8, marginBottom: 12 }} />
+        <View
+          className="bg-[#1C1C1E] rounded-t-3xl"
+          style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16, maxHeight: '95%' }}
+        >
+          <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-3" />
 
-          {/* Type tabs */}
-          <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 8 }}>
+          <View className="flex-row px-4 mb-2">
             {[
               { key: TransactionTypeEnum.EXPENSE, label: '− Расход' },
               { key: TransactionTypeEnum.INCOME, label: '+ Доход' },
@@ -227,161 +232,106 @@ export function AddTransactionModal({
               <TouchableOpacity
                 key={tab.key}
                 onPress={() => { setType(tab.key as TransactionType); setSelectedCategory(null); }}
-                style={{
-                  flex: 1,
-                  paddingVertical: 10,
-                  alignItems: 'center',
-                  backgroundColor: type === tab.key ? colors.background : 'transparent',
-                  borderRadius: 12,
-                }}
+                className={`flex-1 py-2.5 items-center rounded-xl ${
+                  type === tab.key ? '' : ''
+                }`}
+                style={{ backgroundColor: type === tab.key ? colors.background : 'transparent' }}
               >
-                <Text size="md" weight="semibold" style={{ color: type === tab.key ? colors.primary : '#8E8E93' }}>
+                <Text bold className={`text-base ${type === tab.key ? '' : 'text-[#8E8E93]'}`} style={{ color: type === tab.key ? colors.primary : '#8E8E93' }}>
                   {tab.label}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* Amount display + Life Hours */}
-          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-            <Text style={{ color: colors.primary, fontSize: 40, fontWeight: 'bold' }} numberOfLines={1}>
+          <View className="items-center py-2">
+            <Text bold className="text-[40px]" style={{ color: colors.primary }} numberOfLines={1}>
               {displayAmount}
             </Text>
             {lifeHours && type === 'EXPENSE' && (
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 6,
-                marginTop: 6,
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                paddingHorizontal: 14,
-                paddingVertical: 4,
-                borderRadius: 20,
-              }}>
-                <Text size="sm">⏱</Text>
-                <Text size="sm" style={{ color: '#FBBF24' }}>
-                  {lifeHours} работы
-                </Text>
+              <View className="flex-row items-center gap-1.5 mt-1.5 bg-[rgba(255,255,255,0.05)] px-3.5 py-1 rounded-full">
+                <Text className="text-sm">⏱</Text>
+                <Text className="text-sm text-warning-400">{lifeHours} работы</Text>
               </View>
             )}
           </View>
 
-          {/* Date button */}
-          <View style={{ paddingHorizontal: 16, marginBottom: 8 }}>
+          <View className="px-4 mb-2">
             <TouchableOpacity
               onPress={() => setShowDatePicker(true)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                paddingVertical: 8,
-                backgroundColor: 'rgba(255,255,255,0.04)',
-                borderRadius: 20,
-                paddingHorizontal: 16,
-              }}
+              className="flex-row items-center justify-center gap-2 py-2 bg-[rgba(255,255,255,0.04)] rounded-full px-4"
             >
-              <Text size="sm">📅</Text>
-              <Text size="sm" weight="medium" style={{ color: '#EBEBF5' }}>
-                {formatDateFull(date)}
-              </Text>
-              <Text size="xs" style={{ color: '#8E8E93' }}>▾</Text>
+              <Text className="text-sm">📅</Text>
+              <Text bold className="text-sm text-[#EBEBF5]">{formatDateFull(date)}</Text>
+              <Text className="text-xs text-[#8E8E93]">▾</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Detail buttons row */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, paddingHorizontal: 16, marginBottom: 8 }}>
-
-            {/* NOTE button */}
+          <View className="flex-row justify-center gap-6 px-4 mb-2">
             <TouchableOpacity
               onPress={() => setShowNoteInput(!showNoteInput)}
-              style={{ alignItems: 'center', gap: 4 }}
+              className="items-center gap-1"
             >
-              <View style={{
-                width: 48, height: 48, borderRadius: 24,
-                backgroundColor: showNoteInput ? colors.background : 'rgba(255,255,255,0.05)',
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Text size="xl">📝</Text>
+              <View className={`w-12 h-12 rounded-full items-center justify-center ${showNoteInput ? '' : 'bg-[rgba(255,255,255,0.05)]'}`}
+                style={{ backgroundColor: showNoteInput ? colors.background : undefined }}>
+                <Text className="text-xl">📝</Text>
               </View>
-              <Text size="xs" style={{ color: '#8E8E93' }}>
-                {note ? 'Есть' : 'Заметка'}
-              </Text>
+              <Text className="text-xs text-[#8E8E93]">{note ? 'Есть' : 'Заметка'}</Text>
             </TouchableOpacity>
 
-            {/* ACCOUNT button */}
             <TouchableOpacity
               onPress={() => setShowAccountPicker(!showAccountPicker)}
-              style={{ alignItems: 'center', gap: 4 }}
+              className="items-center gap-1"
             >
-              <View style={{
-                width: 48, height: 48, borderRadius: 24,
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Text size="xl">💳</Text>
+              <View className="w-12 h-12 rounded-full bg-[rgba(255,255,255,0.05)] items-center justify-center">
+                <Text className="text-xl">💳</Text>
               </View>
-              <Text size="xs" style={{ color: '#8E8E93' }}>
-                {selectedAccountData?.name || 'Счёт'}
-              </Text>
+              <Text className="text-xs text-[#8E8E93]">{selectedAccountData?.name || 'Счёт'}</Text>
             </TouchableOpacity>
 
-            {/* Category shortcut */}
             <TouchableOpacity
               onPress={() => setShowCategoryPicker(true)}
-              style={{ alignItems: 'center', gap: 4 }}
+              className="items-center gap-1"
             >
               <CategoryIcon
                 icon={selectedCategoryData?.icon || ''}
                 color={selectedCategoryData?.color || colors.primary}
                 size={24}
               />
-              <Text size="xs" style={{ color: '#8E8E93' }} numberOfLines={1}>
+              <Text className="text-xs text-[#8E8E93]" numberOfLines={1}>
                 {selectedCategoryData?.name || 'Категория'}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Note input (collapsible) */}
           {showNoteInput && (
-            <View style={{ paddingHorizontal: 16, marginBottom: 8 }}>
+            <View className="px-4 mb-2">
               <TextInput
                 value={note}
                 onChangeText={setNote}
                 placeholder="Добавить заметку..."
                 placeholderTextColor="#8E8E93"
                 autoFocus
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 10,
-                  color: '#FFFFFF',
-                  fontSize: 16,
-                }}
+                className="bg-[rgba(255,255,255,0.05)] rounded-xl px-4 py-2.5 text-white text-base"
               />
             </View>
           )}
 
-          {/* Account picker (collapsible) */}
           {showAccountPicker && (
-            <View style={{ paddingHorizontal: 16, marginBottom: 8 }}>
+            <View className="px-4 mb-2">
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View className="flex-row gap-2">
                   {accounts.map((account) => (
                     <TouchableOpacity
                       key={account.id}
                       onPress={() => { setSelectedAccount(account.id); setShowAccountPicker(false); }}
+                      className="px-4 py-2.5 rounded-xl border"
                       style={{
-                        paddingHorizontal: 16,
-                        paddingVertical: 10,
                         backgroundColor: selectedAccount === account.id ? colors.background : 'rgba(255,255,255,0.05)',
-                        borderRadius: 12,
-                        borderWidth: 1,
                         borderColor: selectedAccount === account.id ? colors.primary : 'transparent',
                       }}
                     >
-                      <Text size="sm" style={{ color: '#FFFFFF' }}>{account.name}</Text>
+                      <Text className="text-sm text-white">{account.name}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -389,8 +339,7 @@ export function AddTransactionModal({
             </View>
           )}
 
-          {/* Numpad with math operations */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 8 }}>
+          <View className="flex-row flex-wrap px-2">
             {NUMPAD_KEYS.map((key) => {
               const isOp = ['+', '−', '×', '÷'].includes(key);
               const isDelete = key === '⌫';
@@ -405,30 +354,31 @@ export function AddTransactionModal({
                     else if (key === '.' && amount.includes('.')) return;
                     else handleNumberPress(key);
                   }}
-                  style={{ width: '25%', aspectRatio: 1.3, alignItems: 'center', justifyContent: 'center' }}
+                  className="w-[25%] items-center justify-center"
+                  style={{ aspectRatio: 1.3 }}
                   activeOpacity={0.7}
                 >
-                  <View style={{
-                    width: 60, height: 60, borderRadius: 30,
-                    backgroundColor: isActiveOp
-                      ? 'rgba(99, 102, 241, 0.25)'
-                      : isOp
-                        ? 'rgba(99, 102, 241, 0.1)'
-                        : isDelete
-                          ? 'rgba(255,59,48,0.1)'
-                          : 'rgba(255,255,255,0.06)',
-                    alignItems: 'center', justifyContent: 'center',
-                  }}>
+                  <View
+                    className="w-[60px] h-[60px] rounded-full items-center justify-center"
+                    style={{
+                      backgroundColor: isActiveOp
+                        ? 'rgba(99, 102, 241, 0.25)'
+                        : isOp
+                          ? 'rgba(99, 102, 241, 0.1)'
+                          : isDelete
+                            ? 'rgba(255,59,48,0.1)'
+                            : 'rgba(255,255,255,0.06)',
+                    }}
+                  >
                     <Text
-                      size="xl"
-                      weight="semibold"
+                      bold
+                      className="text-xl leading-7"
                       style={{
                         color: isOp
                           ? '#6366F1'
                           : isDelete
                             ? '#FF3B30'
                             : '#FFFFFF',
-                        lineHeight: 28,
                       }}
                     >
                       {key}
@@ -439,42 +389,30 @@ export function AddTransactionModal({
             })}
           </View>
 
-          {/* = and Submit row */}
-          <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingTop: 4, gap: 8 }}>
+          <View className="flex-row px-4 pt-1 gap-2">
             <TouchableOpacity
               onPress={handleEquals}
-              style={{
-                width: 64,
-                height: 56,
-                borderRadius: 16,
-                backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className="w-16 h-14 rounded-2xl bg-[rgba(99,102,241,0.15)] items-center justify-center"
             >
-              <Text size="xxl" weight="bold" style={{ color: '#6366F1' }}>=</Text>
+              <Text bold className="text-3xl text-primary-400">=</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={!numericAmount || !selectedCategory || !selectedAccount || isSubmitting}
+              className="flex-1 py-4 rounded-2xl items-center"
               style={{
-                flex: 1,
-                paddingVertical: 16,
-                borderRadius: 16,
                 backgroundColor: !numericAmount || !selectedCategory || !selectedAccount
                   ? 'rgba(255,255,255,0.1)' : colors.primary,
-                alignItems: 'center',
                 opacity: isSubmitting ? 0.6 : 1,
               }}
             >
-              <Text size="lg" weight="bold" style={{ color: '#FFFFFF' }}>
+              <Text bold className="text-lg text-white">
                 {isSubmitting ? 'Сохранение...' : '✓ Сохранить'}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Date Picker Modal */}
         <DatePickerModal
           visible={showDatePicker}
           currentDate={date}
@@ -482,53 +420,45 @@ export function AddTransactionModal({
           onClose={() => setShowDatePicker(false)}
         />
 
-        {/* Category Picker */}
         <RNModal visible={showCategoryPicker} animationType="slide" onRequestClose={() => setShowCategoryPicker(false)} transparent>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-            <Pressable style={{ flex: 1 }} onPress={() => setShowCategoryPicker(false)} />
-            <View style={{
-              backgroundColor: '#1C1C1E',
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-              maxHeight: '80%',
-            }}>
-              <View style={{ width: 36, height: 4, backgroundColor: '#3A3A3C', borderRadius: 2, alignSelf: 'center', marginTop: 8, marginBottom: 12 }} />
+          <View className="flex-1 bg-[rgba(0,0,0,0.5)] justify-end">
+            <Pressable className="flex-1" onPress={() => setShowCategoryPicker(false)} />
+            <View
+              className="bg-[#1C1C1E] rounded-t-3xl"
+              style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16, maxHeight: '80%' }}
+            >
+              <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-3" />
 
-              <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
-                <Text size="lg" weight="bold" style={{ color: '#FFFFFF' }}>Категория</Text>
+              <View className="px-4 mb-3">
+                <Text bold className="text-lg text-white">Категория</Text>
               </View>
 
               <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}>
                 {displayCategories.length === 0 ? (
-                  <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-                    <Text size="md" style={{ color: '#8E8E93', marginBottom: 16 }}>Нет категорий</Text>
+                  <View className="items-center py-10">
+                    <Text className="text-base text-[#8E8E93] mb-4">Нет категорий</Text>
                     <TouchableOpacity
                       onPress={() => {
                         setShowCategoryPicker(false);
                         onClose();
                         router.push('/main/categories/create');
                       }}
-                      style={{ paddingHorizontal: 24, paddingVertical: 12, backgroundColor: colors.primary, borderRadius: 12 }}
+                      className="px-6 py-3 rounded-xl"
+                      style={{ backgroundColor: colors.primary }}
                     >
-                      <Text size="md" weight="bold" style={{ color: '#FFFFFF' }}>Создать категорию</Text>
+                      <Text bold className="text-base text-white">Создать категорию</Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
                   <>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                    <View className="flex-row flex-wrap gap-3">
                       {displayCategories.map((category) => (
                         <TouchableOpacity
                           key={category.id}
                           onPress={() => { setSelectedCategory(category.id); setShowCategoryPicker(false); }}
+                          className="w-[31%] rounded-2xl py-4 px-2 items-center border-2"
                           style={{
-                            width: '31%',
                             backgroundColor: selectedCategory === category.id ? colors.background : 'rgba(255,255,255,0.05)',
-                            borderRadius: 16,
-                            paddingVertical: 16,
-                            paddingHorizontal: 8,
-                            alignItems: 'center',
-                            borderWidth: 2,
                             borderColor: selectedCategory === category.id ? colors.primary : 'transparent',
                           }}
                         >
@@ -538,7 +468,7 @@ export function AddTransactionModal({
                             size={24}
                             backgroundColor={selectedCategory === category.id ? colors.primary : undefined}
                           />
-                          <Text size="xs" weight="medium" style={{ color: '#FFFFFF', textAlign: 'center' }} numberOfLines={1}>
+                          <Text bold className="text-xs text-white text-center" numberOfLines={1}>
                             {category.name}
                           </Text>
                         </TouchableOpacity>
@@ -551,18 +481,9 @@ export function AddTransactionModal({
                         onClose();
                         router.push('/main/categories/create');
                       }}
-                      style={{
-                        marginTop: 20,
-                        paddingVertical: 14,
-                        backgroundColor: 'rgba(255,255,255,0.05)',
-                        borderRadius: 12,
-                        alignItems: 'center',
-                        borderWidth: 1,
-                        borderColor: 'rgba(255,255,255,0.1)',
-                        borderStyle: 'dashed',
-                      }}
+                      className="mt-5 py-3.5 bg-[rgba(255,255,255,0.05)] rounded-xl items-center border border-[rgba(255,255,255,0.1)] border-dashed"
                     >
-                      <Text size="md" style={{ color: '#8E8E93' }}>+ Создать новую категорию</Text>
+                      <Text className="text-base text-[#8E8E93]">+ Создать новую категорию</Text>
                     </TouchableOpacity>
                   </>
                 )}

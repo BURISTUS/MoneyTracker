@@ -1,8 +1,7 @@
 import React from 'react';
 import { Pressable, type StyleProp, type ViewStyle, View } from 'react-native';
-import { useTheme } from '../../theme';
-import { Text } from '../ui/Text';
-import { Icon } from '../ui/Icon';
+import { Ionicons } from '@expo/vector-icons';
+import { Text } from '../../../components/ui/text';
 import { formatCurrency, getRelativeTime } from '../../utils/formatters';
 import type { Transaction, TransactionType } from '../../types';
 
@@ -25,25 +24,24 @@ const typeSigns: Record<TransactionType, string> = {
 };
 
 const categoryIcons: Record<string, string> = {
-  'Зарплата': 'card',
-  'Фриланс': 'laptop',
-  'Инвестиции': 'trending-up',
-  'Подарки': 'gift',
-  'Продукты': 'cart',
-  'Транспорт': 'bus',
-  'Жильё': 'home',
-  'Коммунальные': 'flash',
-  'Связь': 'call',
-  'Здоровье': 'heart',
-  'Развлечения': 'game-controller',
-  'Одежда': 'shirt',
-  'Рестораны': 'restaurant',
+  'Зарплата': 'card-outline',
+  'Фриланс': 'laptop-outline',
+  'Инвестиции': 'trending-up-outline',
+  'Подарки': 'gift-outline',
+  'Продукты': 'cart-outline',
+  'Транспорт': 'bus-outline',
+  'Жильё': 'home-outline',
+  'Коммунальные': 'flash-outline',
+  'Связь': 'call-outline',
+  'Здоровье': 'heart-outline',
+  'Развлечения': 'game-controller-outline',
+  'Одежда': 'shirt-outline',
+  'Рестораны': 'restaurant-outline',
   Другое: 'ellipsis-horizontal',
 };
 
 export const TransactionItem: React.FC<TransactionItemProps> = React.memo(
   ({ transaction, onPress, style }) => {
-    const { spacing, borderRadius: br } = useTheme();
     const color = typeColors[transaction.type];
     const sign = typeSigns[transaction.type];
     const iconName = (transaction.category?.name && categoryIcons[transaction.category.name]) || 'ellipsis-horizontal';
@@ -51,29 +49,24 @@ export const TransactionItem: React.FC<TransactionItemProps> = React.memo(
     return (
       <Pressable
         onPress={() => onPress?.(transaction.id)}
-        style={[{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md }, style]}
+        className={`flex-row items-center gap-3 py-3 ${style ? '' : ''}`}
+        style={style}
       >
         <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: br.md,
-            backgroundColor: `${color}15`,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          className="w-10 h-10 rounded-xl items-center justify-center"
+          style={{ backgroundColor: `${color}15` }}
         >
-          <Icon name={iconName as any} size={18} color={color} />
+          <Ionicons name={iconName as React.ComponentProps<typeof Ionicons>['name']} size={18} color={color} />
         </View>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text size="md" weight="medium" numberOfLines={1}>
+        <View className="flex-1 gap-0.5">
+          <Text className="text-base font-medium" numberOfLines={1}>
             {transaction.description || transaction.category?.name || 'Операция'}
           </Text>
-          <Text size="xs" style={{ color: '#71717A' }}>
+          <Text className="text-xs text-typography-400">
             {transaction.category?.name} · {getRelativeTime(transaction.date)}
           </Text>
         </View>
-        <Text size="md" weight="semibold" style={{ color }}>
+        <Text className="text-base font-semibold" style={{ color }}>
           {sign}{formatCurrency(Math.abs(transaction.amount))}
         </Text>
       </Pressable>

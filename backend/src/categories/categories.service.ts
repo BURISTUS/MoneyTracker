@@ -158,7 +158,13 @@ export class CategoriesService implements OnModuleInit {
     for (const cat of systemCategories) {
       await this.prisma.category.upsert({
         where: { id: cat.name.toLowerCase().replace(/\s/g, '-') },
-        update: { icon: cat.icon },
+        update: {
+          icon: cat.icon,
+          color: cat.color,
+          type: cat.type,
+          isBaseNeed: cat.isBaseNeed,
+          order: cat.order,
+        },
         create: {
           id: cat.name.toLowerCase().replace(/\s/g, '-'),
           userId: null,

@@ -9,7 +9,7 @@ import {
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
 } from 'react-native';
-import { Text } from './Text';
+import { Text } from '../../../components/ui/text';
 
 interface DatePickerModalProps {
   visible: boolean;
@@ -94,72 +94,44 @@ export function DatePickerModal({
     [customMonth],
   );
 
-  const inputStyle = {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    color: '#FFFFFF',
-    fontSize: 16,
-    textAlign: 'center' as const,
-  };
-
   return (
     <RNModal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-        <Pressable style={{ flex: 1 }} onPress={onClose} />
-        <View style={{
-          backgroundColor: '#1C1C1E',
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-        }}>
-          <View style={{ width: 36, height: 4, backgroundColor: '#3A3A3C', borderRadius: 2, alignSelf: 'center', marginTop: 8, marginBottom: 16 }} />
+      <View className="flex-1 bg-[rgba(0,0,0,0.5)] justify-end">
+        <Pressable className="flex-1" onPress={onClose} />
+        <View
+          className="bg-[#1C1C1E] rounded-t-3xl"
+          style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16 }}
+        >
+          <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-4" />
 
-          <View style={{ paddingHorizontal: 20 }}>
-            <Text size="lg" weight="bold" style={{ color: '#FFFFFF', marginBottom: 4 }}>
-              Дата операции
-            </Text>
-            <Text size="sm" style={{ color: '#8E8E93', marginBottom: 20 }}>
-              {formatDayMonth(currentDate)}
-            </Text>
+          <View className="px-5">
+            <Text bold className="text-lg text-white mb-1">Дата операции</Text>
+            <Text className="text-sm text-[#8E8E93] mb-5">{formatDayMonth(currentDate)}</Text>
 
-            {/* Presets */}
-            <View style={{ gap: 8, marginBottom: 20 }}>
+            <View className="gap-2 mb-5">
               {presets.map((preset) => {
                 const isSelected = currentDate.toDateString() === preset.date.toDateString();
                 return (
                   <TouchableOpacity
                     key={preset.label}
                     onPress={() => handlePreset(preset.date)}
+                    className="flex-row justify-between items-center py-3.5 px-4 rounded-xl border"
                     style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      paddingVertical: 14,
-                      paddingHorizontal: 16,
-                      borderRadius: 12,
                       backgroundColor: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.04)',
-                      borderWidth: 1,
                       borderColor: isSelected ? '#6366F1' : 'transparent',
                     }}
                   >
-                    <Text size="md" weight={isSelected ? 'semibold' : 'regular'} style={{ color: isSelected ? '#FFFFFF' : '#EBEBF5' }}>
+                    <Text bold={isSelected} className={`text-base ${isSelected ? 'text-white' : 'text-[#EBEBF5]'}`}>
                       {preset.label}
                     </Text>
-                    <Text size="sm" style={{ color: '#8E8E93' }}>
-                      {formatDayMonth(preset.date)}
-                    </Text>
+                    <Text className="text-sm text-[#8E8E93]">{formatDayMonth(preset.date)}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            {/* Custom date inputs — only day + month */}
-            <Text size="xs" weight="medium" style={{ color: '#8E8E93', marginBottom: 8, textTransform: 'uppercase' }}>
-              Выбрать дату
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+            <Text bold className="text-xs text-[#8E8E93] mb-2 uppercase">Выбрать дату</Text>
+            <View className="flex-row gap-2 mb-4">
               <TextInput
                 ref={dayRef}
                 value={customDay}
@@ -168,7 +140,7 @@ export function DatePickerModal({
                 placeholderTextColor="#8E8E93"
                 keyboardType="number-pad"
                 maxLength={2}
-                style={{ ...inputStyle, flex: 1 }}
+                className="flex-1 bg-[rgba(255,255,255,0.06)] rounded-[10px] px-3 py-3 text-white text-base text-center"
               />
               <TextInput
                 ref={monthRef}
@@ -179,32 +151,21 @@ export function DatePickerModal({
                 placeholderTextColor="#8E8E93"
                 keyboardType="number-pad"
                 maxLength={2}
-                style={{ ...inputStyle, flex: 1 }}
+                className="flex-1 bg-[rgba(255,255,255,0.06)] rounded-[10px] px-3 py-3 text-white text-base text-center"
               />
               <TouchableOpacity
                 onPress={handleCustomApply}
-                style={{
-                  backgroundColor: '#6366F1',
-                  borderRadius: 10,
-                  paddingHorizontal: 20,
-                  justifyContent: 'center',
-                }}
+                className="bg-primary-500 rounded-[10px] px-5 justify-center"
               >
-                <Text size="md" weight="semibold" style={{ color: '#FFFFFF' }}>OK</Text>
+                <Text bold className="text-base text-white">OK</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Cancel */}
             <TouchableOpacity
               onPress={onClose}
-              style={{
-                paddingVertical: 14,
-                alignItems: 'center',
-                borderRadius: 12,
-                backgroundColor: 'rgba(255,255,255,0.04)',
-              }}
+              className="py-3.5 items-center rounded-xl bg-[rgba(255,255,255,0.04)]"
             >
-              <Text size="md" style={{ color: '#8E8E93' }}>Отмена</Text>
+              <Text className="text-base text-[#8E8E93]">Отмена</Text>
             </TouchableOpacity>
           </View>
         </View>

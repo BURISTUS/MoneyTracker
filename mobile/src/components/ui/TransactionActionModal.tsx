@@ -9,7 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { useDataStore } from '../../stores/dataStore';
-import { Text } from './Text';
+import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from './CategoryIcon';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import type { Transaction } from '../../types';
@@ -111,146 +111,101 @@ export function TransactionActionModal({
 
   return (
     <RNModal visible={visible} animationType="slide" onRequestClose={handleClose} transparent>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-        <Pressable style={{ flex: 1 }} onPress={handleClose} />
+      <View className="flex-1 bg-[rgba(0,0,0,0.5)] justify-end">
+        <Pressable className="flex-1" onPress={handleClose} />
 
-        <View style={{
-          backgroundColor: '#1C1C1E',
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-        }}>
-          <View style={{ width: 36, height: 4, backgroundColor: '#3A3A3C', borderRadius: 2, alignSelf: 'center', marginTop: 8, marginBottom: 16 }} />
+        <View
+          className="bg-[#1C1C1E] rounded-t-3xl"
+          style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16 }}
+        >
+          <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-4" />
 
-          <View style={{ paddingHorizontal: 20 }}>
-            {/* Category + Amount */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+          <View className="px-5">
+            <View className="flex-row items-center gap-4 mb-4">
               <CategoryIcon
                 icon={category?.icon || ''}
                 color={category?.color || (isExpense ? '#FF3B30' : '#34C759')}
                 size={28}
               />
-              <View style={{ flex: 1 }}>
-                <Text size="lg" weight="semibold" style={{ color: '#FFFFFF' }}>
+              <View className="flex-1">
+                <Text bold className="text-lg text-white">
                   {category?.name || 'Без категории'}
                 </Text>
-                <Text size="xl" weight="bold" style={{ color: amountColor }}>
+                <Text bold className="text-xl" style={{ color: amountColor }}>
                   {isExpense ? '− ' : '+ '}{formatCurrency(transaction.amount)}
                 </Text>
               </View>
             </View>
 
-            {/* Details */}
-            <View style={{ gap: 8, marginBottom: 20 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text size="sm" style={{ color: '#8E8E93' }}>Дата</Text>
-                <Text size="sm" style={{ color: '#FFFFFF' }}>
+            <View className="gap-2 mb-5">
+              <View className="flex-row justify-between">
+                <Text className="text-sm text-[#8E8E93]">Дата</Text>
+                <Text className="text-sm text-white">
                   {formatDate(new Date(transaction.date))}
                 </Text>
               </View>
               {account && (
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text size="sm" style={{ color: '#8E8E93' }}>Счёт</Text>
-                  <Text size="sm" style={{ color: '#FFFFFF' }}>{account.name}</Text>
+                <View className="flex-row justify-between">
+                  <Text className="text-sm text-[#8E8E93]">Счёт</Text>
+                  <Text className="text-sm text-white">{account.name}</Text>
                 </View>
               )}
               {lifeHours && (
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text size="sm" style={{ color: '#8E8E93' }}>Время работы</Text>
-                  <Text size="sm" style={{ color: '#FBBF24' }}>⏱ {lifeHours}</Text>
+                <View className="flex-row justify-between">
+                  <Text className="text-sm text-[#8E8E93]">Время работы</Text>
+                  <Text className="text-sm text-warning-400">⏱ {lifeHours}</Text>
                 </View>
               )}
             </View>
 
-            {/* Description / Edit */}
             {isEditing ? (
-              <View style={{ marginBottom: 16 }}>
+              <View className="mb-4">
                 <TextInput
                   value={editDescription}
                   onChangeText={setEditDescription}
                   placeholder="Добавить заметку..."
                   placeholderTextColor="#8E8E93"
                   autoFocus
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    borderRadius: 12,
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    color: '#FFFFFF',
-                    fontSize: 16,
-                    marginBottom: 8,
-                  }}
+                  className="bg-[rgba(255,255,255,0.05)] rounded-xl px-4 py-3 text-white text-base mb-2"
                 />
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View className="flex-row gap-2">
                   <TouchableOpacity
                     onPress={() => setIsEditing(false)}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 12,
-                      borderRadius: 12,
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      alignItems: 'center',
-                    }}
+                    className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.05)] items-center"
                   >
-                    <Text size="md" style={{ color: '#8E8E93' }}>Отмена</Text>
+                    <Text className="text-base text-[#8E8E93]">Отмена</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={handleSaveEdit}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 12,
-                      borderRadius: 12,
-                      backgroundColor: '#6366F1',
-                      alignItems: 'center',
-                    }}
+                    className="flex-1 py-3 rounded-xl bg-primary-500 items-center"
                   >
-                    <Text size="md" weight="semibold" style={{ color: '#FFFFFF' }}>Сохранить</Text>
+                    <Text bold className="text-base text-white">Сохранить</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             ) : (
               transaction.description && (
-                <View style={{
-                  backgroundColor: 'rgba(255,255,255,0.03)',
-                  borderRadius: 12,
-                  padding: 14,
-                  marginBottom: 16,
-                }}>
-                  <Text size="xs" style={{ color: '#8E8E93', marginBottom: 4 }}>Заметка</Text>
-                  <Text size="md" style={{ color: '#FFFFFF' }}>{transaction.description}</Text>
+                <View className="bg-[rgba(255,255,255,0.03)] rounded-xl p-3.5 mb-4">
+                  <Text className="text-xs text-[#8E8E93] mb-1">Заметка</Text>
+                  <Text className="text-base text-white">{transaction.description}</Text>
                 </View>
               )
             )}
 
-            {/* Action buttons */}
-            <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={handleEdit}
-                style={{
-                  flex: 1,
-                  paddingVertical: 14,
-                  borderRadius: 14,
-                  backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                  alignItems: 'center',
-                }}
+                className="flex-1 py-3.5 rounded-[14px] bg-[rgba(99,102,241,0.15)] items-center"
               >
-                <Text size="md" weight="semibold" style={{ color: '#6366F1' }}>
-                  📝 Редактировать
-                </Text>
+                <Text bold className="text-base text-primary-400">📝 Редактировать</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDelete}
                 disabled={isDeleting}
-                style={{
-                  flex: 1,
-                  paddingVertical: 14,
-                  borderRadius: 14,
-                  backgroundColor: 'rgba(255, 59, 48, 0.15)',
-                  alignItems: 'center',
-                  opacity: isDeleting ? 0.5 : 1,
-                }}
+                className="flex-1 py-3.5 rounded-[14px] bg-[rgba(255,59,48,0.15)] items-center"
+                style={{ opacity: isDeleting ? 0.5 : 1 }}
               >
-                <Text size="md" weight="semibold" style={{ color: '#FF3B30' }}>
+                <Text bold className="text-base text-error-400">
                   {isDeleting ? 'Удаление...' : '🗑 Удалить'}
                 </Text>
               </TouchableOpacity>

@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { useTheme } from '../../theme';
-import { Text } from './Text';
+import { Text } from '../../../components/ui/text';
 
 interface LoadingProps {
   message?: string;
@@ -9,23 +8,13 @@ interface LoadingProps {
 }
 
 export const Loading: React.FC<LoadingProps> = React.memo(({ message, fullScreen = false }) => {
-  const { spacing } = useTheme();
-
   return (
     <View
-      style={{
-        flex: fullScreen ? 1 : undefined,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: spacing.huge,
-        gap: spacing.md,
-      }}
+      className={`items-center justify-center gap-3 ${fullScreen ? 'flex-1' : 'py-12'}`}
     >
       <ActivityIndicator size="large" color="#6366F1" />
       {message && (
-        <Text size="sm" style={{ color: '#A1A1AA' }}>
-          {message}
-        </Text>
+        <Text className="text-sm text-typography-400">{message}</Text>
       )}
     </View>
   );
@@ -35,12 +24,8 @@ export const Skeleton: React.FC<{ width?: number | string; height?: number }> = 
   ({ width = '100%', height = 16 }) => {
     return (
       <View
-        style={{
-          width: width as any,
-          height,
-          backgroundColor: 'rgba(255, 255, 255, 0.06)',
-          borderRadius: 4,
-        }}
+        className="bg-[rgba(255,255,255,0.06)] rounded"
+        style={{ width: width as '100%', height }}
       />
     );
   },

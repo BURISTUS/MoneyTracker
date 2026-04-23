@@ -38,11 +38,16 @@ export class AccountsService {
     });
   }
 
-  async update(id: string, userId: string, data: { name?: string }) {
+  async update(id: string, userId: string, data: { name?: string; type?: string; balance?: number; currency?: string }) {
     await this.findById(id, userId);
+    const updateData: Record<string, unknown> = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.type !== undefined) updateData.type = data.type;
+    if (data.balance !== undefined) updateData.balance = data.balance;
+    if (data.currency !== undefined) updateData.currency = data.currency;
     return this.prisma.account.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 

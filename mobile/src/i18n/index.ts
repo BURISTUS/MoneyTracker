@@ -79,10 +79,6 @@ function detectLanguage(): string {
   return SUPPORTED_LANGUAGES.includes(code) ? code : 'en';
 }
 
-const savedLang = typeof window !== 'undefined' && Platform.OS !== 'web'
-  ? (AsyncStorage.getItem(LANGUAGE_KEY) as any)
-  : null;
-
 i18n.use(initReactI18next).init({
   resources: Object.fromEntries(
     SUPPORTED_LANGUAGES.map((lang) => [
@@ -95,6 +91,14 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
   compatibilityJSON: 'v4',
 });
+
+if (Platform.OS !== 'web') {
+  AsyncStorage.getItem(LANGUAGE_KEY).then((saved) => {
+    if (saved && SUPPORTED_LANGUAGES.includes(saved)) {
+      i18n.changeLanguage(saved);
+    }
+  }).catch(() => {});
+}
 
 export async function loadTranslationsFromServer(
   apiGet: (url: string) => Promise<any>,

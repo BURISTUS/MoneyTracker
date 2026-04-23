@@ -1,17 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { View, ScrollView, Alert, Pressable, Modal } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useDataStore } from '../../../src/stores/dataStore';
-import { Screen } from '../../../src/components/ui/Screen';
-import { Text } from '../../../src/components/ui/Text';
-import { Button } from '../../../src/components/ui/Button';
-import { Icon } from '../../../src/components/ui/Icon';
-import { useTheme } from '../../../src/theme';
+import { Text } from '../../../components/ui/text';
 import type { CategoryType } from '../../../src/types';
 import { CategoryType as CategoryTypeEnum } from '../../../src/types';
 import DateTimePicker, {
   DateTimePickerEvent,
-  DateTimePickerAndroid,
 } from '@react-native-community/datetimepicker';
 
 const EXPENSE_COLORS = [
@@ -36,7 +32,6 @@ interface CreateCategoryModalProps {
 }
 
 export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCategoryModalProps) {
-  const { spacing } = useTheme();
   const router = useRouter();
   const addCategory = useDataStore((s) => s.addCategory);
 
@@ -93,89 +88,53 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: '#0A0A0F' }}>
+      <View className="flex-1 bg-[#0A0A0F]">
         <ScrollView contentContainerStyle={{ gap: 24, paddingBottom: 40 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text size="xl" weight="bold" style={{ color: '#FFFFFF' }}>
-            Новая категория
-          </Text>
+        <View className="flex-row justify-between items-center">
+          <Text bold className="text-xl text-white">Новая категория</Text>
           <Pressable onPress={onClose}>
-            <Text size="xl" style={{ color: '#71717A' }}>✕</Text>
+            <Text className="text-xl text-typography-400">✕</Text>
           </Pressable>
         </View>
 
-        <View style={{ gap: 16 }}>
+        <View className="gap-4">
           <View>
-            <Text size="md" style={{ color: '#71717A', marginBottom: 8 }}>
-              Название
-            </Text>
-            <Text
-              style={{
-                color: '#FFFFFF',
-                padding: 16,
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: 12,
-                marginTop: 8,
-              }}
-            >
+            <Text className="text-base text-typography-400 mb-2">Название</Text>
+            <Text className="text-white p-4 bg-[rgba(255,255,255,0.05)] rounded-xl mt-2">
               {name}
             </Text>
           </View>
 
           <View>
-            <Text size="md" style={{ color: '#71717A', marginBottom: 8 }}>
-              Тип
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Text className="text-base text-typography-400 mb-2">Тип</Text>
+            <View className="flex-row gap-3">
               <Pressable
                 onPress={() => setType(CategoryTypeEnum.EXPENSE)}
+                className={`flex-1 rounded-xl py-4 items-center border-2 ${
+                  type === CategoryTypeEnum.EXPENSE ? 'border-error-400' : 'border-transparent'
+                }`}
                 style={{
-                  flex: 1,
-                  backgroundColor:
-                    type === CategoryTypeEnum.EXPENSE
-                      ? 'rgba(248, 113, 113, 0.2)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: 12,
-                  paddingVertical: 16,
-                  alignItems: 'center',
-                  borderWidth: 2,
-                  borderColor:
-                    type === CategoryTypeEnum.EXPENSE ? '#F87171' : 'transparent',
+                  backgroundColor: type === CategoryTypeEnum.EXPENSE
+                    ? 'rgba(248, 113, 113, 0.2)'
+                    : 'rgba(255, 255, 255, 0.05)',
                 }}
               >
-                <Text
-                  size="md"
-                  weight={type === CategoryTypeEnum.EXPENSE ? 'semibold' : 'regular'}
-                  style={{
-                    color: type === CategoryTypeEnum.EXPENSE ? '#F87171' : '#A1A1AA',
-                  }}
-                >
+                <Text bold={type === CategoryTypeEnum.EXPENSE} className={`text-base ${type === CategoryTypeEnum.EXPENSE ? 'text-error-400' : 'text-typography-400'}`}>
                   ⛔ Расход
                 </Text>
               </Pressable>
               <Pressable
                 onPress={() => setType(CategoryTypeEnum.INCOME)}
+                className={`flex-1 rounded-xl py-4 items-center border-2 ${
+                  type === CategoryTypeEnum.INCOME ? 'border-success-400' : 'border-transparent'
+                }`}
                 style={{
-                  flex:  1,
-                  backgroundColor:
-                    type === CategoryTypeEnum.INCOME
-                      ? 'rgba(52, 211, 153, 0.2)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: 12,
-                  paddingVertical: 16,
-                  alignItems: 'center',
-                  borderWidth: 2,
-                  borderColor:
-                    type === CategoryTypeEnum.INCOME ? '#34D399' : 'transparent',
+                  backgroundColor: type === CategoryTypeEnum.INCOME
+                    ? 'rgba(52, 211, 153, 0.2)'
+                    : 'rgba(255, 255, 255, 0.05)',
                 }}
               >
-                <Text
-                  size="md"
-                  weight={type === CategoryTypeEnum.INCOME ? 'semibold' : 'regular'}
-                  style={{
-                    color: type === CategoryTypeEnum.INCOME ? '#34D399' : '#A1A1AA',
-                  }}
-                >
+                <Text bold={type === CategoryTypeEnum.INCOME} className={`text-base ${type === CategoryTypeEnum.INCOME ? 'text-success-400' : 'text-typography-400'}`}>
                   ✅ Доход
                 </Text>
               </Pressable>
@@ -183,27 +142,21 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
           </View>
 
           <View>
-            <Text size="md" style={{ color: '#71717A', marginBottom: 8 }}>
-              Цвет
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            <Text className="text-base text-typography-400 mb-2">Цвет</Text>
+            <View className="flex-row flex-wrap gap-3">
               {colors.map((color) => (
                 <Pressable
                   key={color}
                   onPress={() => setSelectedColor(color)}
+                  className="w-12 h-12 rounded-xl items-center justify-center"
                   style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 12,
                     backgroundColor: color,
                     borderWidth: selectedColor === color ? 3 : 1,
                     borderColor: selectedColor === color ? '#FFFFFF' : 'transparent',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                   }}
                 >
                   {selectedColor === color && (
-                    <Text size="xl" style={{ color: '#FFFFFF' }}>✓</Text>
+                    <Text className="text-xl text-white">✓</Text>
                   )}
                 </Pressable>
               ))}
@@ -211,32 +164,23 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
           </View>
 
           <View>
-            <Text size="md" style={{ color: '#71717A', marginBottom: 8 }}>
-              Иконка
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            <Text className="text-base text-typography-400 mb-2">Иконка</Text>
+            <View className="flex-row flex-wrap gap-3">
               {icons.map((icon) => (
                 <Pressable
                   key={icon}
                   onPress={() => setSelectedIcon(icon)}
+                  className="w-16 h-16 rounded-2xl items-center justify-center border-2"
                   style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: 16,
-                    backgroundColor:
-                      selectedIcon === icon
-                        ? 'rgba(255, 255, 255, 0.08)'
-                        : 'rgba(255, 255, 255, 0.03)',
-                    borderWidth: 2,
-                    borderColor:
-                      selectedIcon === icon ? '#6366F1' : 'rgba(255, 255, 255, 0.1)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    backgroundColor: selectedIcon === icon
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : 'rgba(255, 255, 255, 0.03)',
+                    borderColor: selectedIcon === icon ? '#6366F1' : 'rgba(255, 255, 255, 0.1)',
                   }}
                 >
-                  <Text size="xxxl">{icon}</Text>
+                  <Text className="text-3xl">{icon}</Text>
                   {selectedIcon === icon && (
-                    <Text size="xl" style={{ color: '#6366F1', position: 'absolute', right: 8, top: 4 }}>✓</Text>
+                    <Text className="text-xl text-primary-400 absolute right-2 top-1">✓</Text>
                   )}
                 </Pressable>
               ))}
@@ -244,129 +188,45 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
           </View>
 
           <View>
-            <Text size="md" style={{ color: '#71717A', marginBottom: 8 }}>
-              Дата создания
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Text className="text-base text-typography-400 mb-2">Дата создания</Text>
+            <View className="flex-row gap-2">
+              {(['today', 'yesterday', 'day_before_yesterday'] as DateRangeType[]).map((dr) => {
+                const labels: Record<string, string> = { today: 'Сегодня', yesterday: 'Вчера', day_before_yesterday: 'Позавчера' };
+                const handlers: Record<string, () => void> = {
+                  today: () => { setDateRange('today'); setCustomDate(new Date()); },
+                  yesterday: () => { setDateRange('yesterday'); setCustomDate(new Date(Date.now() - 86400000)); },
+                  day_before_yesterday: () => { setDateRange('day_before_yesterday'); setCustomDate(new Date(Date.now() - 2 * 86400000)); },
+                };
+                return (
+                  <Pressable
+                    key={dr}
+                    onPress={handlers[dr]}
+                    className={`flex-1 rounded-full px-4 py-3 items-center ${
+                      dateRange === dr ? 'bg-[rgba(99,102,241,0.2)]' : 'bg-[rgba(255,255,255,0.05)]'
+                    }`}
+                  >
+                    <Text bold={dateRange === dr} className={`text-base ${dateRange === dr ? 'text-white' : 'text-typography-400'}`}>
+                      {labels[dr]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
               <Pressable
-                onPress={() => {
-                  setDateRange('today');
-                  setCustomDate(new Date());
-                }}
-                style={{
-                  flex: 1,
-                  backgroundColor:
-                    dateRange === 'today'
-                      ? 'rgba(99, 102, 241, 0.2)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: 20,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                }}
+                onPress={() => setShowDatePicker(true)}
+                className={`flex-1 rounded-full px-4 py-3 flex-row items-center gap-2 ${
+                  dateRange === 'custom' ? 'bg-[rgba(99,102,241,0.2)]' : 'bg-[rgba(255,255,255,0.05)]'
+                }`}
               >
-                <Text
-                  size="md"
-                  weight={dateRange === 'today' ? 'semibold' : 'regular'}
-                  style={{
-                    color: dateRange === 'today' ? '#FFFFFF' : '#A1A1AA',
-                  }}
-                >
-                  Сегодня
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  setDateRange('yesterday');
-                  setCustomDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
-                }}
-                style={{
-                  flex: 1,
-                  backgroundColor:
-                    dateRange === 'yesterday'
-                      ? 'rgba(99, 102, 241, 0.2)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: 20,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                }}
-              >
-                <Text
-                  size="md"
-                  weight={dateRange === 'yesterday' ? 'semibold' : 'regular'}
-                  style={{
-                    color: dateRange === 'yesterday' ? '#FFFFFF' : '#A1A1AA',
-                  }}
-                >
-                  Вчера
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  setDateRange('day_before_yesterday');
-                  setCustomDate(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000));
-                }}
-                style={{
-                  flex: 1,
-                  backgroundColor:
-                    dateRange === 'day_before_yesterday'
-                      ? 'rgba(99, 102, 241, 0.2)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: 20,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                }}
-              >
-                <Text
-                  size="md"
-                  weight={dateRange === 'day_before_yesterday' ? 'semibold' : 'regular'}
-                  style={{
-                    color: dateRange === 'day_before_yesterday' ? '#FFFFFF' : '#A1A1AA',
-                  }}
-                >
-                  Позавчера
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  setShowDatePicker(true);
-                }}
-                style={{
-                  flex: 1,
-                  backgroundColor:
-                    dateRange === 'custom'
-                      ? 'rgba(99, 102, 241, 0.2)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: 20,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-              >
-                <Text
-                  size="md"
-                  weight={dateRange === 'custom' ? 'semibold' : 'regular'}
-                  style={{
-                    color: dateRange === 'custom' ? '#FFFFFF' : '#A1A1AA',
-                  }}
-                >
+                <Text bold={dateRange === 'custom'} className={`text-base ${dateRange === 'custom' ? 'text-white' : 'text-typography-400'}`}>
                   {customDate.toLocaleDateString('ru-RU')}
                 </Text>
-                <Icon name="calendar" size={16} color="#6366F1" />
+                <Ionicons name="calendar-outline" size={16} color="#6366F1" />
               </Pressable>
             </View>
           </View>
 
           {showDatePicker && (
-            <View style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              padding: 24,
-              borderRadius: 16,
-            }}>
+            <View className="bg-[rgba(0,0,0,0.8)] p-6 rounded-2xl">
               <DateTimePicker
                 value={customDate}
                 mode="date"
@@ -385,24 +245,25 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
             </View>
           )}
 
-          <Button
+          <Pressable
             onPress={handleCreate}
-            fullWidth
-            size="lg"
             disabled={!name || !selectedColor || !selectedIcon}
+            className={`py-4 rounded-xl items-center ${
+              !name || !selectedColor || !selectedIcon
+                ? 'bg-[rgba(255,255,255,0.1)]'
+                : 'bg-primary-500'
+            }`}
           >
-            Создать категорию
-          </Button>
+            <Text bold className="text-lg text-white">Создать категорию</Text>
+          </Pressable>
 
-          <View style={{ marginTop: 16 }}>
-            <Button
+          <View className="mt-4">
+            <Pressable
               onPress={handleReset}
-              fullWidth
-              size="md"
-              variant="ghost"
+              className="py-3 rounded-xl items-center bg-[rgba(255,255,255,0.04)]"
             >
-              Сбросить
-            </Button>
+              <Text className="text-base text-typography-400">Сбросить</Text>
+            </Pressable>
           </View>
         </View>
       </ScrollView>

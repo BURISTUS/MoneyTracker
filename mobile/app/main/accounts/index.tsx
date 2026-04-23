@@ -1,32 +1,36 @@
-import React, { useState, useCallback } from 'react';
-import { View, FlatList, Pressable } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, FlatList, Pressable, ScrollView, Modal, TextInput, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
-import { Screen } from '../../../src/components/ui/Screen';
-import { Text } from '../../../src/components/ui/Text';
-import { Card } from '../../../src/components/ui/Card';
-import { Input } from '../../../src/components/ui/Input';
-import { Button } from '../../../src/components/ui/Button';
-import { Icon } from '../../../src/components/ui/Icon';
-import { AccountCard } from '../../../src/components/features/AccountCard';
-import { BottomSheet } from '../../../src/components/ui/BottomSheet';
-import { Chip } from '../../../src/components/ui/Chip';
-import { Header } from '../../../src/components/layout/Header';
+import { Text } from '../../../components/ui/text';
 import { CurrencyPicker } from '../../../src/components/ui/CurrencyPicker';
-import { useTheme } from '../../../src/theme';
-import { useTranslation } from 'react-i18next';
 import { formatCurrency } from '../../../src/utils/formatters';
-import type { AccountType } from '../../../src/types';
-import { AccountType as AccountTypeEnum } from '../../../src/types';
+import type { AccountType, TransactionType } from '../../../src/types';
+import { AccountType as AccountTypeEnum, TransactionType as TransactionTypeEnum } from '../../../src/types';
 import type { ExchangeRate } from '../../../src/services/currency';
+
+const BORDER = 'rgba(255,255,255,0.08)';
+const CARD_BG = '#141418';
+
+const accountIcons: Record<AccountType, { icon: keyof typeof Ionicons.glyphMap; color: string }> = {
+  CASH: { icon: 'wallet-outline', color: '#34D399' },
+  BANK: { icon: 'card-outline', color: '#6366F1' },
+  CREDIT: { icon: 'card-outline', color: '#F87171' },
+  INVESTMENT: { icon: 'trending-up-outline', color: '#FBBF24' },
+  DEBT: { icon: 'alert-circle-outline', color: '#FB923C' },
+};
 
 export default function AccountsScreen() {
   const router = useRouter();
-  const { spacing } = useTheme();
-  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const accounts = useDataStore((s) => s.accounts);
   const createAccount = useDataStore((s) => s.createAccount);
+  const updateAccount = useDataStore((s) => s.updateAccount);
+  const addTransaction = useDataStore((s) => s.addTransaction);
   const userCurrency = useDataStore((s) => s.userCurrency);
+  const categories = useDataStore((s) => s.categories);
 
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState('');
@@ -34,7 +38,22 @@ export default function AccountsScreen() {
   const [currency, setCurrency] = useState(userCurrency);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
 
-  const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
+  const [editModal, setEditModal] = useState<{
+    visible: boolean;
+    accountId: string | null;
+    name: string;
+    balance: string;
+  }>({ visible: false, accountId: null, name: '', balance: '0' });
+
+  const [transactionModal, setTransactionModal] = useState<{
+    visible: boolean;
+    accountId: string | null;
+    amount: string;
+    type: TransactionType;
+    note: string;
+  }>({ visible: false, accountId: null, amount: '', type: TransactionTypeEnum.EXPENSE, note: '' });
+
+  const totalBalance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
 
   const accountTypes: { value: AccountType; label: string }[] = [
     { value: AccountTypeEnum.CASH, label: 'Наличные' },
@@ -57,104 +76,303 @@ export default function AccountsScreen() {
     }
   }, [name, type, currency, userCurrency, createAccount]);
 
-  return (
-    <Screen scroll header={<Header title="Счета" showBack />}>
-      <View style={{ gap: spacing.xl }}>
-        <Card variant="glass" padding="xxl">
-          <Text size="sm" style={{ color: '#71717A', marginBottom: 8 }}>
-            Общий баланс
-          </Text>
-          <Text preset="h1">{formatCurrency(totalBalance)}</Text>
-        </Card>
+  const openEditModal = useCallback((account: { id: string; name: string; balance: number }) => {
+    setEditModal({
+      visible: true,
+      accountId: account.id,
+      name: account.name,
+      balance: String(Math.round(Number(account.balance) / 100)),
+    });
+  }, []);
 
-        <FlatList
-          data={accounts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <AccountCard account={item} style={{ marginBottom: spacing.md }} />
-          )}
-          scrollEnabled={false}
-          ListEmptyComponent={
-            <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-              <Icon name="wallet-outline" size={48} color="#52525B" />
-              <Text size="md" style={{ color: '#71717A', marginTop: 12 }}>
-                Нет счетов
-              </Text>
-            </View>
-          }
-        />
+  const handleSaveEdit = useCallback(async () => {
+    if (!editModal.accountId || !editModal.name) return;
+
+    const currentAccount = accounts.find((a) => a.id === editModal.accountId);
+    if (!currentAccount) return;
+
+    const newBalanceKopecks = Math.round(Number(editModal.balance) * 100);
+    const oldBalanceKopecks = Number(currentAccount.balance);
+    const difference = newBalanceKopecks - oldBalanceKopecks;
+
+    await updateAccount(editModal.accountId, { name: editModal.name, balance: newBalanceKopecks });
+
+    if (difference !== 0) {
+      setEditModal((prev) => ({ ...prev, visible: false }));
+      const transactionType = difference > 0 ? TransactionTypeEnum.INCOME : TransactionTypeEnum.EXPENSE;
+      setTransactionModal({
+        visible: true,
+        accountId: editModal.accountId,
+        amount: String(Math.abs(Math.round(difference / 100))),
+        type: transactionType,
+        note: '',
+      });
+    } else {
+      setEditModal({ visible: false, accountId: null, name: '', balance: '0' });
+    }
+  }, [editModal, accounts, updateAccount]);
+
+  const handleAddTransaction = useCallback(async () => {
+    if (!transactionModal.accountId || !transactionModal.amount) return;
+
+    const expenseCategories = categories.filter((c) => c.type === 'EXPENSE');
+    const defaultCategory = expenseCategories.length > 0 ? expenseCategories[0].id : '';
+
+    const amountKopecks = Math.round(Number(transactionModal.amount) * 100);
+    const signedAmount = transactionModal.type === TransactionTypeEnum.EXPENSE ? -amountKopecks : amountKopecks;
+
+    await addTransaction({
+      id: `temp_${Date.now()}`,
+      userId: '',
+      accountId: transactionModal.accountId,
+      categoryId: defaultCategory,
+      amount: Math.abs(signedAmount),
+      type: transactionModal.type,
+      description: transactionModal.note || 'Корректировка баланса счёта',
+      date: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    setTransactionModal({ visible: false, accountId: null, amount: '', type: TransactionTypeEnum.EXPENSE, note: '' });
+  }, [transactionModal, categories, addTransaction]);
+
+  const handleSkipTransaction = useCallback(() => {
+    setTransactionModal({ visible: false, accountId: null, amount: '', type: TransactionTypeEnum.EXPENSE, note: '' });
+  }, []);
+
+  const renderAccount = useCallback(({ item }: { item: { id: string; name: string; type: AccountType; balance: number; currency: string } }) => {
+    const cfg = accountIcons[item.type] || accountIcons.CASH;
+    return (
+      <Pressable onPress={() => openEditModal(item)} style={s.card}>
+        <View style={s.acctRow}>
+          <View style={[s.acctIcon, { backgroundColor: `${cfg.color}15` }]}>
+            <Ionicons name={cfg.icon} size={18} color={cfg.color} />
+          </View>
+          <View style={s.acctInfo}>
+            <Text style={s.acctName}>{item.name}</Text>
+            <Text style={s.acctType}>{item.type}</Text>
+          </View>
+          <Ionicons name="pencil" size={16} color="#52525B" />
+        </View>
+        <Text style={s.acctBalance}>{formatCurrency(item.balance)}</Text>
+      </Pressable>
+    );
+  }, [openEditModal]);
+
+  const keyExtractor = useCallback((item: { id: string }) => item.id, []);
+
+  return (
+    <View style={[s.container, { paddingTop: insets.top }]}>
+      <View style={s.header}>
+        <Pressable onPress={() => router.back()} hitSlop={12} style={s.backBtn}>
+          <Ionicons name="chevron-back" size={28} color="#A1A1AA" />
+        </Pressable>
+        <Text style={s.headerTitle}>Счета</Text>
       </View>
+
+      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+        <View style={s.card}>
+          <View style={s.iconWrap}>
+            <Ionicons name="wallet-outline" size={18} color="#6366F1" />
+          </View>
+          <Text style={s.cardLabel}>Общий баланс</Text>
+          <Text style={s.balanceValue}>{formatCurrency(totalBalance)}</Text>
+        </View>
+
+        {accounts.length === 0 ? (
+          <View style={s.empty}>
+            <Ionicons name="wallet-outline" size={44} color="#3F3F46" />
+            <Text style={s.emptyText}>Нет счетов</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={accounts}
+            renderItem={renderAccount}
+            keyExtractor={keyExtractor}
+            scrollEnabled={false}
+            contentContainerStyle={s.listContent}
+          />
+        )}
+      </ScrollView>
 
       <Pressable
         onPress={() => setShowAdd(true)}
-        style={{
-          position: 'absolute',
-          bottom: 100,
-          right: 24,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: '#6366F1',
-          alignItems: 'center',
-          justifyContent: 'center',
-          shadowColor: '#6366F1',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.4,
-          shadowRadius: 8,
-          elevation: 8,
-        }}
+        style={s.fab}
       >
-        <Icon name="add" size={28} color="#FFFFFF" />
+        <Ionicons name="add" size={26} color="#FFFFFF" />
       </Pressable>
 
-      <BottomSheet visible={showAdd} onClose={() => setShowAdd(false)} title="Новый счёт">
-        <View style={{ gap: 16 }}>
-          <Input label="Название" value={name} onChangeText={setName} placeholder="Мой счёт" />
-          <View style={{ gap: 8 }}>
-            <Text size="sm" weight="medium" style={{ color: '#A1A1AA' }}>
-              Тип
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {accountTypes.map((t) => (
-                <Chip
-                  key={t.value}
-                  label={t.label}
-                  selected={type === t.value}
-                  onPress={() => setType(t.value)}
-                  size="sm"
-                />
-              ))}
+      <Modal visible={showAdd} transparent animationType="slide" onRequestClose={() => setShowAdd(false)}>
+        <Pressable style={s.modalOverlay} onPress={() => setShowAdd(false)}>
+          <Pressable style={s.modalSheet} onPress={(e) => e.stopPropagation()}>
+            <View style={s.modalHandle} />
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>Новый счёт</Text>
+              <Pressable onPress={() => setShowAdd(false)} hitSlop={12}>
+                <Ionicons name="close" size={22} color="#A1A1AA" />
+              </Pressable>
             </View>
-          </View>
-          <Pressable
-            onPress={() => setShowCurrencyPicker(true)}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: 'rgba(255, 255, 255, 0.08)',
-              paddingHorizontal: 16,
-              height: 48,
-            }}
-          >
-            <Text size="sm" weight="medium" style={{ color: '#A1A1AA' }}>
-              {t('accounts.currency', 'Валюта')}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text size="md" weight="semibold">
-                {currency}
-              </Text>
-              <Icon name="chevron-forward" size={16} color="#71717A" />
+
+            <View style={s.modalFields}>
+              <Text style={s.fieldLabel}>Название</Text>
+              <TextInput
+                style={s.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Мой счёт"
+                placeholderTextColor="#52525B"
+              />
+
+              <Text style={s.fieldLabel}>Тип</Text>
+              <View style={s.typeRow}>
+                {accountTypes.map((at) => {
+                  const active = type === at.value;
+                  return (
+                    <Pressable
+                      key={at.value}
+                      onPress={() => setType(at.value)}
+                      style={[s.typeChip, active && s.typeChipActive]}
+                    >
+                      <Text style={[s.typeChipText, active && s.typeChipTextActive]}>
+                        {at.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <Pressable
+                onPress={() => setShowCurrencyPicker(true)}
+                style={s.currencyRow}
+              >
+                <Text style={s.fieldLabel}>Валюта</Text>
+                <View style={s.currencyValue}>
+                  <Text style={s.currencyText}>{currency}</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#52525B" />
+                </View>
+              </Pressable>
+
+              <Pressable
+                onPress={handleAdd}
+                disabled={!name}
+                style={[s.createBtn, !name && s.createBtnDisabled]}
+              >
+                <Text style={s.createBtnText}>Создать</Text>
+              </Pressable>
             </View>
           </Pressable>
-          <Button onPress={handleAdd} fullWidth size="lg" disabled={!name}>
-            Создать
-          </Button>
-        </View>
-      </BottomSheet>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={editModal.visible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditModal((prev) => ({ ...prev, visible: false }))}
+      >
+        <Pressable style={s.modalOverlay} onPress={() => setEditModal((prev) => ({ ...prev, visible: false }))}>
+          <Pressable style={s.modalSheet} onPress={(e) => e.stopPropagation()}>
+            <View style={s.modalHandle} />
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>Редактировать счёт</Text>
+              <Pressable
+                onPress={() => setEditModal((prev) => ({ ...prev, visible: false }))}
+                hitSlop={12}
+              >
+                <Ionicons name="close" size={22} color="#A1A1AA" />
+              </Pressable>
+            </View>
+
+            <View style={s.modalFields}>
+              <Text style={s.fieldLabel}>Название</Text>
+              <TextInput
+                style={s.input}
+                value={editModal.name}
+                onChangeText={(text) => setEditModal((prev) => ({ ...prev, name: text }))}
+                placeholder="Название счёта"
+                placeholderTextColor="#52525B"
+              />
+
+              <Text style={s.fieldLabel}>Баланс</Text>
+              <TextInput
+                style={s.input}
+                value={editModal.balance}
+                onChangeText={(text) => setEditModal((prev) => ({ ...prev, balance: text }))}
+                placeholder="0"
+                placeholderTextColor="#52525B"
+                keyboardType="numeric"
+              />
+
+              <Pressable
+                onPress={handleSaveEdit}
+                disabled={!editModal.name}
+                style={[s.createBtn, !editModal.name && s.createBtnDisabled]}
+              >
+                <Text style={s.createBtnText}>Сохранить</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={transactionModal.visible}
+        transparent
+        animationType="slide"
+        onRequestClose={handleSkipTransaction}
+      >
+        <Pressable style={s.modalOverlay} onPress={handleSkipTransaction}>
+          <Pressable style={s.modalSheet} onPress={(e) => e.stopPropagation()}>
+            <View style={s.modalHandle} />
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>Добавить транзакцию?</Text>
+              <Pressable onPress={handleSkipTransaction} hitSlop={12}>
+                <Ionicons name="close" size={22} color="#A1A1AA" />
+              </Pressable>
+            </View>
+
+            <View style={s.modalFields}>
+              <View style={s.transactionInfo}>
+                <Ionicons
+                  name={transactionModal.type === TransactionTypeEnum.INCOME ? 'arrow-down-circle' : 'arrow-up-circle'}
+                  size={24}
+                  color={transactionModal.type === TransactionTypeEnum.INCOME ? '#34C759' : '#FF3B30'}
+                />
+                <Text style={s.transactionInfoText}>
+                  {transactionModal.type === TransactionTypeEnum.INCOME ? 'Доход' : 'Расход'}:{' '}
+                  <Text style={s.transactionAmount}>{transactionModal.amount} ₽</Text>
+                </Text>
+              </View>
+
+              <Text style={s.fieldLabel}>Заметка</Text>
+              <TextInput
+                style={s.input}
+                value={transactionModal.note}
+                onChangeText={(text) => setTransactionModal((prev) => ({ ...prev, note: text }))}
+                placeholder="Комментарий к транзакции"
+                placeholderTextColor="#52525B"
+                multiline
+              />
+
+              <View style={s.transactionButtons}>
+                <Pressable
+                  onPress={handleSkipTransaction}
+                  style={s.skipBtn}
+                >
+                  <Text style={s.skipBtnText}>Пропустить</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleAddTransaction}
+                  style={s.addTransactionBtn}
+                >
+                  <Text style={s.addTransactionBtnText}>Добавить</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <CurrencyPicker
         visible={showCurrencyPicker}
@@ -164,6 +382,82 @@ export default function AccountsScreen() {
         title="Валюта счёта"
         filterType="FIAT"
       />
-    </Screen>
+    </View>
   );
 }
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0A0A0F' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+  backBtn: { padding: 4, marginLeft: -4 },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 },
+  content: { paddingHorizontal: 16, paddingBottom: 120, gap: 10 },
+  listContent: { gap: 10 },
+
+  card: {
+    backgroundColor: CARD_BG,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 18,
+  },
+  iconWrap: {
+    width: 34, height: 34, borderRadius: 10,
+    backgroundColor: 'rgba(99,102,241,0.12)',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+  },
+  cardLabel: { fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 },
+  balanceValue: { fontSize: 32, fontWeight: '700', color: '#FFFFFF', letterSpacing: -1 },
+
+  empty: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { fontSize: 14, color: '#3F3F46', marginTop: 8 },
+
+  acctRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  acctIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  acctInfo: { marginLeft: 12, flex: 1 },
+  acctName: { fontSize: 15, fontWeight: '600', color: '#E4E4E7' },
+  acctType: { fontSize: 12, color: '#52525B', marginTop: 2 },
+  acctBalance: { fontSize: 20, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5 },
+
+  fab: {
+    position: 'absolute', bottom: 90, right: 20,
+    width: 52, height: 52, borderRadius: 26,
+    backgroundColor: '#6366F1',
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#6366F1', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35, shadowRadius: 8, elevation: 6,
+  },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: '#1C1C20', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
+  modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: 16 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+  modalFields: { gap: 16 },
+  fieldLabel: { fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 },
+  input: {
+    backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: BORDER,
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15, color: '#D4D4D8',
+  },
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  typeChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: BORDER, backgroundColor: 'rgba(0,0,0,0.2)' },
+  typeChipActive: { borderColor: 'rgba(99,102,241,0.3)', backgroundColor: 'rgba(99,102,241,0.12)' },
+  typeChipText: { fontSize: 12, fontWeight: '600', color: '#71717A' },
+  typeChipTextActive: { color: '#6366F1' },
+  currencyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  currencyValue: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  currencyText: { fontSize: 15, fontWeight: '600', color: '#D4D4D8' },
+  createBtn: { backgroundColor: '#6366F1', paddingVertical: 13, borderRadius: 12, alignItems: 'center', marginTop: 4 },
+  createBtnDisabled: { opacity: 0.4 },
+  createBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
+
+  transactionInfo: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 12, padding: 14, gap: 12 },
+  transactionInfoText: { fontSize: 15, color: '#E4E4E7', fontWeight: '500', flex: 1 },
+  transactionAmount: { fontWeight: '700', color: '#FFFFFF' },
+  transactionButtons: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  skipBtn: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: BORDER, paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
+  skipBtnText: { fontSize: 14, fontWeight: '600', color: '#A1A1AA' },
+  addTransactionBtn: { flex: 1, backgroundColor: '#6366F1', paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
+  addTransactionBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
+});

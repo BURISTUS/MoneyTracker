@@ -9,6 +9,7 @@ import categoriesService, { CategoryTypeOption, IconOption } from '../services/c
 import authService from '../services/auth';
 import lifeCostService from '../services/lifeCost';
 import currencyService from '../services/currency';
+import wishlistService from '../services/wishlist';
 import type { ExchangeRate } from '../services/currency';
 import { setCurrencyConfig } from '../utils/formatters';
 
@@ -101,7 +102,8 @@ interface DataState {
 
   // Wishlist
   wishlist: WishlistItem[];
-  addWishlistItem: (item: WishlistItem) => void;
+  fetchWishlist: () => Promise<void>;
+  addWishlistItem: (item: WishlistItem) => Promise<void>;
   updateWishlistItem: (id: string, data: Partial<WishlistItem>) => void;
 
   // Currency
@@ -218,7 +220,11 @@ export const useDataStore = create<DataState>()(
       fetchTransactions: async (filters?: { startDate?: string; endDate?: string; categoryId?: string; type?: string }) => {
         set({ isLoadingTransactions: true });
         try {
-          const transactions = await transactionsService.getAll(filters);
+          const raw = await transactionsService.getAll(filters);
+          const transactions = raw.map((t) => ({
+            ...t,
+            amount: Number(t.amount),
+          }));
           set({ transactions, isLoadingTransactions: false });
         } catch (error) {
           set({ isLoadingTransactions: false });
@@ -349,7 +355,32 @@ export const useDataStore = create<DataState>()(
 
       // Wishlist
       wishlist: INITIAL_WISHLIST,
-      addWishlistItem: (item) => set((state) => ({ wishlist: [...state.wishlist, item] })),
+      fetchWishlist: async () => {
+        try {
+          const items = await wishlistService.getAll();
+          set({ wishlist: items });
+        } catch (e) {
+          console.error('Failed to fetch wishlist:', e);
+        }
+      },
+      addWishlistItem: async (item) => {
+        const isDemoMode = useAuthStore.getState().isDemoMode;
+        if (!isDemoMode) {
+          try {
+            const created = await wishlistService.create({
+              name: item.name,
+              price: item.price,
+              description: item.description,
+              cooldownDays: item.cooldownDays,
+            });
+            set((state) => ({ wishlist: [...state.wishlist, created] }));
+            return;
+          } catch (e) {
+            console.error('Failed to create wishlist item:', e);
+          }
+        }
+        set((state) => ({ wishlist: [...state.wishlist, item] }));
+      },
       updateWishlistItem: (id, data) => set((state) => ({
         wishlist: state.wishlist.map((w) => w.id === id ? { ...w, ...data } : w)
       })),
@@ -392,7 +423,7 @@ export const useDataStore = create<DataState>()(
       // Helpers
       getTotalBalance: () => {
         const { accounts } = get();
-        return accounts.reduce((sum, acc) => sum + acc.balance, 0);
+        return accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
       },
 
       getMonthlyIncome: () => {
@@ -401,7 +432,7 @@ export const useDataStore = create<DataState>()(
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         return transactions
           .filter((t) => t.type === 'INCOME' && new Date(t.date) >= startOfMonth)
-          .reduce((sum, t) => sum + t.amount, 0);
+          .reduce((sum, t) => sum + Number(t.amount), 0);
       },
 
       getMonthlyExpenses: () => {
@@ -410,12 +441,12 @@ export const useDataStore = create<DataState>()(
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         return transactions
           .filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= startOfMonth)
-          .reduce((sum, t) => sum + t.amount, 0);
+          .reduce((sum, t) => sum + Number(t.amount), 0);
       },
 
       getHourlyRate: () => {
         const { gamification } = get();
-        return gamification?.hourlyRate ? gamification.hourlyRate / 100 : 1500;
+        return gamification?.hourlyRate ? Number(gamification.hourlyRate) : 1500;
       },
 
       setHourlyRate: async (rateRubles: number) => {
@@ -489,7 +520,7 @@ export const useDataStore = create<DataState>()(
           console.log('🎮 Demo mode — skipping API calls');
           return;
         }
-        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate, fetchCurrencyRates } = get();
+        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate, fetchCurrencyRates, fetchWishlist } = get();
         await Promise.all([
           fetchAccounts(),
           fetchCategories(),
@@ -497,6 +528,7 @@ export const useDataStore = create<DataState>()(
           fetchGamification(),
           fetchHourlyRate(),
           fetchCurrencyRates(),
+          fetchWishlist(),
         ]);
       },
     }),

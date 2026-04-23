@@ -1,30 +1,43 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Pressable, FlatList, Alert, TouchableOpacity, TextInput } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { useAuthStore } from '../../../src/stores/authStore';
-import { Screen } from '../../../src/components/ui/Screen';
-import { Text } from '../../../src/components/ui/Text';
-import { Icon } from '../../../src/components/ui/Icon';
-import { useTheme } from '../../../src/theme';
+import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../../src/utils/formatters';
-import type { WishlistStatus } from '../../../src/types';
 import { WishlistStatus as WishlistStatusEnum } from '../../../src/types';
+import wishlistService from '../../../src/services/wishlist';
+import type { WishlistItem } from '../../../src/types';
 
-type TabType = 'all' | 'pending' | 'history';
+function formatLifeHours(amountKopecks: number, hourlyRateRubles: number): string | null {
+  if (hourlyRateRubles <= 0) return null;
+  const rubles = amountKopecks / 100;
+  const hours = rubles / hourlyRateRubles;
+  if (hours < 1) return `${Math.round(hours * 60)} мин`;
+  if (hours < 24) return `${hours.toFixed(1)} ч`;
+  return `${(hours / 24).toFixed(1)} дн`;
+}
+
+function getDaysLeft(cooldownEnds: string): number {
+  return Math.max(
+    0,
+    Math.ceil(
+      (new Date(cooldownEnds).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+    ),
+  );
+}
 
 export default function WishlistScreen() {
-  const router = useRouter();
-  const { spacing } = useTheme();
+  const insets = useSafeAreaInsets();
   const wishlist = useDataStore((s) => s.wishlist);
   const updateWishlistItem = useDataStore((s) => s.updateWishlistItem);
-  const addTransaction = useDataStore((s) => s.addTransaction);
-  const accounts = useDataStore((s) => s.accounts);
+  const fetchWishlist = useDataStore((s) => s.fetchWishlist);
   const user = useAuthStore((s) => s.user);
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
 
-  const [tab, setTab] = useState<TabType>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [newName, setNewName] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newDescription, setNewDescription] = useState('');
@@ -34,21 +47,24 @@ export default function WishlistScreen() {
     return rate > 0 ? rate : (user?.hourlyRate ? user.hourlyRate / 100 : 0);
   }, [getHourlyRate, user?.hourlyRate]);
 
-  const filteredItems = useMemo(() => {
-    if (tab === 'all') return wishlist;
-    if (tab === 'pending') {
-      return wishlist.filter((item) => item.status === 'PENDING' || item.status === 'READY');
-    }
-    return wishlist.filter(
-      (item) => item.status === 'REJECTED' || item.status === 'PURCHASED',
-    );
-  }, [wishlist, tab]);
+  const activeItems = useMemo(() => {
+    return wishlist
+      .filter((item) => item.status === 'PENDING' || item.status === 'READY')
+      .sort((a, b) => new Date(a.cooldownEnds).getTime() - new Date(b.cooldownEnds).getTime());
+  }, [wishlist]);
+
+  const historyItems = useMemo(() => {
+    return wishlist
+      .filter((item) => item.status === 'REJECTED' || item.status === 'PURCHASED')
+      .sort((a, b) => new Date(b.decidedAt || b.createdAt).getTime() - new Date(a.decidedAt || a.createdAt).getTime());
+  }, [wishlist]);
 
   const handleBuy = useCallback(
     async (id: string, name: string, price: number) => {
+      const hours = formatLifeHours(price, hourlyRate);
       Alert.alert(
         `Купить ${name}?`,
-        `На сумму: ${formatCurrency(price)}${hourlyRate > 0 ? `\n⏱ ${(price / 100 / hourlyRate).toFixed(1)} часов работы` : ''}`,
+        `На сумму: ${formatCurrency(price)}${hours ? `\n⏱ ${hours} работы` : ''}`,
         [
           { text: 'Отмена', style: 'cancel' },
           {
@@ -56,11 +72,15 @@ export default function WishlistScreen() {
             style: 'destructive',
             onPress: async () => {
               try {
-                await updateWishlistItem(id, {
+                const isDemoMode = useAuthStore.getState().isDemoMode;
+                if (!isDemoMode) {
+                  await wishlistService.purchase(id);
+                }
+                updateWishlistItem(id, {
                   status: WishlistStatusEnum.PURCHASED,
                   purchasedAt: new Date().toISOString(),
+                  decidedAt: new Date().toISOString(),
                 });
-                Alert.alert('Успешно!', 'Покупка добавлена в историю');
               } catch {
                 Alert.alert('Ошибка', 'Не удалось отметить покупку');
               }
@@ -83,11 +103,14 @@ export default function WishlistScreen() {
             text: 'Отказаться',
             onPress: async () => {
               try {
-                await updateWishlistItem(id, {
+                const isDemoMode = useAuthStore.getState().isDemoMode;
+                if (!isDemoMode) {
+                  await wishlistService.reject(id);
+                }
+                updateWishlistItem(id, {
                   status: WishlistStatusEnum.REJECTED,
                   decidedAt: new Date().toISOString(),
                 });
-                Alert.alert('Умный выбор! 💪', 'Вы сэкономили деньги');
               } catch {
                 Alert.alert('Ошибка', 'Не удалось обновить');
               }
@@ -99,7 +122,7 @@ export default function WishlistScreen() {
     [updateWishlistItem],
   );
 
-  const handleAddItem = useCallback(() => {
+  const handleAddItem = useCallback(async () => {
     if (!newName || !newPrice || !newDescription.trim()) {
       Alert.alert('Ошибка', 'Заполните все поля');
       return;
@@ -115,7 +138,7 @@ export default function WishlistScreen() {
     const cooldownEnds = new Date();
     cooldownEnds.setDate(cooldownEnds.getDate() + cooldownDays);
 
-    useDataStore.getState().addWishlistItem({
+    await useDataStore.getState().addWishlistItem({
       id: `wish_${Date.now()}`,
       userId: user?.id || '',
       name: newName,
@@ -136,285 +159,215 @@ export default function WishlistScreen() {
     setNewDescription('');
     setShowAddModal(false);
     Alert.alert('Добавлено!', `Подождите ${cooldownDays} дней перед покупкой`);
-  }, [newName, newPrice, user?.id]);
+  }, [newName, newPrice, newDescription, user?.id]);
 
-  const renderItem = useCallback(
-    ({ item }: { item: any }) => {
-      const priceRub = item.price / 100;
-      const hoursCost = hourlyRate > 0 ? (priceRub / hourlyRate).toFixed(1) : null;
-      const daysLeft = Math.max(
-        0,
-        Math.ceil(
-          (new Date(item.cooldownEnds).getTime() - new Date().getTime()) /
-            (1000 * 60 * 60 * 24),
-        ),
-      );
-      const isPending = item.status === 'PENDING' || item.status === 'READY';
+  const renderActiveItem = useCallback(
+    ({ item }: { item: WishlistItem }) => {
+      const hoursCost = formatLifeHours(item.price, hourlyRate);
+      const daysLeft = getDaysLeft(item.cooldownEnds);
+      const isReady = item.status === 'READY' || daysLeft === 0;
 
       return (
         <View
-          style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.04)',
-            borderRadius: 16,
-            padding: 16,
-            marginHorizontal: spacing.md,
-            marginBottom: 12,
-          }}
+          className={`rounded-2xl p-4 mx-4 mb-3 ${
+            isReady ? 'bg-success-500/10 border border-success-500/30' : 'bg-background-50/30'
+          }`}
         >
-          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-            <View
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 16,
-                backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text size="xxxl">🎁</Text>
+          <View className="flex-row gap-3">
+            <View className={`w-14 h-14 rounded-2xl items-center justify-center ${isReady ? 'bg-success-500/20' : 'bg-primary-500/15'}`}>
+              <Text className="text-2xl">{isReady ? '🔥' : '🧊'}</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text size="lg" weight="semibold" style={{ color: '#FFFFFF' }}>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-typography-white">
                 {item.name}
               </Text>
               {item.description ? (
-                <Text size="sm" style={{ color: '#8E8E93', marginTop: 2 }} numberOfLines={2}>
+                <Text className="text-sm text-typography-400 mt-0.5" numberOfLines={2}>
                   {item.description}
                 </Text>
               ) : null}
-              <Text size="xl" weight="bold" style={{ color: '#6366F1', marginTop: 4 }}>
-                {formatCurrency(item.price)}
+              <Text className="text-lg font-bold text-error-400 mt-1">
+                {formatCurrency(item.price)}{hoursCost ? ` ⏱ / ${hoursCost} работы` : ''}
               </Text>
-              {hoursCost && (
-                <Text size="xs" style={{ color: '#FBBF24', marginTop: 2 }}>
-                  ⏱ {hoursCost} ч работы
-                </Text>
-              )}
             </View>
           </View>
 
-          {isPending && (
-            <>
-              {item.status === 'READY' ? (
-                <View style={{ backgroundColor: 'rgba(52, 211, 153, 0.15)', borderRadius: 12, padding: 12, marginBottom: 12 }}>
-                  <Text size="md" style={{ color: '#34D399' }}>
-                    ✅ Готово к покупке!
-                  </Text>
-                </View>
-              ) : (
-                <View style={{ backgroundColor: 'rgba(251, 191, 36, 0.15)', borderRadius: 12, padding: 12, marginBottom: 12 }}>
-                  <Text size="md" style={{ color: '#FBBF24' }}>
-                    ⏳ {daysLeft === 0 ? 'Сегодня можно купить!' : `${daysLeft} дн. до покупки`}
-                  </Text>
-                </View>
-              )}
-
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity
-                  onPress={() => handleReject(item.id, item.name)}
-                  style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    borderRadius: 12,
-                    paddingVertical: 14,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text size="md" weight="semibold" style={{ color: '#F4F4F5' }}>
-                    Отказаться
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleBuy(item.id, item.name, item.price)}
-                  disabled={item.status !== 'READY'}
-                  style={{
-                    flex: 1,
-                    backgroundColor: item.status === 'READY' ? '#34D399' : 'rgba(52, 211, 153, 0.3)',
-                    borderRadius: 12,
-                    paddingVertical: 14,
-                    alignItems: 'center',
-                    opacity: item.status !== 'READY' ? 0.5 : 1,
-                  }}
-                >
-                  <Text size="md" weight="semibold" style={{ color: '#FFFFFF' }}>
-                    Купить
-                  </Text>
-                </TouchableOpacity>
+          <View className="mt-3">
+            {isReady ? (
+              <View className="bg-success-500/15 rounded-xl p-2.5 mb-3">
+                <Text className="text-sm font-medium text-success-400">
+                  ✅ Готово к решению!
+                </Text>
               </View>
-            </>
-          )}
+            ) : (
+              <View className="bg-warning-500/10 rounded-xl p-2.5 mb-3">
+                <Text className="text-sm text-warning-400">
+                  ⏳ {daysLeft === 1 ? 'Завтра можно решить' : `${daysLeft} дн. до решения`}
+                </Text>
+              </View>
+            )}
 
-          {!isPending && (
-            <View style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: 12, padding: 12 }}>
-              <Text size="md" style={{ color: item.status === 'PURCHASED' ? '#34D399' : '#71717A' }}>
-                {item.status === 'PURCHASED' ? '✅ Куплено' : '🚫 Отказались'} — экономия {formatCurrency(item.price)}
-              </Text>
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={() => handleReject(item.id, item.name)}
+                className="flex-1 bg-success-500/15 rounded-xl py-3 items-center"
+              >
+                <Text className="text-base font-semibold text-success-400">
+                  Не нужно
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleBuy(item.id, item.name, item.price)}
+                disabled={!isReady}
+                className="flex-1 rounded-xl py-3 items-center"
+                style={{
+                  backgroundColor: isReady ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.05)',
+                  opacity: isReady ? 1 : 0.4,
+                }}
+              >
+                <Text className={`text-base font-semibold ${isReady ? 'text-error-400' : 'text-typography-400'}`}>
+                  Купить
+                </Text>
+              </TouchableOpacity>
             </View>
-          )}
+          </View>
         </View>
       );
     },
-    [spacing.md, handleBuy, handleReject, hourlyRate],
+    [handleBuy, handleReject, hourlyRate],
+  );
+
+  const renderHistoryItem = useCallback(
+    ({ item }: { item: WishlistItem }) => {
+      const isPurchased = item.status === 'PURCHASED';
+      return (
+        <View className="flex-row items-center gap-3 px-4 py-2.5 mx-4 mb-1 rounded-xl bg-background-50/20">
+          <Text className="text-base">{isPurchased ? '🛒' : '💪'}</Text>
+          <View className="flex-1">
+            <Text className="text-sm text-typography-white">{item.name}</Text>
+            <Text className="text-xs text-typography-400">{formatCurrency(item.price)}</Text>
+          </View>
+          <Text className={`text-xs font-medium ${isPurchased ? 'text-typography-400' : 'text-success-400'}`}>
+            {isPurchased ? 'Куплено' : 'Экономия'}
+          </Text>
+        </View>
+      );
+    },
+    [],
   );
 
   return (
-    <Screen scroll={false}>
-      <View style={{ flex: 1 }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 }}>
-          <Text size="xl" weight="bold" style={{ color: '#FFFFFF' }}>
-            Инкубатор желаний
+    <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
+      <View className="flex-1">
+        <View className="flex-row justify-between items-center px-4 pb-2 pt-2">
+          <Text className="text-xl font-bold text-typography-white">
+            Инкубатор
           </Text>
           <TouchableOpacity
             onPress={() => setShowAddModal(true)}
-            style={{
-              width: 44, height: 44, borderRadius: 22,
-              backgroundColor: 'rgba(99, 102, 241, 0.2)',
-              alignItems: 'center', justifyContent: 'center',
-            }}
+            className="w-9 h-9 rounded-full bg-primary-500 items-center justify-center"
           >
-            <Text size="xxl" style={{ color: '#6366F1' }}>+</Text>
+            <Ionicons name="add" size={20} color="white" />
           </TouchableOpacity>
         </View>
 
-        {/* Hourly rate info */}
-        {hourlyRate > 0 && (
-          <View style={{
-            marginHorizontal: 16,
-            marginBottom: 12,
-            backgroundColor: 'rgba(251, 191, 36, 0.1)',
-            borderRadius: 12,
-            padding: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-          }}>
-            <Text size="md">⏱</Text>
-            <Text size="sm" style={{ color: '#FBBF24' }}>
-              Ваша ставка: {hourlyRate.toFixed(0)} ₽/ч
+        {activeItems.length === 0 && historyItems.length === 0 ? (
+          <View className="items-center py-20">
+            <Text className="text-3xl mb-4">🧊</Text>
+            <Text className="text-lg text-typography-white mb-2">
+              Инкубатор пуст
             </Text>
-          </View>
-        )}
-
-        {/* Tabs */}
-        <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 16 }}>
-          {(['all', 'pending', 'history'] as TabType[]).map((t) => (
-            <Pressable
-              key={t}
-              onPress={() => setTab(t)}
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                alignItems: 'center',
-                borderRadius: 12,
-                backgroundColor: tab === t ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                borderWidth: tab === t ? 2 : 0,
-                borderColor: tab === t ? '#6366F1' : 'transparent',
-              }}
+            <Text className="text-base text-typography-400 mb-6">
+              Заморозьте желание и подождите 7 дней
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowAddModal(true)}
+              className="px-6 py-3 bg-primary-500 rounded-xl"
             >
-              <Text size="sm" weight={tab === t ? 'semibold' : 'regular'} style={{ color: tab === t ? '#FFFFFF' : '#8E8E93' }}>
-                {t === 'all' ? 'Все' : t === 'pending' ? 'Ожидание' : 'История'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {/* List */}
-        {filteredItems.length === 0 ? (
-          <View style={{ alignItems: 'center', paddingVertical: 80 }}>
-            <Text size="xxxl" style={{ marginBottom: 16 }}>🎁</Text>
-            <Text size="lg" style={{ color: '#FFFFFF', marginBottom: 8 }}>
-              {tab === 'history' ? 'Пока нет истории' : 'Нет желаний'}
-            </Text>
-            <Text size="md" style={{ color: '#8E8E93', marginBottom: 24 }}>
-              {tab === 'history' ? 'Здесь будет история' : 'Добавьте желание и подождите 7 дней'}
-            </Text>
-            {tab === 'all' && (
-              <TouchableOpacity
-                onPress={() => setShowAddModal(true)}
-                style={{
-                  paddingHorizontal: 24,
-                  paddingVertical: 12,
-                  backgroundColor: '#6366F1',
-                  borderRadius: 12,
-                }}
-              >
-                <Text size="md" weight="bold" style={{ color: '#FFFFFF' }}>Добавить желание</Text>
-              </TouchableOpacity>
-            )}
+              <Text className="text-base font-bold text-typography-white">Заморозить желание</Text>
+            </TouchableOpacity>
           </View>
         ) : (
-          <FlatList
-            data={filteredItems}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            contentContainerStyle={{ paddingBottom: 20 }}
-          />
+          <>
+            <FlatList
+              data={activeItems}
+              keyExtractor={(item) => item.id}
+              renderItem={renderActiveItem}
+              contentContainerStyle={{ paddingTop: 4, paddingBottom: 8 }}
+              ListFooterComponent={
+                historyItems.length > 0 ? (
+                  <View className="mt-2">
+                    <TouchableOpacity
+                      onPress={() => setShowHistory((v) => !v)}
+                      className="flex-row items-center justify-between px-4 py-3"
+                      activeOpacity={0.6}
+                    >
+                      <Text className="text-sm font-medium text-typography-400">
+                        История ({historyItems.length})
+                      </Text>
+                      <Ionicons
+                        name={showHistory ? 'chevron-up' : 'chevron-down'}
+                        size={18}
+                        color="#8C8C8C"
+                      />
+                    </TouchableOpacity>
+                    {showHistory && (
+                      <View>
+                        {historyItems.map((item) => (
+                          <View key={item.id}>{renderHistoryItem({ item })}</View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                ) : null
+              }
+            />
+          </>
         )}
       </View>
 
-      {/* Add Modal */}
       {showAddModal && (
-        <View style={{
-          position: 'absolute',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: '#0A0A0F',
-        }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 }}>
+        <View className="absolute inset-0 bg-background-0" style={{ paddingTop: insets.top }}>
+          <View className="flex-row justify-between items-center px-4 py-3">
             <TouchableOpacity onPress={() => setShowAddModal(false)}>
-              <Text size="lg" style={{ color: '#8E8E93' }}>← Назад</Text>
+              <Text className="text-base text-typography-400">← Назад</Text>
             </TouchableOpacity>
-            <Text size="lg" weight="bold" style={{ color: '#FFFFFF' }}>Новое желание</Text>
-            <View style={{ width: 60 }} />
+            <Text className="text-base font-bold text-typography-white">Новое желание</Text>
+            <View className="w-[60px]" />
           </View>
 
-          <View style={{ padding: 16, gap: 20 }}>
+          <View className="p-4 gap-5" style={{ paddingBottom: Math.max(insets.bottom, 16) }}>
             <View>
-              <Text size="sm" style={{ color: '#8E8E93', marginBottom: 8 }}>Что хотите?</Text>
+              <Text className="text-sm text-typography-400 mb-2">Что хотите?</Text>
               <TextInput
                 value={newName}
                 onChangeText={setNewName}
                 placeholder="Например: AirPods Pro"
                 placeholderTextColor="#8E8E93"
                 autoFocus
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  color: '#FFFFFF',
-                  fontSize: 18,
-                }}
+                className="bg-background-50/50 rounded-xl px-4 py-4 text-typography-white text-lg"
               />
             </View>
 
             <View>
-              <Text size="sm" style={{ color: '#8E8E93', marginBottom: 8 }}>Сколько стоит? (₽)</Text>
+              <Text className="text-sm text-typography-400 mb-2">Сколько стоит? (₽)</Text>
               <TextInput
                 value={newPrice}
                 onChangeText={setNewPrice}
                 placeholder="25000"
                 placeholderTextColor="#8E8E93"
                 keyboardType="decimal-pad"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  color: '#FFFFFF',
-                  fontSize: 18,
-                }}
+                className="bg-background-50/50 rounded-xl px-4 py-4 text-typography-white text-lg"
               />
               {newPrice && hourlyRate > 0 && (
-                <Text size="sm" style={{ color: '#FBBF24', marginTop: 8 }}>
-                  ⏱ Это {(parseFloat(newPrice) / hourlyRate).toFixed(1)} часов вашей работы
+                <Text className="text-sm text-warning-400 mt-2">
+                  ⏱ Это {formatLifeHours(Math.round(parseFloat(newPrice) * 100), hourlyRate)} вашей работы
                 </Text>
               )}
             </View>
 
             <View>
-              <Text size="sm" style={{ color: '#8E8E93', marginBottom: 8 }}>Зачем вам это? *</Text>
+              <Text className="text-sm text-typography-400 mb-2">Зачем вам это? *</Text>
               <TextInput
                 value={newDescription}
                 onChangeText={setNewDescription}
@@ -422,41 +375,29 @@ export default function WishlistScreen() {
                 placeholderTextColor="#8E8E93"
                 multiline
                 numberOfLines={3}
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  color: '#FFFFFF',
-                  fontSize: 16,
-                  minHeight: 80,
-                  textAlignVertical: 'top',
-                }}
+                className="bg-background-50/50 rounded-xl px-4 py-4 text-typography-white text-base min-h-[80px]"
+                style={{ textAlignVertical: 'top' }}
               />
             </View>
 
             <TouchableOpacity
               onPress={handleAddItem}
               disabled={!newName || !newPrice || !newDescription.trim()}
-              style={{
-                paddingVertical: 16,
-                borderRadius: 16,
-                backgroundColor: !newName || !newPrice || !newDescription.trim() ? 'rgba(255,255,255,0.1)' : '#6366F1',
-                alignItems: 'center',
-                marginTop: 20,
-              }}
+              className={`py-4 rounded-2xl items-center mt-5 ${
+                !newName || !newPrice || !newDescription.trim() ? 'bg-background-50/30' : 'bg-primary-500'
+              }`}
             >
-              <Text size="lg" weight="bold" style={{ color: '#FFFFFF' }}>
-                Добавить в инкубатор
+              <Text className="text-lg font-bold text-typography-white">
+                Заморозить на 7 дней
               </Text>
             </TouchableOpacity>
 
-            <Text size="xs" style={{ color: '#8E8E93', textAlign: 'center', marginTop: 8 }}>
-              Перед покупкой нужно подождать 7 дней — чтобы точно решить, нужно ли это вам
+            <Text className="text-xs text-typography-400 text-center mt-2">
+              Через 7 дней вы решите: купить или отказаться
             </Text>
           </View>
         </View>
       )}
-    </Screen>
+    </View>
   );
 }

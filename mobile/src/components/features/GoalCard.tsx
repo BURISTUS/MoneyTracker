@@ -1,9 +1,6 @@
 import React from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
-import { useTheme } from '../../theme';
-import { Text } from '../ui/Text';
-import { Card } from '../ui/Card';
-import { ProgressBar } from '../ui/ProgressBar';
+import { Text } from '../../../components/ui/text';
 import { formatCurrency, getDaysRemaining } from '../../utils/formatters';
 import type { Goal } from '../../types';
 
@@ -13,41 +10,35 @@ interface GoalCardProps {
 }
 
 export const GoalCard: React.FC<GoalCardProps> = React.memo(({ goal, style }) => {
-  const { spacing } = useTheme();
   const progress = goal.progress ?? (goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0);
   const daysLeft = getDaysRemaining(goal.deadline);
+  const clampedProgress = Math.min(100, Math.max(0, progress));
 
   return (
-    <Card variant="glass" padding="lg" style={style}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
-        <Text size="md" weight="medium" numberOfLines={1} style={{ flex: 1 }}>
-          {goal.name}
-        </Text>
+    <View className="bg-background-50 rounded-2xl border border-outline-200 p-6" style={style}>
+      <View className="flex-row justify-between mb-2">
+        <Text className="text-base font-medium flex-1" numberOfLines={1}>{goal.name}</Text>
         {goal.isCompleted ? (
-          <Text size="sm" weight="semibold" style={{ color: '#34D399' }}>
-            Достигнута
-          </Text>
+          <Text className="text-sm font-semibold text-success-400">Достигнута</Text>
         ) : (
-          <Text size="xs" style={{ color: '#71717A' }}>
-            {daysLeft} дн.
-          </Text>
+          <Text className="text-xs text-typography-400">{daysLeft} дн.</Text>
         )}
       </View>
-      <ProgressBar
-        progress={progress}
-        gradient={['#6366F1', '#818CF8']}
-        height={6}
-        showPercent
-        style={{ marginBottom: spacing.sm }}
-      />
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Text size="xs" style={{ color: '#71717A' }}>
-          {formatCurrency(goal.currentAmount)}
-        </Text>
-        <Text size="xs" style={{ color: '#A1A1AA' }}>
-          из {formatCurrency(goal.targetAmount)}
-        </Text>
+      <View className="mb-2">
+        <View className="flex-row justify-between mb-1">
+          <Text className="text-xs text-typography-400">{Math.round(clampedProgress)}%</Text>
+        </View>
+        <View className="h-1.5 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+          <View
+            className="h-full rounded-full bg-primary-500"
+            style={{ width: `${clampedProgress}%` }}
+          />
+        </View>
       </View>
-    </Card>
+      <View className="flex-row justify-between">
+        <Text className="text-xs text-typography-400">{formatCurrency(goal.currentAmount)}</Text>
+        <Text className="text-xs text-typography-400">из {formatCurrency(goal.targetAmount)}</Text>
+      </View>
+    </View>
   );
 });

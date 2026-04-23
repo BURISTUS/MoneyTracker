@@ -49,8 +49,10 @@ export class AccountsController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update account' })
-  async update(@Param('id') id: string, @Request() req: any, @Body() body: { name?: string }) {
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: { name?: string; type?: string; balance?: number; currency?: string }) {
     return this.accountsService.update(id, req.user.id, body);
   }
 

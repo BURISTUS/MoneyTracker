@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Dimensions } from 'react-native';
 import Svg, { Rect, Line, Text as SvgText } from 'react-native-svg';
-import { Text } from './Text';
+import { Text } from '../../../components/ui/text';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_WIDTH = SCREEN_WIDTH - 48;
@@ -28,20 +28,13 @@ export function SpendingChart({ data, monthLabel }: SpendingChartProps) {
 
     const barWidth = Math.max((CHART_WIDTH - data.length * BAR_GAP) / data.length, 3);
 
-    const bars = data.map((d, i) => {
-      const x = i * (barWidth + BAR_GAP);
+    const bars = data.map((d) => {
       const expenseH = maxVal > 0 ? (d.expense / maxVal) * BAR_AREA_HEIGHT : 0;
       const incomeH = maxVal > 0 ? (d.income / maxVal) * BAR_AREA_HEIGHT : 0;
 
       return {
-        x,
-        expenseY: BAR_AREA_HEIGHT - expenseH,
         expenseH,
-        incomeY: BAR_AREA_HEIGHT - incomeH,
         incomeH,
-        width: barWidth,
-        day: d.day,
-        hasData: d.expense > 0 || d.income > 0,
       };
     });
 
@@ -59,32 +52,22 @@ export function SpendingChart({ data, monthLabel }: SpendingChartProps) {
   };
 
   return (
-    <View style={{ gap: 12 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text size="sm" weight="medium" style={{ color: '#A1A1AA' }}>
-          {monthLabel}
-        </Text>
-        <View style={{ flexDirection: 'row', gap: 16 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#34C759' }} />
-            <Text size="xs" style={{ color: '#8E8E93' }}>
-              {formatK(totalIncome)}
-            </Text>
+    <View className="gap-3">
+      <View className="flex-row justify-between items-center">
+        <Text className="text-sm font-medium text-typography-400">{monthLabel}</Text>
+        <View className="flex-row gap-4">
+          <View className="flex-row items-center gap-1">
+            <View className="w-2 h-2 rounded-sm bg-success-500" />
+            <Text className="text-xs text-typography-400">{formatK(totalIncome)}</Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#FF3B30' }} />
-            <Text size="xs" style={{ color: '#8E8E93' }}>
-              {formatK(totalExpense)}
-            </Text>
+          <View className="flex-row items-center gap-1">
+            <View className="w-2 h-2 rounded-sm bg-error-500" />
+            <Text className="text-xs text-typography-400">{formatK(totalExpense)}</Text>
           </View>
         </View>
       </View>
 
-      <View style={{
-        backgroundColor: 'rgba(255, 255, 255, 0.02)',
-        borderRadius: 16,
-        padding: 12,
-      }}>
+      <View className="bg-[rgba(255,255,255,0.02)] rounded-2xl p-3">
         <Svg width={CHART_WIDTH - 24} height={CHART_HEIGHT}>
           {bars.map((bar, i) => {
             const svgWidth = CHART_WIDTH - 24;

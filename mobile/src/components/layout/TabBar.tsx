@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Pressable, type StyleProp, type ViewStyle, Dimensions } from 'react-native';
+import { View, Pressable, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../theme';
-import { Text } from '../ui/Text';
-import { Icon } from '../ui/Icon';
+import { Ionicons } from '@expo/vector-icons';
+import { Text } from '../../../components/ui/text';
 import { useRouter, usePathname } from 'expo-router';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -11,8 +10,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface TabItem {
   key: string;
   label: string;
-  icon: React.ComponentProps<typeof Icon>['name'];
-  iconActive: React.ComponentProps<typeof Icon>['name'];
+  icon: string;
+  iconActive: string;
   path: string;
 }
 
@@ -24,7 +23,6 @@ const tabs: TabItem[] = [
 ];
 
 export const TabBar: React.FC = React.memo(() => {
-  const { spacing, borderRadius: br } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
@@ -36,65 +34,31 @@ export const TabBar: React.FC = React.memo(() => {
 
   return (
     <View
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(17, 17, 24, 0.92)',
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.06)',
-        paddingBottom: Math.max(insets.bottom, spacing.sm),
-        paddingTop: spacing.sm,
-      }}
+      className="absolute bottom-0 left-0 right-0 bg-[rgba(17,17,24,0.92)] border-t border-[rgba(255,255,255,0.06)]"
+      style={{ paddingBottom: Math.max(insets.bottom, 8), paddingTop: 8 }}
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          paddingHorizontal: spacing.xs,
-        }}
-      >
+      <View className="flex-row justify-around items-center px-1">
         {tabs.map((tab) => {
           const active = isActive(tab);
           return (
             <Pressable
               key={tab.key}
-              onPress={() => router.replace(tab.path as any)}
-              style={{
-                flex: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 2,
-                paddingVertical: spacing.xs,
-              }}
+              onPress={() => router.replace(tab.path as never)}
+              className="flex-1 items-center justify-center gap-0.5 p-1"
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
             >
-              <View
-                style={{
-                  width: 40,
-                  height: 28,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: br.sm,
-                  backgroundColor: active ? 'rgba(99, 102, 241, 0.12)' : 'transparent',
-                }}
-              >
-                <Icon
-                  name={active ? tab.iconActive : tab.icon}
-                  size={22}
-                  color={active ? '#818CF8' : '#71717A'}
-                />
-              </View>
-              <Text
-                size="xs"
-                weight={active ? 'semibold' : 'regular'}
-                style={{ color: active ? '#818CF8' : '#71717A' }}
-              >
+              <Ionicons
+                name={(active ? tab.iconActive : tab.icon) as React.ComponentProps<typeof Ionicons>['name']}
+                size={22}
+                color={active ? '#818CF8' : '#71717A'}
+              />
+              <Text bold={active} className={`text-[10px] ${active ? 'text-primary-300' : 'text-typography-400'}`}>
                 {tab.label}
               </Text>
+              {active && (
+                <View className="w-1 h-1 rounded-full bg-primary-400 mt-0.5" />
+              )}
             </Pressable>
           );
         })}

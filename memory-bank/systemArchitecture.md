@@ -66,13 +66,16 @@
 ### Mobile
 - **Framework:** React Native (Expo SDK 54)
 - **Routing:** expo-router (file-based)
+- **UI Library:** gluestack-ui v3 (copy-paste, NativeWind/Tailwind)
+- **Styling:** NativeWind v4 (Tailwind CSS для RN) + react-native-css-interop@0.2.3 (с patch-package патчем)
+- **CSS Vars:** nativewind `vars()` в gluestack-ui-provider/config.ts (light/dark токены) — GluestackUIProvider применяет через `style={config[mode]}` на wrapper View
 - **State:** Zustand (persist + expo-secure-store) + React Query (@tanstack/react-query)
 - **HTTP:** Axios (base config в services/api.ts)
 - **i18n:** i18next + react-i18next + expo-localization. Переводы загружаются с бэкенда (`GET /api/i18n/translations/:lang`), локальный fallback. `Accept-Language` header на каждый запрос. 8 языков: en, ru, es, pt, fr, de, ja, zh.
 - **Токен:** JWT в expo-secure-store (ключ `authToken`)
 - **SVG:** react-native-svg (без LinearGradient/stop — крашат Android)
 - **Запрещены:** react-native-reanimated и react-native-gesture-handler в компонентах (краш Android)
-- **Тема:** Dark mode (#0A0A0F фон, #1C1C1E карточки)
+- **Тема:** Dark mode (#0A0A0F фон, #1C1C1E карточки) через gluestack-ui tokens + NativeWind vars
 
 ## База данных (Prisma)
 
@@ -136,7 +139,7 @@ backend/src/
 ```
 mobile/
 ├── app/                   # expo-router routes
-│   ├── _layout.tsx        # Root: QueryClientProvider + ThemeProvider + Stack
+│   ├── _layout.tsx        # Root: GluestackUIProvider + QueryClientProvider + ThemeProvider + Stack, import global.css
 │   ├── index.tsx          # Auth gate (checkAuth → /main или /auth/login)
 │   ├── auth/              # login.tsx, register.tsx
 │   └── main/              # Authenticated screens
@@ -152,7 +155,6 @@ mobile/
 │       └── profile/       # Profile settings
 ├── src/
 │   ├── types/index.ts     # Все TypeScript типы (430 строк)
-│   ├── theme/             # Dark theme colors, spacing, typography
 │   ├── utils/formatters.ts # formatCurrency (копейки→рубли), formatDate
 │   ├── services/          # API services (api.ts, auth, accounts, categories, transactions, lifeCost)
 │   ├── stores/            # Zustand stores
@@ -160,9 +162,9 @@ mobile/
 │   │   └── dataStore.ts   # accounts, transactions, categories, budgets, goals, wishlist, gamification, getHourlyRate/setHourlyRate
 │   ├── hooks/             # Custom hooks (useAccounts, useTransactions, etc.)
 │   └── components/
-│       ├── ui/            # Базовые: Screen, Text, Button, Input, Card, Icon, Loading, DonutChart, SpendingChart, AddTransactionModal, TransactionActionModal, DatePickerModal
-│       ├── features/      # Составные: AccountCard, TransactionItem, WishlistCard, XPBar, etc.
-│       └── layout/        # Header, TabBar
+│       ├── ui/            # Базовые: Loading, CategoryIcon, DonutChart, SpendingChart, AddTransactionModal, TransactionActionModal, DatePickerModal, DateRangePickerModal, CurrencyPicker
+│       ├── features/      # Составные: AccountCard, TransactionItem, WishlistCard, XPBar, BalanceHero, BudgetCard, GoalCard, StatCard
+│       └── layout/        # TabBar
 ```
 
 ## API эндпоинты

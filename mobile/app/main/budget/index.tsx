@@ -1,20 +1,18 @@
 import React from 'react';
-import { View, FlatList } from 'react-native';
+import { View, FlatList, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
-import { Screen } from '../../../src/components/ui/Screen';
-import { Text } from '../../../src/components/ui/Text';
-import { Card } from '../../../src/components/ui/Card';
-import { ProgressBar } from '../../../src/components/ui/ProgressBar';
-import { Icon } from '../../../src/components/ui/Icon';
-import { Header } from '../../../src/components/layout/Header';
-import { useTheme } from '../../../src/theme';
+import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../../src/utils/formatters';
 
+const BORDER = 'rgba(255,255,255,0.08)';
+const CARD_BG = '#141418';
+
 export default function BudgetScreen() {
-  const { spacing } = useTheme();
+  const insets = useSafeAreaInsets();
   const budgets = useDataStore((s) => s.budgets);
   const transactions = useDataStore((s) => s.transactions);
-  const accounts = useDataStore((s) => s.accounts);
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -39,34 +37,35 @@ export default function BudgetScreen() {
   });
 
   return (
-    <Screen scroll header={<Header title="Бюджеты" showBack />}>
-      <View style={{ gap: spacing.xl }}>
-        <Card variant="glass" padding="xxl">
-          <Text size="sm" style={{ color: '#71717A', marginBottom: 8 }}>
-            Свободно в этом месяце
+    <View style={[s.container, { paddingTop: insets.top }]}>
+      <View style={s.header}>
+        <Ionicons name="wallet-outline" size={22} color="#6366F1" />
+        <Text style={s.headerTitle}>Бюджеты</Text>
+      </View>
+
+      <View style={s.content}>
+        <View style={s.card}>
+          <View style={s.iconWrap}>
+            <Ionicons name="pie-chart-outline" size={18} color="#6366F1" />
+          </View>
+          <Text style={s.cardLabel}>Свободно в этом месяце</Text>
+          <Text style={[s.freeValue, { color: free >= 0 ? '#34D399' : '#F87171' }]}>
+            {free >= 0 ? '+' : ''}{formatCurrency(free)}
           </Text>
-          <Text
-            preset="h1"
-            style={{ color: free >= 0 ? '#34D399' : '#F87171' }}
-          >
-            {free >= 0 ? '+' : ''}
-            {formatCurrency(free)}
-          </Text>
-          <View style={{ flexDirection: 'row', gap: spacing.xxl, marginTop: spacing.lg }}>
+          <View style={s.statsRow}>
             <View>
-              <Text size="xs" style={{ color: '#71717A' }}>Лимит</Text>
-              <Text size="md" weight="semibold">{formatCurrency(totalBudget)}</Text>
+              <Text style={s.statsLabel}>Лимит</Text>
+              <Text style={s.statsValue}>{formatCurrency(totalBudget)}</Text>
             </View>
+            <View style={s.statsDivider} />
             <View>
-              <Text size="xs" style={{ color: '#71717A' }}>Потрачено</Text>
-              <Text size="md" weight="semibold" style={{ color: '#F87171' }}>
-                {formatCurrency(monthlyExpenses)}
-              </Text>
+              <Text style={s.statsLabel}>Потрачено</Text>
+              <Text style={[s.statsValue, { color: '#F87171' }]}>{formatCurrency(monthlyExpenses)}</Text>
             </View>
           </View>
-        </Card>
+        </View>
 
-        <Text preset="h3">По категориям</Text>
+        <Text style={s.sectionTitle}>По категориям</Text>
 
         <FlatList
           data={budgetsWithProgress}
@@ -76,38 +75,73 @@ export default function BudgetScreen() {
             const isNear = item.progress >= (item.alertThreshold ?? 80);
             const color = isOver ? '#F87171' : isNear ? '#FBBF24' : '#34D399';
             return (
-              <Card variant="glass" padding="lg" style={{ marginBottom: spacing.md }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
-                  <Text size="md" weight="medium" numberOfLines={1} style={{ flex: 1 }}>
+              <View style={s.card}>
+                <View style={s.budgetHeader}>
+                  <Text style={s.budgetName} numberOfLines={1}>
                     {item.category?.name || 'Категория'}
                   </Text>
-                  <Text size="sm" weight="semibold" style={{ color }}>
-                    {Math.round(item.progress)}%
-                  </Text>
+                  <Text style={[s.budgetPct, { color }]}>{Math.round(item.progress)}%</Text>
                 </View>
-                <ProgressBar progress={Math.min(item.progress, 100)} color={color} height={6} style={{ marginBottom: spacing.sm }} />
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text size="xs" style={{ color: '#71717A' }}>
-                    {formatCurrency(item.spent)}
-                  </Text>
-                  <Text size="xs" style={{ color: '#A1A1AA' }}>
-                    из {formatCurrency(item.amount)}
-                  </Text>
+                <View style={s.progressTrack}>
+                  <View style={[s.progressFill, { width: `${Math.min(item.progress, 100)}%`, backgroundColor: color }]} />
                 </View>
-              </Card>
+                <View style={s.budgetFooter}>
+                  <Text style={s.budgetFooterText}>{formatCurrency(item.spent)}</Text>
+                  <Text style={s.budgetFooterText}>из {formatCurrency(item.amount)}</Text>
+                </View>
+              </View>
             );
           }}
           scrollEnabled={false}
+          contentContainerStyle={{ gap: 10 }}
           ListEmptyComponent={
-            <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-              <Icon name="pie-chart-outline" size={48} color="#52525B" />
-              <Text size="md" style={{ color: '#71717A', marginTop: 12 }}>
-                Нет бюджетов
-              </Text>
+            <View style={s.empty}>
+              <Ionicons name="pie-chart-outline" size={44} color="#3F3F46" />
+              <Text style={s.emptyText}>Нет бюджетов</Text>
             </View>
           }
         />
       </View>
-    </Screen>
+    </View>
   );
 }
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0A0A0F' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 },
+  content: { flex: 1, paddingHorizontal: 16, paddingBottom: 32 },
+
+  card: {
+    backgroundColor: CARD_BG,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 18,
+    marginBottom: 10,
+  },
+  iconWrap: {
+    width: 34, height: 34, borderRadius: 10,
+    backgroundColor: 'rgba(99,102,241,0.12)',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+  },
+  cardLabel: { fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 },
+  freeValue: { fontSize: 32, fontWeight: '700', letterSpacing: -1, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: BORDER },
+  statsLabel: { fontSize: 12, color: '#52525B', marginBottom: 3 },
+  statsValue: { fontSize: 15, fontWeight: '600', color: '#D4D4D8' },
+  statsDivider: { width: 1, backgroundColor: BORDER, marginHorizontal: 16, alignSelf: 'stretch' },
+
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#A1A1AA', marginBottom: 10, marginTop: 4 },
+
+  budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  budgetName: { fontSize: 15, fontWeight: '600', color: '#E4E4E7', flex: 1 },
+  budgetPct: { fontSize: 14, fontWeight: '700' },
+  progressTrack: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 10 },
+  progressFill: { height: 6, borderRadius: 3 },
+  budgetFooter: { flexDirection: 'row', justifyContent: 'space-between' },
+  budgetFooterText: { fontSize: 12, color: '#52525B' },
+
+  empty: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { fontSize: 14, color: '#3F3F46', marginTop: 8 },
+});

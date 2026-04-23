@@ -72,4 +72,29 @@
 **Почему:** Модель `ExchangeRate` с полем `rate` (1 USD = X валюты) и `date` (YYYY-MM-DD из API). Cron `0 6 * * *` ежедневно обновляет все курсы. API: jsdelivr primary + cloudflare fallback. Формула кросс-курса: `(amount / from.rate) * to.rate`. USD — технический хаб, пользователь его не видит. `refreshRates()` использует `upsert` — все ~300+ валют из API сохраняются в БД. Batch upsert по 50 записей параллельно. `GET /currency/list` с пагинацией и поиском для мобильного CurrencyPicker.
 
 ### Решение: CurrencyPicker — модальный пикер валют с поиском и табами
-**Почему:** 300+ валют в БД требуют удобного поиска. CurrencyPicker — модальный BottomSheet-style компонент с поиском по коду/названию (дебаунс 300мс), табами Все/Фиат/Крипто/Металлы, пагинацией (50 на страницу). Используется в Profile для выбора основной валюты (userCurrency → PATCH /users/profile) и при создании счёта (filterType="FIAT"). `setCurrencyConfig()` теперь принимает символ динамически из API.
+**Почему:** 300+ валют в БД требуют удобного поиска. CurrencyPicker — модальный BottomSheet-style компонент с поиском по коду/названию (дебаунс 300мс), табами Популярные/Все/Фиат/Крипто/Металлы, пагинацией (50 на страницу). Используется в Profile для выбора основной валюты (userCurrency → PATCH /users/profile) и при создании счёта (filterType="FIAT"). `setCurrencyConfig()` теперь принимает символ динамически из API. Названия валют через i18n: `t('currencies.${code}', item.name)` — перевод по коду, fallback на английское название из БД.
+
+### Решение: Миграция на gluestack-ui v3 + NativeWind v4 (2026-04-19)
+**Почему:** Кастомные UI-компоненты не имеют единой дизайн-системы, визуальная нестабильность. gluestack-ui v3 — copy-paste подход (как shadcn/ui), NativeWind (Tailwind для RN) даёт единый язык стилизации. Тёмная тема (#0A0A0F) через CSS variables + NativeWind `vars()`. Заменяет ВСЮ текущую тему: theme/colors.ts, spacing.ts, typography.ts, shadows.ts → tailwind.config.js tokens. CLI `npx gluestack-ui init` падает с OOM — компоненты копируются вручную.
+
+### Решение: react@19.1.0 строго (2026-04-19)
+**Почему:** react-native@0.81.5 содержит react-native-renderer@19.1.0. React и renderer должны иметь **точное совпадение** версий. `react@19.1.4` давал Incompatible React versions error при каждом рендере. Пиним react@19.1.0 + react-dom@19.1.0.
+
+### Решение: react-native-css-interop patch (2026-04-19)
+**Почему:** `react-native-css-interop@0.2.3` в babel.js требует `react-native-worklets/plugin` — это нужно для reanimated 4+. У нас reanimated 3.15, плагин не нужен. Патч через patch-package: закомментирована строка `"react-native-worklets/plugin"` в `node_modules/react-native-css-interop/babel.js`. patch-package добавлен в devDependencies + postinstall скрипт.
+
+### Решение: GluestackUIProvider применяет CSS-переменные (2026-04-19)
+**Почему:** Сгенерированный gluestack `GluestackUIProvider` принимал `mode="dark"` но **не применял** CSS-переменные из `config.ts`. Без этого NativeWind `vars()` не попадал в стиль дерева → все Tailwind-классы (bg-background-0, text-typography-white и т.д.) разрешались в undefined. Фикс: `<View style={config[resolved]} className="flex-1">{children}</View>`. `config` содержит `light`/`dark` объекты с CSS-переменными через `nativewind vars()`.
+
+### Решение: i18n AsyncStorage — async после init (2026-04-19)
+**Почему:** `AsyncStorage.getItem()` вызывался синхронно при загрузке модуля (top-level в index.ts). На Android native модули ещё не инициализированы → `AsyncStorageError: Native module is null`. Фикс: i18n.init() использует device language, затем AsyncStorage.getItem().then() переключает на сохранённый язык.
+
+### Решение: PanResponder вместо gesture-handler для свайпов (2026-04-19)
+**Почему:** react-native-gesture-handler запрещён в проекте (краш Android — NullPointerException, описано в systemArchitecture.md). PanResponder встроен в RN, работает без зависимостей. Используется на transactions screen для свайпа по периодам (влево = прошлый период, вправо = следующий). Порог: dx > 30, dx > dy * 2 (горизонтальный свайп).
+
+### Решение: Number() для BigInt полей из API (2026-04-19)
+**Почему:** Prisma BigInt сериализуется как string (BigInt.toJSON monkey-patch). На фронте тип `number`, но реальное значение — string. `reduce((sum, t) => sum + t.amount, 0)` делает `"0" + "211000"` = `"0211000"` → конкатенация вместо сложения. Фикс: `Number(t.amount)` во всех reduce/sum операциях + при `fetchTransactions` нормализация `amount: Number(t.amount)`. Затронуто: totalAmount, categoryData, getTotalBalance, getMonthlyIncome, getMonthlyExpenses.
+
+### Решение: getHourlyRate двойное деление на 100 (2026-04-21)
+**Почему:** Бэкенд `/life-cost/rate` уже конвертирует `user.hourlyRate` из копеек в рубли (`/ 100`). Фронтенд `fetchGamification` сохранял рубли в `gamification.hourlyRate`. Но `getHourlyRate()` делал ещё `/ 100` — двойное деление. Если hourlyRate = 150000 копеек (1500₽), бэкенд возвращал 1500, фронтенд выдавал 15. Фикс: убрал `/ 100` из `getHourlyRate()`.
+**Почему:** Каждый тип периода (DAY/WEEK/MONTH/YEAR/CUSTOM) использует offset от текущего момента. DAY: offset=-1 = вчера, offset=-2 = позавчера. WEEK: offset=-1 = прошлая неделя (с понедельника). MONTH: offset=-1 = прошлый месяц. CUSTOM: сдвиг на длину диапазона. offset ограничен сверху нулём (нельзя смотреть будущее). Система `getRange(period, offset, customRange)` централизует расчёт дат.

@@ -6,13 +6,13 @@ import {
   Keyboard,
   Platform,
   ScrollView,
+  Pressable,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/authStore';
-import { Input } from '../../src/components/ui/Input';
-import { Button } from '../../src/components/ui/Button';
-import { Text } from '../../src/components/ui/Text';
-import { Icon } from '../../src/components/ui/Icon';
+import { Text } from '../../components/ui/text';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -32,9 +32,10 @@ export default function RegisterScreen() {
       const result = await register({ email, password, name, hourlyRate: hourlyRate ? parseInt(hourlyRate) : undefined });
       console.log('✅ Registration successful:', result);
       router.replace('/main');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Registration failed:', error);
-      alert('Ошибка регистрации: ' + (error.response?.data?.message || error.message || 'Неизвестная ошибка'));
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      alert('Ошибка регистрации: ' + (err.response?.data?.message || err.message || 'Неизвестная ошибка'));
     }
   }, [name, email, password, hourlyRate, register, router]);
 
@@ -47,7 +48,7 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1, backgroundColor: '#0A0A0F' }}
+      className="flex-1 bg-background-0"
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
@@ -59,89 +60,101 @@ export default function RegisterScreen() {
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={{ alignItems: 'center', marginBottom: 40 }}>
-            <View
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 24,
-                backgroundColor: '#6366F1',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 20,
-              }}
-            >
-              <Icon name="wallet" size={32} color="#FFFFFF" />
+          <View className="items-center mb-10">
+            <View className="w-[72px] h-[72px] rounded-3xl bg-primary-500 items-center justify-center mb-5">
+              <Ionicons name="wallet" size={32} color="#FFFFFF" />
             </View>
-            <Text preset="h1" style={{ color: '#FFFFFF' }}>Money Tracker</Text>
-            <Text size="sm" style={{ color: '#71717A', marginTop: 8 }}>
+            <Text className="text-3xl font-bold text-typography-white">Money Tracker</Text>
+            <Text className="text-sm text-typography-400 mt-2">
               Создайте аккаунт
             </Text>
           </View>
 
-          <View style={{ gap: 16 }}>
-            <Button onPress={handleDemo} fullWidth size="lg" variant="success">
-              <Icon name="play" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-              Начать (демо)
-            </Button>
+          <View className="gap-4">
+            <Pressable
+              onPress={handleDemo}
+              className="w-full h-12 rounded-xl bg-success-500 items-center justify-center flex-row"
+            >
+              <Ionicons name="play" size={20} color="#FFFFFF" />
+              <Text className="text-base font-semibold text-typography-white ml-2">
+                Начать (демо)
+              </Text>
+            </Pressable>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 8 }}>
-              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
-              <Text size="sm" style={{ color: '#71717A', paddingHorizontal: 16 }}>
+            <View className="flex-row items-center my-2">
+              <View className="flex-1 h-px bg-outline-200" />
+              <Text className="text-sm text-typography-400 px-4">
                 или заполните форму
               </Text>
-              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
+              <View className="flex-1 h-px bg-outline-200" />
             </View>
 
-            <Input
-              label="Имя"
-              value={name}
-              onChangeText={setName}
-              placeholder="Как вас зовут?"
-            />
+            <View>
+              <Text className="text-sm font-medium text-typography-400 mb-1.5">Имя</Text>
+              <TextInput
+                className="bg-background-0/50 rounded-xl border border-outline-200 px-4 h-12 text-base text-typography-white"
+                value={name}
+                onChangeText={setName}
+                placeholder="Как вас зовут?"
+                placeholderTextColor="#71717A"
+              />
+            </View>
 
-            <Input
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="your@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
+            <View>
+              <Text className="text-sm font-medium text-typography-400 mb-1.5">Email</Text>
+              <TextInput
+                className="bg-background-0/50 rounded-xl border border-outline-200 px-4 h-12 text-base text-typography-white"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="your@email.com"
+                placeholderTextColor="#71717A"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
 
-            <Input
-              label="Пароль"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Минимум 6 символов"
-              secureTextEntry
-            />
+            <View>
+              <Text className="text-sm font-medium text-typography-400 mb-1.5">Пароль</Text>
+              <TextInput
+                className="bg-background-0/50 rounded-xl border border-outline-200 px-4 h-12 text-base text-typography-white"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Минимум 6 символов"
+                placeholderTextColor="#71717A"
+                secureTextEntry
+              />
+            </View>
 
-            <Input
-              label="Часовая ставка (₽/час)"
-              value={hourlyRate}
-              onChangeText={setHourlyRate}
-              placeholder="Например: 500"
-              keyboardType="number-pad"
-            />
+            <View>
+              <Text className="text-sm font-medium text-typography-400 mb-1.5">Часовая ставка (₽/час)</Text>
+              <TextInput
+                className="bg-background-0/50 rounded-xl border border-outline-200 px-4 h-12 text-base text-typography-white"
+                value={hourlyRate}
+                onChangeText={setHourlyRate}
+                placeholder="Например: 500"
+                placeholderTextColor="#71717A"
+                keyboardType="number-pad"
+              />
+            </View>
 
-            <Button onPress={handleRegister} loading={isLoading} fullWidth size="lg">
-              Зарегистрироваться
-            </Button>
+            <Pressable
+              onPress={handleRegister}
+              disabled={isLoading}
+              className={`w-full h-12 rounded-xl items-center justify-center ${isLoading ? 'bg-primary-500/40' : 'bg-primary-500'}`}
+            >
+              <Text className="text-base font-semibold text-typography-white">Зарегистрироваться</Text>
+            </Pressable>
           </View>
 
-          <View style={{ alignItems: 'center', marginTop: 32 }}>
-            <Text size="sm" style={{ color: '#71717A' }}>
+          <View className="items-center mt-8">
+            <Text className="text-sm text-typography-400">
               Уже есть аккаунт?
             </Text>
-            <Text
-              size="sm"
-              weight="semibold"
-              style={{ color: '#6366F1', marginTop: 4 }}
-              onPress={() => router.push('/auth/login')}
-            >
-              Войти
-            </Text>
+            <Pressable onPress={() => router.push('/auth/login')}>
+              <Text className="text-sm font-semibold text-primary-400 mt-1">
+                Войти
+              </Text>
+            </Pressable>
           </View>
         </ScrollView>
       </TouchableWithoutFeedback>

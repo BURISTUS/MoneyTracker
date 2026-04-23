@@ -1,24 +1,40 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Pressable,
   ScrollView,
   TouchableOpacity,
+  PanResponder,
+  Animated,
+  Modal as RNModal,
+  Platform,
+  Text as RNText,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
-import { useAuthStore } from '../../../src/stores/authStore';
-import { Screen } from '../../../src/components/ui/Screen';
-import { Text } from '../../../src/components/ui/Text';
-import { Icon } from '../../../src/components/ui/Icon';
+import { Text } from '../../../components/ui/text';
 import { AddTransactionModal } from '../../../src/components/ui/AddTransactionModal';
 import { TransactionActionModal } from '../../../src/components/ui/TransactionActionModal';
+import { DateRangePickerModal } from '../../../src/components/ui/DateRangePickerModal';
+import type { DateRange } from '../../../src/components/ui/DateRangePickerModal';
 import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import { formatCurrency, formatDate } from '../../../src/utils/formatters';
-import type { TransactionType, Category, Transaction } from '../../../src/types';
+import type { TransactionType, Transaction } from '../../../src/types';
 import { TransactionType as TransactionTypeEnum } from '../../../src/types';
 
 type TimePeriod = 'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'CUSTOM';
+
+const MONTHS_NOMINATIVE = [
+  'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+  'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
+];
+
+const MONTHS_GENITIVE = [
+  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+];
 
 function formatLifeHours(amountKopecks: number, hourlyRateRubles: number): string | null {
   if (hourlyRateRubles <= 0) return null;
@@ -29,8 +45,84 @@ function formatLifeHours(amountKopecks: number, hourlyRateRubles: number): strin
   return `${(hours / 24).toFixed(1)} дн`;
 }
 
+function getRange(period: TimePeriod, offset: number, customRange: DateRange | null): { startDate: Date; endDate: Date } {
+  const now = new Date();
+
+  if (period === 'CUSTOM' && customRange) {
+    const duration = customRange.endDate.getTime() - customRange.startDate.getTime();
+    const baseStart = new Date(customRange.startDate.getTime() + duration * offset);
+    const baseEnd = new Date(customRange.endDate.getTime() + duration * offset);
+    return { startDate: baseStart, endDate: baseEnd };
+  }
+
+  switch (period) {
+    case 'DAY': {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+      return { startDate: d, endDate: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59) };
+    }
+    case 'WEEK': {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const dayOfWeek = today.getDay() || 7;
+      const thisMonday = new Date(today.getTime() - (dayOfWeek - 1) * 86400000);
+      const start = new Date(thisMonday.getTime() + offset * 7 * 86400000);
+      const end = new Date(start.getTime() + 6 * 86400000);
+      return { startDate: start, endDate: new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59) };
+    }
+    case 'MONTH': {
+      const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0, 23, 59, 59);
+      return { startDate: start, endDate: end };
+    }
+    case 'YEAR': {
+      const start = new Date(now.getFullYear() + offset, 0, 1);
+      const end = new Date(now.getFullYear() + offset, 11, 31, 23, 59, 59);
+      return { startDate: start, endDate: end };
+    }
+    default: {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return { startDate: d, endDate: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59) };
+    }
+  }
+}
+
+function getRangeLabel(period: TimePeriod, offset: number, customRange: DateRange | null): string {
+  const now = new Date();
+
+  switch (period) {
+    case 'DAY': {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+      if (offset === 0) return 'Сегодня';
+      if (offset === -1) return 'Вчера';
+      if (offset === -2) return 'Позавчера';
+      return `${d.getDate()} ${MONTHS_GENITIVE[d.getMonth()]}`;
+    }
+    case 'WEEK': {
+      if (offset === 0) return 'Эта неделя';
+      if (offset === -1) return 'Прошлая неделя';
+      const range = getRange('WEEK', offset, null);
+      return `${range.startDate.getDate()} ${MONTHS_GENITIVE[range.startDate.getMonth()]} — ${range.endDate.getDate()} ${MONTHS_GENITIVE[range.endDate.getMonth()]}`;
+    }
+    case 'MONTH': {
+      const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      return `${MONTHS_NOMINATIVE[d.getMonth()]} ${d.getFullYear()}`;
+    }
+    case 'YEAR': {
+      return `${now.getFullYear() + offset}`;
+    }
+    default: {
+      if (customRange) {
+        const s = customRange.startDate;
+        const e = customRange.endDate;
+        return `${s.getDate()} ${MONTHS_GENITIVE[s.getMonth()]} — ${e.getDate()} ${MONTHS_GENITIVE[e.getMonth()]}`;
+      }
+      return 'Период';
+    }
+  }
+}
+
 export default function TransactionsDashboardScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const transactions = useDataStore((s) => s.transactions);
   const categories = useDataStore((s) => s.categories);
   const accounts = useDataStore((s) => s.accounts);
@@ -38,46 +130,51 @@ export default function TransactionsDashboardScreen() {
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
 
   const [period, setPeriod] = useState<TimePeriod>('MONTH');
+  const [offset, setOffset] = useState(0);
   const [type, setType] = useState<TransactionType>(TransactionTypeEnum.EXPENSE);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [customRange, setCustomRange] = useState<DateRange | null>(null);
+  const [showRangePicker, setShowRangePicker] = useState(false);
+  const [showAccountPicker, setShowAccountPicker] = useState(false);
+  const [currentAccountId, setCurrentAccountId] = useState<string | null>(accounts.length > 0 ? accounts[0].id : null);
+
+  const range = useMemo(() => getRange(period, offset, customRange), [period, offset, customRange]);
+
+  const periodSummary = useMemo(() => {
+    const inRange = transactions.filter((t) => {
+      const d = new Date(t.date);
+      return d >= range.startDate && d <= range.endDate;
+    });
+    const income = inRange
+      .filter((t) => t.type === 'INCOME')
+      .filter((t) => !currentAccountId || t.accountId === currentAccountId)
+      .reduce((s, t) => s + Number(t.amount), 0);
+    const expense = inRange
+      .filter((t) => t.type === 'EXPENSE')
+      .filter((t) => !currentAccountId || t.accountId === currentAccountId)
+      .reduce((s, t) => s + Number(t.amount), 0);
+    return { income, expense, balance: income - expense };
+  }, [transactions, range, currentAccountId]);
 
   const filteredTransactions = useMemo(() => {
-    let filtered = transactions.filter((t) => t.type === type);
-
-    const now = new Date();
-    let startDate: Date;
-
-    switch (period) {
-      case 'DAY':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
-      case 'WEEK':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'MONTH':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'YEAR':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
-      case 'CUSTOM':
-      default:
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    }
-
-    filtered = filtered.filter((t) => new Date(t.date) >= startDate);
+    const filtered = transactions
+      .filter((t) => t.type === type)
+      .filter((t) => !currentAccountId || t.accountId === currentAccountId)
+      .filter((t) => {
+        const d = new Date(t.date);
+        return d >= range.startDate && d <= range.endDate;
+      });
 
     if (selectedCategory) {
-      filtered = filtered.filter((t) => t.categoryId === selectedCategory);
+      return filtered.filter((t) => t.categoryId === selectedCategory);
     }
-
     return filtered;
-  }, [transactions, type, period, selectedCategory]);
+  }, [transactions, type, range, selectedCategory, currentAccountId]);
 
   const totalAmount = useMemo(() => {
-    return filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
+    return filteredTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
   }, [filteredTransactions]);
 
   const totalLifeHours = useMemo(() => {
@@ -86,20 +183,16 @@ export default function TransactionsDashboardScreen() {
 
   const categoryData = useMemo(() => {
     const categoryTotals = new Map<string, number>();
-
     filteredTransactions.forEach((t) => {
       const current = categoryTotals.get(t.categoryId) || 0;
-      categoryTotals.set(t.categoryId, current + t.amount);
+      categoryTotals.set(t.categoryId, current + Number(t.amount));
     });
-
     const data = Array.from(categoryTotals.entries()).map(([categoryId, amount]) => ({
       category: categories.find((c) => c.id === categoryId)!,
       amount,
       percentage: totalAmount > 0 ? (amount / totalAmount) * 100 : 0,
     }));
-
     data.sort((a, b) => b.amount - a.amount);
-
     return data.slice(0, 8);
   }, [filteredTransactions, categories, totalAmount]);
 
@@ -123,205 +216,207 @@ export default function TransactionsDashboardScreen() {
 
   const handleTransactionComplete = useCallback(() => {
     setPeriod('DAY');
+    setOffset(0);
     setSelectedCategory(null);
   }, []);
 
+  const changePeriodType = useCallback((newPeriod: TimePeriod) => {
+    setPeriod(newPeriod);
+    setOffset(0);
+  }, []);
+
+  const swipeRef = useRef({ startX: 0 });
+  const contentOpacity = useRef(new Animated.Value(1)).current;
+  const isAnimatingOffset = useRef(false);
+
+  const animateOffset = useCallback((delta: number) => {
+    if (isAnimatingOffset.current) return;
+    isAnimatingOffset.current = true;
+
+    Animated.timing(contentOpacity, {
+      toValue: 0,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(() => {
+      setOffset((o) => Math.min(0, o + delta));
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }).start(() => {
+        isAnimatingOffset.current = false;
+      });
+    });
+  }, [contentOpacity]);
+
+  const panResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > 30 && Math.abs(gs.dx) > Math.abs(gs.dy) * 2,
+    onPanResponderRelease: (_, gs) => {
+      if (Math.abs(gs.dx) < 40) return;
+      if (gs.dx > 0) animateOffset(-1);
+      else animateOffset(1);
+    },
+  }), [animateOffset]);
+
+  const rangeLabel = getRangeLabel(period, offset, customRange);
+
   return (
-    <Screen style={{ padding: 0 }}>
-      <View style={{ flex: 1, backgroundColor: '#0A0A0F' }}>
-        {/* Header */}
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: 16,
-            paddingBottom: 12,
-            backgroundColor: '#0A0A0F',
-          }}
-        >
-          {/* Account selector */}
+    <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
+      <View className="flex-1">
+        <View className="px-4 pb-2 pt-2">
           <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 12,
-            }}
+            onPress={() => setShowAccountPicker(true)}
+            activeOpacity={0.6}
+            className="self-start flex-row items-center gap-1.5 bg-[#1C1C1E] rounded-full px-3 py-1.5"
           >
-            <View
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Icon name="wallet-outline" size={22} color="#6366F1" />
-            </View>
-            <View>
-              <Text size="xs" style={{ color: '#8E8E93', marginBottom: 2 }}>
-                Счет
+            <Text className="text-sm font-medium text-[#F5F5F5]">
+              {currentAccountId
+                ? accounts.find((a) => a.id === currentAccountId)?.name || 'Счёт'
+                : 'Все счета'}
+            </Text>
+            {currentAccountId && (
+              <Text className="text-sm text-[#F5F5F5]">
+                {' • '}
+                {formatCurrency(accounts.find((a) => a.id === currentAccountId)?.balance || 0)}
               </Text>
-              <Text size="sm" weight="semibold" style={{ color: '#FFFFFF' }}>
-                {accounts.length > 0 ? accounts[0].name : 'Все счета'}
-              </Text>
-            </View>
+            )}
+            <Ionicons name="chevron-down" size={14} color="#A1A1AA" />
+          </TouchableOpacity>
+        </View>
+
+        <View className="flex-row items-center px-4 mb-2 gap-2">
+          <TouchableOpacity
+            onPress={() => animateOffset(-1)}
+            className="w-9 h-9 items-center justify-center rounded-full bg-background-50/40"
+          >
+            <Ionicons name="chevron-back" size={22} color="#818CF8" />
           </TouchableOpacity>
 
-          {/* Balance */}
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text size="xs" style={{ color: '#8E8E93', marginBottom: 2 }}>
-              Баланс
-            </Text>
-            <Text size="md" weight="bold" style={{ color: '#FFFFFF' }}>
-              {accounts.length > 0
-                ? formatCurrency(accounts.reduce((sum, a) => sum + a.balance, 0))
-                : '0 ₽'}
-            </Text>
-          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 6 }}
+            className="flex-1"
+          >
+            {[
+              { key: 'DAY', label: 'День' },
+              { key: 'WEEK', label: 'Неделя' },
+              { key: 'MONTH', label: 'Месяц' },
+              { key: 'YEAR', label: 'Год' },
+              { key: 'CUSTOM', label: 'Период' },
+            ].map((item) => (
+              <TouchableOpacity
+                key={item.key}
+                onPress={() => {
+                  if (item.key === 'CUSTOM') {
+                    setShowRangePicker(true);
+                  }
+                  changePeriodType(item.key as TimePeriod);
+                }}
+                className={`px-3 h-7 items-center justify-center rounded-lg border ${
+                  period === item.key
+                    ? 'bg-primary-500/20 border-primary-400'
+                    : 'bg-background-50/30 border-outline-200'
+                }`}
+              >
+                <Text
+                  className={`text-[11px] ${period === item.key ? 'font-semibold text-primary-400' : 'text-typography-400'}`}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <TouchableOpacity
+            onPress={() => animateOffset(1)}
+            disabled={offset >= 0}
+            className="w-9 h-9 items-center justify-center rounded-full bg-background-50/40"
+            style={{ opacity: offset >= 0 ? 0.2 : 1 }}
+          >
+            <Ionicons name="chevron-forward" size={22} color="#818CF8" />
+          </TouchableOpacity>
         </View>
 
-        {/* Type toggle */}
-        <View
-          style={{
-            flexDirection: 'row',
-            paddingHorizontal: 16,
-            paddingBottom: 12,
-            gap: 8,
-          }}
-        >
-          {[
-            { key: 'EXPENSE' as const, label: 'Расходы', color: '#FF3B30' },
-            { key: 'INCOME' as const, label: 'Доходы', color: '#34C759' },
-          ].map((tab) => (
-            <TouchableOpacity
-              key={tab.key}
-              onPress={() => {
-                setType(tab.key as any);
-                setSelectedCategory(null);
-              }}
-              style={{
-                flex: 1,
-                paddingVertical: 12,
-                alignItems: 'center',
-                backgroundColor:
-                  type === tab.key ? tab.color + '20' : 'transparent',
-                borderRadius: 12,
-                borderWidth: 2,
-                borderColor: type === tab.key ? tab.color : 'transparent',
-              }}
-            >
-              <Text
-                size="md"
-                weight="semibold"
-                style={{
-                  color: type === tab.key ? tab.color : '#8E8E93',
-                }}
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View className="items-center mb-1">
+            <Text className="text-sm font-medium text-typography-400">
+              {rangeLabel}
+            </Text>
         </View>
 
-        {/* Period selector */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{
-            paddingHorizontal: 16,
-            marginBottom: 8,
-          }}
-          contentContainerStyle={{ gap: 8 }}
+        <Animated.View
+          className="flex-1"
+          style={{ opacity: contentOpacity }}
+          {...panResponder.panHandlers}
         >
-          {[
-            { key: 'DAY', label: 'День' },
-            { key: 'WEEK', label: 'Неделя' },
-            { key: 'MONTH', label: 'Месяц' },
-            { key: 'YEAR', label: 'Год' },
-            { key: 'CUSTOM', label: 'Период' },
-          ].map((item) => (
-            <TouchableOpacity
-              key={item.key}
-              onPress={() => setPeriod(item.key as TimePeriod)}
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 10,
-                backgroundColor:
-                  period === item.key ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor:
-                  period === item.key ? '#6366F1' : 'rgba(255, 255, 255, 0.1)',
-              }}
-            >
-              <Text
-                size="xs"
-                weight={period === item.key ? 'semibold' : 'regular'}
-                style={{
-                  color:
-                    period === item.key ? '#FFFFFF' : '#8E8E93',
-                }}
-              >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+          <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+            <View className="px-4 py-4">
+              <View className="flex-row gap-3">
+                <TouchableOpacity
+                  onPress={() => {
+                    setType('EXPENSE' as TransactionType);
+                    setSelectedCategory(null);
+                  }}
+                  activeOpacity={0.7}
+                  className="flex-1 rounded-2xl p-4 border-2"
+                  style={{
+                    backgroundColor: type === 'EXPENSE' ? 'rgba(255, 59, 48, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                    borderColor: type === 'EXPENSE' ? 'rgba(255, 59, 48, 0.4)' : 'transparent',
+                  }}
+                >
+                  <RNText style={{ fontSize: 13, color: '#FF6B6B', fontWeight: '600' }}>РАСХОДЫ</RNText>
+                  <RNText style={{ fontSize: 32, fontWeight: 'bold', color: '#FF3B30', marginTop: 4 }}>
+                    {formatCurrency(periodSummary.expense)}
+                  </RNText>
+                  {type === 'EXPENSE' && totalLifeHours && (
+                    <RNText style={{ fontSize: 16, color: '#FF9500', marginTop: 6 }}>⏱ {totalLifeHours}</RNText>
+                  )}
+                </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-          {/* Summary */}
-          <View style={{ paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center' }}>
-            <Text
-              size="xxxl"
-              weight="bold"
-              style={{ color: type === 'EXPENSE' ? '#FF3B30' : '#34C759', lineHeight: 44 }}
-            >
-              {formatCurrency(totalAmount)}
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 16, marginTop: 8, alignItems: 'center' }}>
-              <Text size="sm" style={{ color: '#8E8E93' }}>
-                {type === 'EXPENSE' ? 'Расходы' : 'Доходы'} за период
-              </Text>
-              {type === 'EXPENSE' && totalLifeHours && (
-                <>
-                  <Text size="sm" style={{ color: '#8E8E93' }}>·</Text>
-                  <Text size="sm" style={{ color: '#FBBF24' }}>⏱ {totalLifeHours}</Text>
-                </>
-              )}
+                <TouchableOpacity
+                  onPress={() => {
+                    setType('INCOME' as TransactionType);
+                    setSelectedCategory(null);
+                  }}
+                  activeOpacity={0.7}
+                  className="flex-1 rounded-2xl p-4 border-2"
+                  style={{
+                    backgroundColor: type === 'INCOME' ? 'rgba(52, 199, 89, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                    borderColor: type === 'INCOME' ? 'rgba(52, 199, 89, 0.4)' : 'transparent',
+                  }}
+                >
+                  <RNText style={{ fontSize: 13, color: '#5ED98A', fontWeight: '600' }}>ДОХОДЫ</RNText>
+                  <RNText style={{ fontSize: 32, fontWeight: 'bold', color: '#34C759', marginTop: 4 }}>
+                    {formatCurrency(periodSummary.income)}
+                  </RNText>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {categoryData.length > 0 && (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 16 }}>
+              <View className="flex-row flex-wrap justify-center gap-2.5 mt-5">
                 {categoryData.slice(0, 6).map((item) => {
                   const isSelected = selectedCategory === item.category.id;
                   return (
-                    <Pressable
-                      key={item.category.id}
-                      onPress={() => handleCategoryPress(item.category.id)}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 6,
-                        backgroundColor: isSelected ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
-                        paddingHorizontal: 10,
-                        paddingVertical: 6,
-                        borderRadius: 16,
-                        borderWidth: 1,
-                        borderColor: isSelected ? (item.category.color || '#6366F1') : 'transparent',
-                      }}
-                    >
-                      <CategoryIcon
-                        icon={item.category.icon}
-                        color={item.category.color || '#6366F1'}
-                        size={14}
-                      />
-                      <Text size="xs" style={{ color: isSelected ? '#FFFFFF' : '#8E8E93' }}>
+                      <Pressable
+                        key={item.category.id}
+                        onPress={() => handleCategoryPress(item.category.id)}
+                        className={`flex-row items-center gap-2 px-3.5 py-2 rounded-full border ${
+                          isSelected
+                            ? 'bg-background-50/80'
+                            : 'bg-background-50/30 border-transparent'
+                        }`}
+                        style={isSelected ? { borderColor: item.category.color || '#6366F1' } : undefined}
+                      >
+                        <CategoryIcon
+                          icon={item.category.icon}
+                          color={item.category.color || '#6366F1'}
+                          size={16}
+                        />
+                      <Text className={`text-sm ${isSelected ? 'text-typography-white' : 'text-typography-400'}`}>
                         {item.category.name}
                       </Text>
-                      <Text size="xs" weight="semibold" style={{ color: '#FFFFFF' }}>
+                      <Text className="text-sm font-semibold text-typography-white">
                         {Math.round(item.percentage)}%
                       </Text>
                     </Pressable>
@@ -329,61 +424,29 @@ export default function TransactionsDashboardScreen() {
                 })}
               </View>
             )}
-          </View>
 
-          {/* Transactions list */}
-          <View style={{ paddingHorizontal: 16 }}>
-            <Text
-              size="xs"
-              weight="semibold"
-              style={{
-                color: '#8E8E93',
-                marginBottom: 16,
-                textTransform: 'uppercase',
-              }}
-            >
+            <View className="px-4">
+            <Text className="text-base font-semibold text-typography-400 mb-5 uppercase">
               Операции
             </Text>
 
             {isLoading ? (
-              <View
-                style={{
-                  alignItems: 'center',
-                  paddingVertical: 60,
-                }}
-              >
-                <Text size="md" style={{ color: '#8E8E93' }}>
-                  Загрузка...
-                </Text>
+              <View className="items-center py-16">
+                <Text className="text-base text-typography-400">Загрузка...</Text>
               </View>
             ) : Object.keys(groupedTransactions).length === 0 ? (
-              <View
-                style={{
-                  alignItems: 'center',
-                  paddingVertical: 80,
-                }}
-              >
-                <Icon name="receipt-outline" size={64} color="#3A3A3C" />
-                <Text size="md" style={{ color: '#8E8E93', marginTop: 16 }}>
-                  Нет операций
-                </Text>
+              <View className="items-center py-20">
+                <Ionicons name="receipt-outline" size={64} color="#3A3A3C" />
+                <Text className="text-base text-typography-400 mt-4">Нет операций</Text>
               </View>
             ) : (
               Object.entries(groupedTransactions).map(([date, items]) => (
-                <View key={date} style={{ marginBottom: 24 }}>
-                  <Text
-                    size="xs"
-                    weight="medium"
-                    style={{
-                      color: '#8E8E93',
-                      marginBottom: 12,
-                      textTransform: 'uppercase',
-                    }}
-                  >
+                <View key={date} className="mb-6">
+                  <Text className="text-sm font-medium text-typography-400 mb-3 uppercase">
                     {date}
                   </Text>
 
-                  <View style={{ gap: 10 }}>
+                  <View className="gap-2.5">
                     {items.map((transaction) => {
                       const category = categories.find(
                         (c) => c.id === transaction.categoryId,
@@ -396,60 +459,42 @@ export default function TransactionsDashboardScreen() {
                         <TouchableOpacity
                           key={transaction.id}
                           onPress={() => setSelectedTransaction(transaction)}
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                            borderRadius: 14,
-                            padding: 14,
-                            gap: 14,
-                          }}
+                           className="flex-row items-center bg-background-50/30 rounded-[16px] p-4 gap-4"
                         >
-                          {/* Category icon */}
-                          <CategoryIcon
+                           <CategoryIcon
                             icon={category?.icon || ''}
                             color={category?.color || (type === 'EXPENSE' ? '#FF3B30' : '#34C759')}
-                            size={24}
+                            size={28}
                           />
 
-                          {/* Details */}
-                          <View style={{ flex: 1 }}>
-                            <Text
-                              size="md"
-                              weight="medium"
-                              style={{ color: '#FFFFFF' }}
-                            >
+                           <View className="flex-1">
+                            <Text className="text-lg font-medium text-typography-white">
                               {category?.name || 'Без категории'}
                             </Text>
                             {transaction.description && (
-                              <Text size="xs" style={{ color: '#8E8E93' }}>
+                              <Text className="text-sm text-typography-400">
                                 {transaction.description}
                               </Text>
                             )}
                             {transaction.type === 'EXPENSE' && (() => {
                               const hours = formatLifeHours(transaction.amount, getHourlyRate());
                               return hours ? (
-                                <Text size="xs" style={{ color: '#FBBF24' }}>
+                                <Text className="text-sm text-warning-400">
                                   ⏱ {hours} работы
                                 </Text>
                               ) : null;
                             })()}
                             {account && (
-                              <Text size="xs" style={{ color: '#8E8E93' }}>
+                              <Text className="text-sm text-typography-400">
                                 {account.name}
                               </Text>
                             )}
                           </View>
 
-                          {/* Amount */}
-                          <Text
-                            size="md"
-                            weight="bold"
-                            style={{
-                              color:
-                                type === 'EXPENSE' ? '#FF3B30' : '#34C759',
-                            }}
-                          >
+                      <Text
+                        className="text-lg font-bold"
+                        style={{ color: type === 'EXPENSE' ? '#FF3B30' : '#34C759' }}
+                      >
                             {type === 'EXPENSE' ? '− ' : '+ '}
                             {formatCurrency(transaction.amount)}
                           </Text>
@@ -462,32 +507,17 @@ export default function TransactionsDashboardScreen() {
             )}
           </View>
         </ScrollView>
+        </Animated.View>
 
-        {/* Add button */}
         <TouchableOpacity
           onPress={handleAddTransaction}
-          style={{
-            position: 'absolute',
-            bottom: 24,
-            right: 24,
-            width: 64,
-            height: 64,
-            borderRadius: 32,
-            backgroundColor: '#6366F1',
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: '#6366F1',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.4,
-            shadowRadius: 8,
-            elevation: 8,
-          }}
+          className="absolute right-5 w-14 h-14 rounded-full bg-primary-500 items-center justify-center"
+          style={{ bottom: 90, shadowColor: '#6366F1', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 }}
         >
-          <Icon name="add" size={32} color="#FFFFFF" />
+          <Ionicons name="add" size={28} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
-      {/* Add transaction modal */}
       <AddTransactionModal
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
@@ -495,12 +525,92 @@ export default function TransactionsDashboardScreen() {
         initialType={type}
       />
 
-      {/* Transaction action modal */}
       <TransactionActionModal
         visible={!!selectedTransaction}
         transaction={selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
       />
-    </Screen>
+
+      <DateRangePickerModal
+        visible={showRangePicker}
+        currentRange={customRange}
+        onSelect={(r) => {
+          setCustomRange(r);
+          changePeriodType('CUSTOM');
+          setShowRangePicker(false);
+        }}
+        onClose={() => setShowRangePicker(false)}
+      />
+
+      <RNModal visible={showAccountPicker} animationType="slide" onRequestClose={() => setShowAccountPicker(false)} transparent>
+        <View className="flex-1 bg-[rgba(0,0,0,0.5)] justify-end">
+          <Pressable className="flex-1" onPress={() => setShowAccountPicker(false)} />
+          <View
+            className="bg-[#1C1C1E] rounded-t-3xl"
+            style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16 }}
+          >
+            <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-4" />
+
+            <View className="px-5">
+              <View className="flex-row items-center justify-between mb-4">
+                <Text bold className="text-lg text-white">Выбрать счёт</Text>
+                <Pressable onPress={() => setShowAccountPicker(false)} hitSlop={12}>
+                  <Ionicons name="close" size={22} color="#71717A" />
+                </Pressable>
+              </View>
+
+              <TouchableOpacity
+                key="__all__"
+                onPress={() => {
+                  setCurrentAccountId(null);
+                  setShowAccountPicker(false);
+                }}
+                className={`flex-row items-center justify-between py-3.5 px-4 rounded-xl border mb-2 ${
+                  !currentAccountId ? 'bg-primary-500/10 border-primary-400' : 'bg-background-50/30 border-transparent'
+                }`}
+              >
+                <View className="flex-row items-center gap-3">
+                  <View className="w-11 h-11 rounded-full bg-primary-500/20 items-center justify-center">
+                    <Ionicons name="layers" size={20} color="#818CF8" />
+                  </View>
+                  <View>
+                    <Text bold className="text-base text-white">Все счета</Text>
+                    <Text className="text-sm text-typography-400">{formatCurrency(accounts.reduce((sum, a) => sum + Number(a.balance), 0))}</Text>
+                  </View>
+                </View>
+                {!currentAccountId && <Ionicons name="checkmark" size={20} color="#818CF8" />}
+              </TouchableOpacity>
+
+              {accounts.map((account) => {
+                const isSelected = account.id === currentAccountId;
+                return (
+                  <TouchableOpacity
+                    key={account.id}
+                    onPress={() => {
+                      setCurrentAccountId(account.id);
+                      setShowAccountPicker(false);
+                    }}
+                    className={`flex-row items-center justify-between py-3.5 px-4 rounded-xl border mb-2 ${
+                      isSelected ? 'bg-primary-500/10 border-primary-400' : 'bg-background-50/30 border-transparent'
+                    }`}
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-11 h-11 rounded-full bg-primary-500/20 items-center justify-center">
+                        <Ionicons name="card" size={20} color="#818CF8" />
+                      </View>
+                      <View>
+                        <Text bold className="text-base text-white">{account.name}</Text>
+                        <Text className="text-sm text-typography-400">{formatCurrency(account.balance)}</Text>
+                      </View>
+                    </View>
+                    {isSelected && <Ionicons name="checkmark" size={20} color="#818CF8" />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      </RNModal>
+    </View>
   );
 }

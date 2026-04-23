@@ -6,11 +6,14 @@ import {
   ScrollView,
   Alert,
   TextInput,
+  RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDataStore } from '../../src/stores/dataStore';
-import { Screen } from '../../src/components/ui/Screen';
-import { Text } from '../../src/components/ui/Text';
+import { Text } from '../../components/ui/text';
 import { Loading } from '../../src/components/ui/Loading';
 import { formatCurrency } from '../../src/utils/formatters';
 import { WishlistStatus } from '../../src/types';
@@ -23,6 +26,7 @@ function formatHours(hours: number): string {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const initializeData = useDataStore((s) => s.initializeData);
   const transactions = useDataStore((s) => s.transactions);
   const wishlist = useDataStore((s) => s.wishlist);
@@ -165,331 +169,234 @@ export default function HomeScreen() {
 
   if (isLoading && transactions.length === 0) {
     return (
-      <Screen scroll={false}>
-        <View style={{ paddingTop: 60 }}>
+      <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
+        <View className="pt-16">
           <Loading message="Загрузка..." />
         </View>
-      </Screen>
+      </View>
     );
   }
 
   return (
-    <Screen refreshing={refreshing} onRefresh={onRefresh}>
-      <View style={{ gap: 20 }}>
-
-        {/* === 1. БАЛАНС ВРЕМЕНИ === */}
-        <View style={{ paddingTop: 4 }}>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{
-              flex: 1,
-              backgroundColor: 'rgba(255, 59, 48, 0.08)',
-              borderRadius: 16,
-              padding: 18,
-              borderWidth: 1,
-              borderColor: 'rgba(255, 59, 48, 0.15)',
-            }}>
-              <Text size="xs" style={{ color: '#FF3B30', marginBottom: 6 }}>
-                Потрачено жизни
-              </Text>
-              <Text size="xxl" weight="bold" style={{ color: '#FFFFFF' }}>
-                {spentHours > 0 ? formatHours(spentHours) : '—'}
-              </Text>
-              {hourlyRate > 0 && (
-                <Text size="xs" style={{ color: '#8E8E93', marginTop: 4 }}>
-                  {hourlyRate.toFixed(0)} ₽/ч
+    <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 80 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />
+        }
+      >
+        <View className="gap-5">
+          <View className="pt-1">
+            <View className="flex-row gap-2.5">
+              <View className="flex-1 bg-error-500/8 rounded-2xl p-4.5 border border-error-500/15">
+                <Text className="text-xs text-error-400 mb-1.5">Потрачено жизни</Text>
+                <Text className="text-2xl font-bold text-typography-white">
+                  {spentHours > 0 ? formatHours(spentHours) : '—'}
                 </Text>
-              )}
-            </View>
+                {hourlyRate > 0 && (
+                  <Text className="text-xs text-typography-400 mt-1">
+                    {hourlyRate.toFixed(0)} ₽/ч
+                  </Text>
+                )}
+              </View>
 
-            <View style={{
-              flex: 1,
-              backgroundColor: 'rgba(52, 199, 89, 0.08)',
-              borderRadius: 16,
-              padding: 18,
-              borderWidth: 1,
-              borderColor: 'rgba(52, 199, 89, 0.15)',
-            }}>
-              <Text size="xs" style={{ color: '#34C759', marginBottom: 6 }}>
-                Сохранено
-              </Text>
-              <Text size="xxl" weight="bold" style={{ color: '#FFFFFF' }}>
-                {savedHours > 0 ? formatHours(savedHours) : '—'}
-              </Text>
-              <Text size="xs" style={{ color: '#8E8E93', marginTop: 4 }}>
-                {wishlist.filter((w) => w.status === 'REJECTED').length} отказов
-              </Text>
+              <View className="flex-1 bg-success-500/8 rounded-2xl p-4.5 border border-success-500/15">
+                <Text className="text-xs text-success-400 mb-1.5">Сохранено</Text>
+                <Text className="text-2xl font-bold text-typography-white">
+                  {savedHours > 0 ? formatHours(savedHours) : '—'}
+                </Text>
+                <Text className="text-xs text-typography-400 mt-1">
+                  {wishlist.filter((w) => w.status === 'REJECTED').length} отказов
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* === 2. ЗОНА ПРИНЯТИЯ РЕШЕНИЙ === */}
-        {readyItems.length > 0 && (
-          <View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <Text size="md" weight="semibold" style={{ color: '#FBBF24' }}>
-                Решите сейчас
-              </Text>
-              <Pressable onPress={() => router.push('/main/wishlist/' as any)}>
-                <Text size="xs" style={{ color: '#6366F1' }}>Все желания</Text>
-              </Pressable>
-            </View>
-
-            <View style={{ gap: 10 }}>
-              {readyItems.map((item) => {
-                const hours = hourlyRate > 0 ? (item.price / 100) / hourlyRate : 0;
-                return (
-                  <View
-                    key={item.id}
-                    style={{
-                      backgroundColor: 'rgba(251, 191, 36, 0.06)',
-                      borderRadius: 16,
-                      padding: 18,
-                      borderWidth: 1,
-                      borderColor: 'rgba(251, 191, 36, 0.15)',
-                    }}
-                  >
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text size="lg" weight="semibold" style={{ color: '#FFFFFF' }}>
-                          {item.name}
-                        </Text>
-                        {item.description ? (
-                          <Text size="xs" style={{ color: '#8E8E93', marginTop: 2 }} numberOfLines={1}>
-                            {item.description}
-                          </Text>
-                        ) : null}
-                      </View>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text size="lg" weight="bold" style={{ color: '#FBBF24' }}>
-                          {hours > 0 ? formatHours(hours) : formatCurrency(item.price)}
-                        </Text>
-                        <Text size="xs" style={{ color: '#8E8E93' }}>
-                          {formatCurrency(item.price)}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                      <TouchableOpacity
-                        onPress={() => handleReject(item)}
-                        style={{
-                          flex: 1.2,
-                          backgroundColor: '#34C759',
-                          borderRadius: 14,
-                          paddingVertical: 14,
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Text size="md" weight="bold" style={{ color: '#FFFFFF' }}>
-                          Не нужно
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleBuy(item)}
-                        style={{
-                          flex: 0.8,
-                          backgroundColor: 'rgba(255, 59, 48, 0.15)',
-                          borderRadius: 14,
-                          paddingVertical: 14,
-                          alignItems: 'center',
-                          borderWidth: 1,
-                          borderColor: 'rgba(255, 59, 48, 0.3)',
-                        }}
-                      >
-                        <Text size="md" weight="semibold" style={{ color: '#FF3B30' }}>
-                          Купить
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        )}
-
-        {/* === 3. МОРОЗИЛЬНАЯ КАМЕРА === */}
-        {pendingItems.length > 0 && (
-          <View>
-            <Text size="md" weight="semibold" style={{ color: '#8E8E93', marginBottom: 10 }}>
-              Остывает
-            </Text>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 10 }}
-            >
-              {pendingItems.map((item) => {
-                const daysLeft = Math.max(
-                  0,
-                  Math.ceil(
-                    (new Date(item.cooldownEnds).getTime() - now.getTime()) /
-                      (1000 * 60 * 60 * 24),
-                  ),
-                );
-                const hours = hourlyRate > 0 ? (item.price / 100) / hourlyRate : 0;
-
-                return (
-                  <View
-                    key={item.id}
-                    style={{
-                      width: 150,
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                      borderRadius: 16,
-                      padding: 16,
-                      borderWidth: 1,
-                      borderColor: 'rgba(255, 255, 255, 0.06)',
-                      opacity: 0.75,
-                    }}
-                  >
-                    <Text size="sm" weight="medium" style={{ color: '#FFFFFF' }} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text size="xs" style={{ color: '#8E8E93', marginTop: 4 }}>
-                      {hours > 0 ? `${formatHours(hours)}` : formatCurrency(item.price)}
-                    </Text>
-                    <View style={{
-                      marginTop: 12,
-                      backgroundColor: 'rgba(96, 165, 250, 0.1)',
-                      borderRadius: 8,
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      alignSelf: 'flex-start',
-                    }}>
-                      <Text size="xs" weight="medium" style={{ color: '#60A5FA' }}>
-                        {daysLeft === 0 ? 'Сегодня' : `${daysLeft} дн.`}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* === 4. БЫСТРЫЕ ДЕЙСТВИЯ === */}
-        <View style={{ gap: 10, paddingTop: 4 }}>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <TouchableOpacity
-              onPress={() => router.push('/main/transactions/create?income')}
-              style={{
-                flex: 1,
-                backgroundColor: 'rgba(52, 199, 89, 0.1)',
-                borderRadius: 14,
-                paddingVertical: 16,
-                alignItems: 'center',
-                borderWidth: 1,
-                borderColor: 'rgba(52, 199, 89, 0.2)',
-              }}
-            >
-              <Text size="lg" weight="bold" style={{ color: '#34C759' }}>+</Text>
-              <Text size="xs" style={{ color: '#34C759', marginTop: 2 }}>Доход</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setShowAddWish(true)}
-              style={{
-                flex: 1.5,
-                backgroundColor: 'rgba(96, 165, 250, 0.1)',
-                borderRadius: 14,
-                paddingVertical: 16,
-                alignItems: 'center',
-                borderWidth: 1,
-                borderColor: 'rgba(96, 165, 250, 0.2)',
-              }}
-            >
-              <Text size="lg" style={{ color: '#60A5FA' }}>❄️</Text>
-              <Text size="xs" weight="medium" style={{ color: '#60A5FA', marginTop: 2 }}>
-                Заморозить желание
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push('/main/transactions/create?expense')}
-              style={{
-                flex: 1,
-                backgroundColor: 'rgba(255, 59, 48, 0.1)',
-                borderRadius: 14,
-                paddingVertical: 16,
-                alignItems: 'center',
-                borderWidth: 1,
-                borderColor: 'rgba(255, 59, 48, 0.2)',
-              }}
-            >
-              <Text size="lg" weight="bold" style={{ color: '#FF3B30' }}>−</Text>
-              <Text size="xs" style={{ color: '#FF3B30', marginTop: 2 }}>Трата</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
-      {/* === МОДАЛКА: Заморозить желание === */}
-      {showAddWish && (
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: '#0A0A0F',
-        }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 }}>
-            <TouchableOpacity onPress={() => setShowAddWish(false)}>
-              <Text size="lg" style={{ color: '#8E8E93' }}>Отмена</Text>
-            </TouchableOpacity>
-            <Text size="lg" weight="bold" style={{ color: '#FFFFFF' }}>
-              Заморозить желание
-            </Text>
-            <View style={{ width: 60 }} />
-          </View>
-
-          <View style={{ padding: 16, gap: 20 }}>
+          {readyItems.length > 0 && (
             <View>
-              <Text size="sm" style={{ color: '#8E8E93', marginBottom: 8 }}>Что хотите?</Text>
+              <View className="flex-row justify-between items-center mb-2.5">
+                <Text className="text-base font-semibold text-warning-400">Решите сейчас</Text>
+                <Pressable onPress={() => router.push('/main/wishlist/' as never)}>
+                  <Text className="text-xs text-primary-400">Все желания</Text>
+                </Pressable>
+              </View>
+
+              <View className="gap-2.5">
+                {readyItems.map((item) => {
+                  const hours = hourlyRate > 0 ? (item.price / 100) / hourlyRate : 0;
+                  return (
+                    <View
+                      key={item.id}
+                      className="bg-warning-500/6 rounded-2xl p-4.5 border border-warning-500/15"
+                    >
+                      <View className="flex-row justify-between items-start mb-3">
+                        <View className="flex-1">
+                          <Text className="text-lg font-semibold text-typography-white">
+                            {item.name}
+                          </Text>
+                          {item.description ? (
+                            <Text className="text-xs text-typography-400 mt-0.5" numberOfLines={1}>
+                              {item.description}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <View className="items-end">
+                          <Text className="text-lg font-bold text-warning-400">
+                            {hours > 0 ? formatHours(hours) : formatCurrency(item.price)}
+                          </Text>
+                          <Text className="text-xs text-typography-400">
+                            {formatCurrency(item.price)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View className="flex-row gap-2.5">
+                        <TouchableOpacity
+                          onPress={() => handleReject(item)}
+                          className="flex-[1.2] bg-success-500 rounded-[14px] py-3.5 items-center"
+                        >
+                          <Text className="text-base font-bold text-typography-white">Не нужно</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleBuy(item)}
+                          className="flex-[0.8] bg-error-500/15 rounded-[14px] py-3.5 items-center border border-error-500/30"
+                        >
+                          <Text className="text-base font-semibold text-error-400">Купить</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {pendingItems.length > 0 && (
+            <View>
+              <Text className="text-base font-semibold text-typography-400 mb-2.5">Остывает</Text>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 10 }}
+              >
+                {pendingItems.map((item) => {
+                  const daysLeft = Math.max(
+                    0,
+                    Math.ceil(
+                      (new Date(item.cooldownEnds).getTime() - now.getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    ),
+                  );
+                  const hours = hourlyRate > 0 ? (item.price / 100) / hourlyRate : 0;
+
+                  return (
+                    <View
+                      key={item.id}
+                      className="w-[150px] bg-background-50/30 rounded-2xl p-4 border border-outline-200 opacity-75"
+                    >
+                      <Text className="text-sm font-medium text-typography-white" numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      <Text className="text-xs text-typography-400 mt-1">
+                        {hours > 0 ? `${formatHours(hours)}` : formatCurrency(item.price)}
+                      </Text>
+                      <View className="mt-3 bg-info-500/10 rounded-lg px-2 py-1 self-start">
+                        <Text className="text-xs font-medium text-info-400">
+                          {daysLeft === 0 ? 'Сегодня' : `${daysLeft} дн.`}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          <View className="gap-2.5 pt-1">
+            <View className="flex-row gap-2.5">
+              <TouchableOpacity
+                onPress={() => router.push('/main/transactions/create?income')}
+                className="flex-1 bg-success-500/10 rounded-[14px] py-4 items-center border border-success-500/20"
+              >
+                <Text className="text-lg font-bold text-success-400">+</Text>
+                <Text className="text-xs text-success-400 mt-0.5">Доход</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setShowAddWish(true)}
+                className="flex-[1.5] bg-info-500/10 rounded-[14px] py-4 items-center border border-info-500/20"
+              >
+                <Text className="text-base text-info-400">❄️</Text>
+                <Text className="text-xs font-medium text-info-400 mt-0.5">
+                  Заморозить желание
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => router.push('/main/transactions/create?expense')}
+                className="flex-1 bg-error-500/10 rounded-[14px] py-4 items-center border border-error-500/20"
+              >
+                <Text className="text-lg font-bold text-error-400">−</Text>
+                <Text className="text-xs text-error-400 mt-0.5">Трата</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      {showAddWish && (
+        <KeyboardAvoidingView
+          className="absolute inset-0 bg-background-0"
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View className="flex-row justify-between items-center px-4 pt-4" style={{ paddingTop: insets.top }}>
+            <TouchableOpacity onPress={() => setShowAddWish(false)}>
+              <Text className="text-lg text-typography-400">Отмена</Text>
+            </TouchableOpacity>
+            <Text className="text-lg font-bold text-typography-white">Заморозить желание</Text>
+            <View className="w-[60px]" />
+          </View>
+
+          <ScrollView
+            className="flex-1"
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+          >
+            <View className="p-4 gap-5">
+            <View>
+              <Text className="text-sm text-typography-400 mb-2">Что хотите?</Text>
               <TextInput
                 value={wishName}
                 onChangeText={setWishName}
                 placeholder="Например: AirPods Pro"
                 placeholderTextColor="#8E8E93"
                 autoFocus
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  color: '#FFFFFF',
-                  fontSize: 18,
-                }}
+                className="bg-background-50 rounded-xl px-4 py-4 text-typography-white text-lg"
               />
             </View>
 
             <View>
-              <Text size="sm" style={{ color: '#8E8E93', marginBottom: 8 }}>Сколько стоит? (₽)</Text>
+              <Text className="text-sm text-typography-400 mb-2">Сколько стоит? (₽)</Text>
               <TextInput
                 value={wishPrice}
                 onChangeText={setWishPrice}
                 placeholder="25000"
                 placeholderTextColor="#8E8E93"
                 keyboardType="decimal-pad"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  color: '#FFFFFF',
-                  fontSize: 18,
-                }}
+                className="bg-background-50 rounded-xl px-4 py-4 text-typography-white text-lg"
               />
               {wishPrice && hourlyRate > 0 && (
-                <Text size="sm" style={{ color: '#FBBF24', marginTop: 8 }}>
+                <Text className="text-sm text-warning-400 mt-2">
                   = {((parseFloat(wishPrice) || 0) / hourlyRate).toFixed(1)} ч вашей жизни
                 </Text>
               )}
             </View>
 
             <View>
-              <Text size="sm" style={{ color: '#8E8E93', marginBottom: 8 }}>Зачем вам это? *</Text>
+              <Text className="text-sm text-typography-400 mb-2">Зачем вам это? *</Text>
               <TextInput
                 value={wishDesc}
                 onChangeText={setWishDesc}
@@ -497,43 +404,32 @@ export default function HomeScreen() {
                 placeholderTextColor="#8E8E93"
                 multiline
                 numberOfLines={3}
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  color: '#FFFFFF',
-                  fontSize: 16,
-                  minHeight: 80,
-                  textAlignVertical: 'top',
-                }}
+                className="bg-background-50 rounded-xl px-4 py-4 text-typography-white text-base min-h-[80px]"
+                style={{ textAlignVertical: 'top' }}
               />
             </View>
 
             <TouchableOpacity
               onPress={handleAddWish}
               disabled={!wishName || !wishPrice || !wishDesc.trim()}
-              style={{
-                paddingVertical: 16,
-                borderRadius: 16,
-                backgroundColor: !wishName || !wishPrice || !wishDesc.trim()
-                  ? 'rgba(255,255,255,0.1)'
-                  : '#60A5FA',
-                alignItems: 'center',
-                marginTop: 8,
-              }}
+              className={`py-4 rounded-2xl items-center mt-2 ${
+                !wishName || !wishPrice || !wishDesc.trim()
+                  ? 'bg-typography-500/10'
+                  : 'bg-info-400'
+              }`}
             >
-              <Text size="lg" weight="bold" style={{ color: '#FFFFFF' }}>
+              <Text className="text-lg font-bold text-typography-white">
                 Заморозить на 7 дней
               </Text>
             </TouchableOpacity>
 
-            <Text size="xs" style={{ color: '#8E8E93', textAlign: 'center' }}>
+            <Text className="text-xs text-typography-400 text-center">
               Через 7 дней вы решите — нужно ли это вам
             </Text>
           </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       )}
-    </Screen>
+    </View>
   );
 }

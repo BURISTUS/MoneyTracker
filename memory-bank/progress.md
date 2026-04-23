@@ -130,12 +130,48 @@
 - [x] Mobile: Валюта при создании счёта — кнопка в BottomSheet, `filterType="FIAT"`
 - [x] Mobile: `setCurrencyConfig()` принимает динамический символ из API
 
+### NativeWind/gluestack-ui полная миграция
+- [x] gluestack-ui v3 + NativeWind v4 настроены (tailwind.config.js, global.css, babel, metro)
+- [x] 14 экранов переписаны на Tailwind className
+- [x] 8 feature-компонентов мигрированы (XPBar, AccountCard, TransactionItem, WishlistCard, GoalCard, BudgetCard, StatCard, BalanceHero)
+- [x] 4 UI-модалки мигрированы (AddTransactionModal, TransactionActionModal, DatePickerModal, CurrencyPicker)
+- [x] 2 chart-компонента мигрированы (DonutChart, SpendingChart)
+- [x] Loading.tsx, TabBar.tsx, CreateCategoryModal.tsx мигрированы
+- [x] Budget screen — inline ProgressBar
+- [x] Удалены 12 старых UI-компонентов (BottomSheet, Button, Text, Input, Card, Icon, Chip, Divider, Badge, Avatar, Screen, ProgressBar)
+- [x] Удалена старая тема src/theme/ (colors, spacing, typography, shadows, index)
+- [x] Удалён Header.tsx (не использовался)
+- [x] CategoryIcon.tsx — не зависит от темы (vector icons)
+
+### Миграция — критические фиксы (2026-04-19)
+- [x] react@19.1.4 → react@19.1.0 (версия renderer в react-native@0.81.5 строго 19.1.0)
+- [x] react-native-worklets-core установлен (требуется react-native-css-interop)
+- [x] react-native-css-interop/babel.js патч (закомментирован worklets plugin, patch-package)
+- [x] patch-package добавлен в devDependencies + postinstall скрипт
+- [x] GluestackUIProvider: применяет CSS-переменные из config.ts через style={config[mode]}
+- [x] i18n/index.ts: AsyncStorage.getItem перенесён из синхронного модульного вызова в async после init
+
+### Transactions — навигация по периодам (2026-04-19)
+- [x] DateRangePickerModal — полный календарь с сеткой дней, выбор диапазона тапом (start → end), подсветка диапазона, навигация по месяцам, пресеты
+- [x] Кнопка "Период" открывает DateRangePickerModal
+- [x] Свайп влево/вправо по списку транзакций — переключает период назад/вперёд (PanResponder)
+- [x] Стрелки < > с лейблом текущего диапазона в одной строке с фильтр-чипами
+- [x] offset-based навигация: день → вчера/позавчера, неделя → прошлая/позапрошлая, месяц → прошлый/текущий, год → прошлый/текущий
+- [x] Фильтр-чипы компактные (h-6 fixed height, text-[11px])
+- [x] TabBar: убран синий прямоугольник, активный таб = цветная иконка + точка снизу
+
+### Редактирование счетов
+- [x] Accounts screen — тап по карточке открывает модалку редактирования (название + баланс)
+- [x] При изменении баланса автоматически рассчитывается разница и предлагается добавить транзакцию
+- [x] Transaction modal — показывает тип (доход/расход), сумму, поле для заметки, кнопки "Пропустить" / "Добавить"
+- [x] FlatList для списка счетов (оптимизация рендеринга)
+- [x] dataStore: updateAccount метод уже существовал, используется напрямую
+
 ## Бэклог
 - [ ] Transfer между счетами (TransactionType.TRANSFER)
 - [ ] Budget страница с реальными данными
 - [ ] Goals страница с реальными данными
 - [ ] Редактирование категорий
-- [ ] Редактирование счетов
 - [ ] Семейный бюджет (Family module)
 - [ ] Депозиты/кредиты (Deposit/Loan modules)
 - [ ] Прогнозирование (ForecastScenario)
