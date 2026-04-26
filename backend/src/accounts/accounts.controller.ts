@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Prisma } from '@prisma/client';
 import { AccountsService } from './accounts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -52,7 +53,7 @@ export class AccountsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update account' })
-  async update(@Param('id') id: string, @Request() req: any, @Body() body: { name?: string; type?: string; balance?: number; currency?: string }) {
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: Prisma.AccountUpdateInput) {
     return this.accountsService.update(id, req.user.id, body);
   }
 

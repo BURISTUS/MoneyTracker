@@ -167,10 +167,44 @@
 - [x] FlatList для списка счетов (оптимизация рендеринга)
 - [x] dataStore: updateAccount метод уже существовал, используется напрямую
 
+### Базовые счета при регистрации
+- [x] Убран третий дефолтный счёт (Альфа/CREDIT)
+- [x] Оставлено два базовых счёта: "Наличные" (CASH) и "Банковский счёт" (BANK)
+- [x] Бэкенд `accounts.service.ts` метод `createDefaultsForUser` обновлён
+
+### Бюджеты — месячный лимит по категории
+- [x] Backend `BudgetService` — упрощённое создание (categoryId + amount + alertThreshold), period=MONTHLY, даты start/end текущего месяца авто
+- [x] Backend `GET /budgets` — inline прогресс за текущий месяц (spent, remaining, percentUsed, isOverBudget, isNearLimit)
+- [x] Backend `PATCH /budgets/:id` — редактирование суммы/порога
+- [x] Backend DTO `CreateBudgetDto`, `UpdateBudgetDto` с class-validator
+- [x] Mobile `BudgetService` (`src/services/budget.ts`) — API wrapper
+- [x] Mobile `dataStore` — `fetchBudgets`, `createBudget`, `updateBudget`, `deleteBudgetApi`
+- [x] Mobile `initializeData` — загружает бюджеты
+- [x] Mobile `BudgetScreen` — список с прогресс-барами, FAB «Добавить», AddBudgetModal (категория + сумма + порог 50/70/80/90%), редактирование/удаление
+- [x] Mobile `TransactionsScreen` — dot-индикатор лимита рядом с категорией (зелёный <80%, жёлтый 80-100%, красный >100%)
+- [x] Mobile `AddTransactionModal` — прогресс-бар остатка лимита под кнопкой категории
+
+### Цели (Goals) — полная реализация
+- [x] Backend `GoalsService` — `serializeGoal` для BigInt→string, inline прогресс (percentComplete, remaining)
+- [x] Backend `GET /goals` — все цели с прогрессом
+- [x] Backend `POST /goals` — создание (name, targetAmount, deadline)
+- [x] Backend `PATCH /goals/:id` — редактирование name/target/deadline
+- [x] Backend `PATCH /goals/:id/progress` — пополнение currentAmount
+- [x] Backend `DELETE /goals/:id` — удаление
+- [x] Backend DTO `CreateGoalDto`, `UpdateGoalDto`, `UpdateGoalProgressDto`
+- [x] Prisma schema: `deadline` теперь `@default(now())` (опционально при создании)
+- [x] Mobile `GoalsService` (`src/services/goals.ts`) — API wrapper
+- [x] Mobile `dataStore` — `fetchGoals`, `createGoal`, `updateGoalApi`, `addGoalProgress`, `deleteGoalApi`
+- [x] Mobile `initializeData` — загружает цели
+- [x] Mobile `GoalsScreen` — список с прогрессом, FAB «+», модалки: создать (name + target + deadline), редактировать (name + target + deadline + удалить), пополнить (amount)
+
+### Дефолтные категории для существующего юзера
+- [x] Backend `POST /categories/defaults` — endpoint для создания дефолтных категорий текущему юзеру
+- [x] `createDefaultsForUser` теперь пропускает существующие категории по имени (не создаёт дубли)
+- [x] Новые юзеры получают категории автоматически при регистрации (через `auth.service.ts`)
+
 ## Бэклог
 - [ ] Transfer между счетами (TransactionType.TRANSFER)
-- [ ] Budget страница с реальными данными
-- [ ] Goals страница с реальными данными
 - [ ] Редактирование категорий
 - [ ] Семейный бюджет (Family module)
 - [ ] Депозиты/кредиты (Deposit/Loan modules)

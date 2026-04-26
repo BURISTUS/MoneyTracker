@@ -97,7 +97,7 @@
 | Account | userId, name, type(CASH/BANK/CREDIT/INVESTMENT/DEBT), balance(BigInt), currency |
 | Category | userId(nullable — null = системная), name, type(INCOME/EXPENSE), icon, color, isBaseNeed |
 | Transaction | userId, accountId, categoryId, amount(BigInt), type(INCOME/EXPENSE/TRANSFER), date |
-| Budget | userId, categoryId, amount, period(WEEKLY/MONTHLY/YEARLY) |
+| Budget | userId, categoryId, amount(BigInt), period(MONTHLY default), startDate/endDate(auto текущий месяц), alertThreshold(default 80) |
 | Goal | userId, name, targetAmount, currentAmount, deadline |
 | UserGamification | userId(unique), xp, level, savedAmount, status |
 | WishlistItem | userId, name, price, description(String, обязательное), status(PENDING/READY/REJECTED/PURCHASED), cooldownDays(7) |
@@ -201,6 +201,15 @@ mobile/
 | POST | /transactions | Создать (обновляет баланс аккаунта) |
 | PATCH | /transactions/:id | Обновить (description, date) |
 | DELETE | /transactions/:id | Удалить (восстанавливает баланс) |
+
+### Budget
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | /budgets | Все бюджеты с прогрессом за текущий месяц |
+| GET | /budgets/:id/progress | Прогресс конкретного бюджета |
+| POST | /budgets | Создать месячный бюджет (categoryId, amount, alertThreshold) |
+| PATCH | /budgets/:id | Обновить сумму/порог |
+| DELETE | /budgets/:id | Удалить бюджет |
 
 ### Users
 | Метод | Путь | Описание |

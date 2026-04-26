@@ -10,6 +10,8 @@ import authService from '../services/auth';
 import lifeCostService from '../services/lifeCost';
 import currencyService from '../services/currency';
 import wishlistService from '../services/wishlist';
+import budgetService from '../services/budget';
+import goalsService from '../services/goals';
 import type { ExchangeRate } from '../services/currency';
 import { setCurrencyConfig } from '../utils/formatters';
 
@@ -74,6 +76,10 @@ interface DataState {
   setBudgets: (budgets: Budget[]) => void;
   addBudget: (budget: Budget) => void;
   updateBudget: (id: string, data: Partial<Budget>) => void;
+  deleteBudget: (id: string) => void;
+  fetchBudgets: () => Promise<void>;
+  createBudget: (data: { categoryId: string; amount: number; alertThreshold?: number }) => Promise<Budget>;
+  deleteBudgetApi: (id: string) => Promise<void>;
 
   // Goals
   goals: Goal[];
@@ -81,6 +87,12 @@ interface DataState {
   setGoals: (goals: Goal[]) => void;
   addGoal: (goal: Goal) => void;
   updateGoal: (id: string, data: Partial<Goal>) => void;
+  deleteGoal: (id: string) => void;
+  fetchGoals: () => Promise<void>;
+  createGoal: (data: { name: string; targetAmount: number; deadline?: string }) => Promise<Goal>;
+  updateGoalApi: (id: string, data: Partial<{ name: string; targetAmount: number; deadline: string }>) => Promise<void>;
+  addGoalProgress: (id: string, amount: number) => Promise<void>;
+  deleteGoalApi: (id: string) => Promise<void>;
 
   // Gamification
   gamification: UserGamification | null;
@@ -261,20 +273,11 @@ export const useDataStore = create<DataState>()(
       setCategories: (cats) => set({ categories: cats }),
       fetchCategories: async () => {
         try {
-          // Load all categories (system + personal) with auth
           const categories = await categoriesService.getAll();
           set({ categories });
           console.log(`✅ Loaded ${categories.length} categories`);
         } catch (error) {
           console.error('Failed to fetch categories:', error);
-          // Fallback: try loading system categories without auth
-          try {
-            const systemCategories = await categoriesService.getSystemCategories();
-            set({ categories: systemCategories });
-            console.log(`✅ Loaded ${systemCategories.length} system categories (fallback)`);
-          } catch (fallbackError) {
-            console.error('Failed to fetch system categories:', fallbackError);
-          }
         }
       },
       addCategory: async (data: { name: string; type: CategoryType; icon: string; color: string; isBaseNeed?: boolean }) => {
@@ -296,6 +299,44 @@ export const useDataStore = create<DataState>()(
       updateBudget: (id, data) => set((state) => ({
         budgets: state.budgets.map((b) => b.id === id ? { ...b, ...data } : b)
       })),
+      deleteBudget: (id) => set((state) => ({
+        budgets: state.budgets.filter((b) => b.id !== id)
+      })),
+      fetchBudgets: async () => {
+        set({ isLoadingBudgets: true });
+        try {
+          const budgets = await budgetService.getAll();
+          set({ budgets, isLoadingBudgets: false });
+        } catch (error) {
+          set({ isLoadingBudgets: false });
+          console.error('Failed to fetch budgets:', error);
+        }
+      },
+      createBudget: async (data) => {
+        set({ isLoadingBudgets: true });
+        try {
+          const budget = await budgetService.create(data);
+          set((state) => ({
+            budgets: [...state.budgets, budget],
+            isLoadingBudgets: false
+          }));
+          return budget;
+        } catch (error) {
+          set({ isLoadingBudgets: false });
+          throw error;
+        }
+      },
+      deleteBudgetApi: async (id) => {
+        try {
+          await budgetService.delete(id);
+          set((state) => ({
+            budgets: state.budgets.filter((b) => b.id !== id)
+          }));
+        } catch (error) {
+          console.error('Failed to delete budget:', error);
+          throw error;
+        }
+      },
 
       // Goals
       goals: INITIAL_GOALS,
@@ -305,6 +346,66 @@ export const useDataStore = create<DataState>()(
       updateGoal: (id, data) => set((state) => ({
         goals: state.goals.map((g) => g.id === id ? { ...g, ...data } : g)
       })),
+      deleteGoal: (id) => set((state) => ({
+        goals: state.goals.filter((g) => g.id !== id)
+      })),
+      fetchGoals: async () => {
+        set({ isLoadingGoals: true });
+        try {
+          const goals = await goalsService.getAll();
+          set({ goals, isLoadingGoals: false });
+        } catch (error) {
+          set({ isLoadingGoals: false });
+          console.error('Failed to fetch goals:', error);
+        }
+      },
+      createGoal: async (data) => {
+        set({ isLoadingGoals: true });
+        try {
+          const goal = await goalsService.create(data);
+          set((state) => ({
+            goals: [...state.goals, goal],
+            isLoadingGoals: false
+          }));
+          return goal;
+        } catch (error) {
+          set({ isLoadingGoals: false });
+          throw error;
+        }
+      },
+      updateGoalApi: async (id, data) => {
+        try {
+          const updated = await goalsService.update(id, data);
+          set((state) => ({
+            goals: state.goals.map((g) => g.id === id ? { ...g, ...updated } : g)
+          }));
+        } catch (error) {
+          console.error('Failed to update goal:', error);
+          throw error;
+        }
+      },
+      addGoalProgress: async (id, amount) => {
+        try {
+          const updated = await goalsService.addProgress(id, amount);
+          set((state) => ({
+            goals: state.goals.map((g) => g.id === id ? { ...g, ...updated } : g)
+          }));
+        } catch (error) {
+          console.error('Failed to add goal progress:', error);
+          throw error;
+        }
+      },
+      deleteGoalApi: async (id) => {
+        try {
+          await goalsService.delete(id);
+          set((state) => ({
+            goals: state.goals.filter((g) => g.id !== id)
+          }));
+        } catch (error) {
+          console.error('Failed to delete goal:', error);
+          throw error;
+        }
+      },
 
       // Gamification
       gamification: INITIAL_GAMIFICATION,
@@ -520,7 +621,7 @@ export const useDataStore = create<DataState>()(
           console.log('🎮 Demo mode — skipping API calls');
           return;
         }
-        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate, fetchCurrencyRates, fetchWishlist } = get();
+        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate, fetchCurrencyRates, fetchWishlist, fetchBudgets, fetchGoals } = get();
         await Promise.all([
           fetchAccounts(),
           fetchCategories(),
@@ -529,6 +630,8 @@ export const useDataStore = create<DataState>()(
           fetchHourlyRate(),
           fetchCurrencyRates(),
           fetchWishlist(),
+          fetchBudgets(),
+          fetchGoals(),
         ]);
       },
     }),

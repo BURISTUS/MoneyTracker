@@ -30,16 +30,10 @@ export class CategoriesController {
     });
   }
 
-  @Get('system')
-  @ApiOperation({ summary: 'Get system categories only (public)' })
-  async getSystemCategories() {
-    return this.categoriesService.findSystemCategories();
-  }
-
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all categories (system + personal)' })
+  @ApiOperation({ summary: 'Get all user categories' })
   async findAll(@Request() req: any) {
     return this.categoriesService.findAll(req.user.id);
   }
@@ -73,5 +67,13 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Delete category' })
   async delete(@Param('id') id: string, @Request() req: any) {
     return this.categoriesService.delete(id, req.user.id);
+  }
+
+  @Post('defaults')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create default categories for current user' })
+  async createDefaults(@Request() req: any) {
+    return this.categoriesService.createDefaultsForUser(req.user.id);
   }
 }

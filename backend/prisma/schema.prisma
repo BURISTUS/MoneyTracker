@@ -63,6 +63,7 @@ model Account {
   balance     BigInt   @default(0)
   currency    String   @default("RUB")
   isDefault   Boolean  @default(false)
+  includeInTotal Boolean @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -166,7 +167,7 @@ model Goal {
   name        String
   targetAmount BigInt
   currentAmount BigInt  @default(0)
-  deadline    DateTime
+  deadline    DateTime @default(now())
   isCompleted Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

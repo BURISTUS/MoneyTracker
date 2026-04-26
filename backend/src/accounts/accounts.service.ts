@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CurrencyService } from '../currency/currency.service';
 
@@ -38,16 +39,11 @@ export class AccountsService {
     });
   }
 
-  async update(id: string, userId: string, data: { name?: string; type?: string; balance?: number; currency?: string }) {
+  async update(id: string, userId: string, data: Prisma.AccountUpdateInput) {
     await this.findById(id, userId);
-    const updateData: Record<string, unknown> = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.type !== undefined) updateData.type = data.type;
-    if (data.balance !== undefined) updateData.balance = data.balance;
-    if (data.currency !== undefined) updateData.currency = data.currency;
     return this.prisma.account.update({
       where: { id },
-      data: updateData,
+      data,
     });
   }
 
@@ -62,7 +58,10 @@ export class AccountsService {
     });
 
     let total = 0;
+    let includedCount = 0;
     for (const acc of accounts) {
+      if (!acc.includeInTotal) continue;
+      includedCount++;
       if (acc.currency === targetCurrency) {
         total += Number(acc.balance);
       } else {
@@ -74,14 +73,13 @@ export class AccountsService {
         total += Math.round(converted * 100);
       }
     }
-    return { total, currency: targetCurrency, accountsCount: accounts.length };
+    return { total, currency: targetCurrency, accountsCount: includedCount };
   }
 
   async createDefaultsForUser(userId: string) {
     const defaultAccounts = [
       { name: 'Наличные', type: 'CASH' as const, isDefault: true },
-      { name: 'Тинькофф', type: 'BANK' as const, isDefault: false },
-      { name: 'Альфа', type: 'CREDIT' as const, isDefault: false },
+      { name: 'Банковский счёт', type: 'BANK' as const, isDefault: false },
     ];
 
     const created = [];

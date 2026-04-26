@@ -36,6 +36,7 @@ export interface Account {
   balance: number;
   currency: string;
   isDefault: boolean;
+  includeInTotal: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -113,6 +114,9 @@ export interface Budget {
   spent?: number;
   remaining?: number;
   progress?: number;
+  percentUsed?: number;
+  isOverBudget?: boolean;
+  isNearLimit?: boolean;
 }
 
 export enum BudgetPeriod {

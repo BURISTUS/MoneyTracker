@@ -21,9 +21,9 @@ const AVAILABLE_ICONS = [
 export class CategoriesService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
 
-  // При запуске приложения - создаём системные категории если их нет
+  // При запуске - ничего не сидим, категории создаются при регистрации юзера
   async onModuleInit() {
-    await this.seedSystemCategories();
+    // seedSystemCategories убран — теперь персональные категории на юзера
   }
 
   // Получить все доступные иконки
@@ -31,17 +31,11 @@ export class CategoriesService implements OnModuleInit {
     return AVAILABLE_ICONS.map(icon => ({ name: icon }));
   }
 
-  // Получить все категории для пользователя (системные + персональные)
+  // Получить все категории пользователя
   async findAll(userId: string) {
     return this.prisma.category.findMany({
-      where: {
-        OR: [
-          { userId: null }, // Системные
-          { userId }, // Персональные
-        ],
-      },
+      where: { userId },
       orderBy: [
-        { userId: 'desc' }, // Системные first (null сортируется первым)
         { order: 'asc' },
         { name: 'asc' },
       ],
@@ -135,9 +129,9 @@ export class CategoriesService implements OnModuleInit {
     });
   }
 
-  // Заполнить системные категории (сид)
-  private async seedSystemCategories() {
-    const systemCategories = [
+  // Создать пресет категорий для нового юзера
+  async createDefaultsForUser(userId: string) {
+    const defaultCategories = [
       { name: 'Зарплата', type: CategoryType.INCOME, icon: 'material:wallet', color: '#34C759', isBaseNeed: false, order: 1 },
       { name: 'Фриланс', type: CategoryType.INCOME, icon: 'material:laptop', color: '#007AFF', isBaseNeed: false, order: 2 },
       { name: 'Инвестиции', type: CategoryType.INCOME, icon: 'material:chart-line', color: '#5856D6', isBaseNeed: false, order: 3 },
@@ -153,24 +147,26 @@ export class CategoriesService implements OnModuleInit {
       { name: 'Одежда', type: CategoryType.EXPENSE, icon: 'material:tshirt-crew', color: '#5AC8FA', isBaseNeed: false, order: 21 },
       { name: 'Рестораны', type: CategoryType.EXPENSE, icon: 'material:food', color: '#FF3B30', isBaseNeed: false, order: 22 },
       { name: 'Подарки', type: CategoryType.EXPENSE, icon: 'material:gift', color: '#FF2D55', isBaseNeed: false, order: 23 },
+      { name: 'Корректировка', type: CategoryType.EXPENSE, icon: 'material:swap-horizontal', color: '#8E8E93', isBaseNeed: false, order: 99 },
     ];
 
-    for (const cat of systemCategories) {
-      await this.prisma.category.upsert({
-        where: { id: cat.name.toLowerCase().replace(/\s/g, '-') },
-        update: {
-          icon: cat.icon,
-          color: cat.color,
-          type: cat.type,
-          isBaseNeed: cat.isBaseNeed,
-          order: cat.order,
-        },
-        create: {
-          id: cat.name.toLowerCase().replace(/\s/g, '-'),
-          userId: null,
+    const existing = await this.prisma.category.findMany({
+      where: { userId },
+      select: { name: true },
+    });
+    const existingNames = new Set(existing.map((c) => c.name));
+
+    const created = [];
+    for (const cat of defaultCategories) {
+      if (existingNames.has(cat.name)) continue;
+      const newCat = await this.prisma.category.create({
+        data: {
+          userId,
           ...cat,
         },
       });
+      created.push(newCat);
     }
+    return { created: created.length, skipped: defaultCategories.length - created.length };
   }
 }

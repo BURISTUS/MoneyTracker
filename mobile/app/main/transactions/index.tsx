@@ -126,6 +126,8 @@ export default function TransactionsDashboardScreen() {
   const transactions = useDataStore((s) => s.transactions);
   const categories = useDataStore((s) => s.categories);
   const accounts = useDataStore((s) => s.accounts);
+  const budgets = useDataStore((s) => s.budgets);
+  const fetchTransactions = useDataStore((s) => s.fetchTransactions);
   const isLoading = useDataStore((s) => s.isLoadingTransactions);
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
 
@@ -468,9 +470,21 @@ export default function TransactionsDashboardScreen() {
                           />
 
                            <View className="flex-1">
-                            <Text className="text-lg font-medium text-typography-white">
-                              {category?.name || 'Без категории'}
-                            </Text>
+                             <View className="flex-row items-center gap-2">
+                               {transaction.type === 'EXPENSE' && category && (() => {
+                                 const budget = budgets.find((b) => b.categoryId === category.id);
+                                 if (!budget) return null;
+                                 const percent = budget.percentUsed || budget.progress || 0;
+                                 const threshold = budget.alertThreshold || 80;
+                                 const dotColor = percent > 100 ? '#F87171' : percent >= threshold ? '#FBBF24' : '#34D399';
+                                 return (
+                                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }} />
+                                 );
+                               })()}
+                               <Text className="text-lg font-medium text-typography-white">
+                                 {category?.name || 'Без категории'}
+                               </Text>
+                             </View>
                             {transaction.description && (
                               <Text className="text-sm text-typography-400">
                                 {transaction.description}

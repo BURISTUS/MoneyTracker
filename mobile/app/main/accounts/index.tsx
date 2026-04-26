@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, FlatList, Pressable, ScrollView, Modal, TextInput, StyleSheet, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, FlatList, Pressable, ScrollView, Modal, TextInput, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { useDataStore } from '../../../src/stores/dataStore';
 import { Text } from '../../../components/ui/text';
 import { CurrencyPicker } from '../../../src/components/ui/CurrencyPicker';
 import { formatCurrency } from '../../../src/utils/formatters';
+import { currencyService } from '../../../src/services/currency';
 import type { AccountType, TransactionType } from '../../../src/types';
 import { AccountType as AccountTypeEnum, TransactionType as TransactionTypeEnum } from '../../../src/types';
 import type { ExchangeRate } from '../../../src/services/currency';
@@ -43,7 +44,11 @@ export default function AccountsScreen() {
     accountId: string | null;
     name: string;
     balance: string;
-  }>({ visible: false, accountId: null, name: '', balance: '0' });
+    type: AccountType;
+    currency: string;
+    includeInTotal: boolean;
+    originalBalance: string;
+  }>({ visible: false, accountId: null, name: '', balance: '0', type: AccountTypeEnum.BANK, currency: userCurrency, includeInTotal: true, originalBalance: '0' });
 
   const [transactionModal, setTransactionModal] = useState<{
     visible: boolean;
@@ -53,7 +58,15 @@ export default function AccountsScreen() {
     note: string;
   }>({ visible: false, accountId: null, amount: '', type: TransactionTypeEnum.EXPENSE, note: '' });
 
-  const totalBalance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
+  const totalBalance = accounts
+    .filter((a) => a.includeInTotal !== false)
+    .reduce((sum, a) => {
+      if (a.currency === userCurrency) {
+        return sum + Number(a.balance);
+      }
+      const converted = currencyService.convertLocal(Number(a.balance) / 100, a.currency, userCurrency);
+      return sum + Math.round(converted * 100);
+    }, 0);
 
   const accountTypes: { value: AccountType; label: string }[] = [
     { value: AccountTypeEnum.CASH, label: 'Наличные' },
@@ -76,12 +89,17 @@ export default function AccountsScreen() {
     }
   }, [name, type, currency, userCurrency, createAccount]);
 
-  const openEditModal = useCallback((account: { id: string; name: string; balance: number }) => {
+  const openEditModal = useCallback((account: { id: string; name: string; type: AccountType; balance: number; currency: string; includeInTotal: boolean }) => {
+    const balanceStr = String(Math.round(Number(account.balance) / 100));
     setEditModal({
       visible: true,
       accountId: account.id,
       name: account.name,
-      balance: String(Math.round(Number(account.balance) / 100)),
+      balance: balanceStr,
+      type: account.type,
+      currency: account.currency,
+      includeInTotal: account.includeInTotal !== false,
+      originalBalance: balanceStr,
     });
   }, []);
 
@@ -95,7 +113,13 @@ export default function AccountsScreen() {
     const oldBalanceKopecks = Number(currentAccount.balance);
     const difference = newBalanceKopecks - oldBalanceKopecks;
 
-    await updateAccount(editModal.accountId, { name: editModal.name, balance: newBalanceKopecks });
+    await updateAccount(editModal.accountId, {
+      name: editModal.name,
+      type: editModal.type,
+      balance: newBalanceKopecks,
+      currency: editModal.currency,
+      includeInTotal: editModal.includeInTotal,
+    });
 
     if (difference !== 0) {
       setEditModal((prev) => ({ ...prev, visible: false }));
@@ -108,15 +132,15 @@ export default function AccountsScreen() {
         note: '',
       });
     } else {
-      setEditModal({ visible: false, accountId: null, name: '', balance: '0' });
+      setEditModal({ visible: false, accountId: null, name: '', balance: '0', type: AccountTypeEnum.BANK, currency: userCurrency, includeInTotal: true, originalBalance: '0' });
     }
-  }, [editModal, accounts, updateAccount]);
+  }, [editModal, accounts, updateAccount, userCurrency]);
 
   const handleAddTransaction = useCallback(async () => {
     if (!transactionModal.accountId || !transactionModal.amount) return;
 
-    const expenseCategories = categories.filter((c) => c.type === 'EXPENSE');
-    const defaultCategory = expenseCategories.length > 0 ? expenseCategories[0].id : '';
+    const adjustmentCategory = categories.find((c) => c.name === 'Корректировка');
+    const categoryId = adjustmentCategory ? adjustmentCategory.id : (categories.length > 0 ? categories[0].id : '');
 
     const amountKopecks = Math.round(Number(transactionModal.amount) * 100);
     const signedAmount = transactionModal.type === TransactionTypeEnum.EXPENSE ? -amountKopecks : amountKopecks;
@@ -125,7 +149,7 @@ export default function AccountsScreen() {
       id: `temp_${Date.now()}`,
       userId: '',
       accountId: transactionModal.accountId,
-      categoryId: defaultCategory,
+      categoryId,
       amount: Math.abs(signedAmount),
       type: transactionModal.type,
       description: transactionModal.note || 'Корректировка баланса счёта',
@@ -141,7 +165,7 @@ export default function AccountsScreen() {
     setTransactionModal({ visible: false, accountId: null, amount: '', type: TransactionTypeEnum.EXPENSE, note: '' });
   }, []);
 
-  const renderAccount = useCallback(({ item }: { item: { id: string; name: string; type: AccountType; balance: number; currency: string } }) => {
+  const renderAccount = useCallback(({ item }: { item: { id: string; name: string; type: AccountType; balance: number; currency: string; includeInTotal: boolean } }) => {
     const cfg = accountIcons[item.type] || accountIcons.CASH;
     return (
       <Pressable onPress={() => openEditModal(item)} style={s.card}>
@@ -151,11 +175,17 @@ export default function AccountsScreen() {
           </View>
           <View style={s.acctInfo}>
             <Text style={s.acctName}>{item.name}</Text>
-            <Text style={s.acctType}>{item.type}</Text>
+            <View style={s.acctMetaRow}>
+              <Text style={s.acctType}>{item.type}</Text>
+              <Text style={s.acctCurrency}>{item.currency}</Text>
+              {!item.includeInTotal && (
+                <Ionicons name="eye-off" size={12} color="#52525B" style={{ marginLeft: 6 }} />
+              )}
+            </View>
           </View>
           <Ionicons name="pencil" size={16} color="#52525B" />
         </View>
-        <Text style={s.acctBalance}>{formatCurrency(item.balance)}</Text>
+        <Text style={s.acctBalance}>{formatCurrency(item.balance, item.currency)}</Text>
       </Pressable>
     );
   }, [openEditModal]);
@@ -172,12 +202,12 @@ export default function AccountsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <View style={s.card}>
+        <View style={s.totalCard}>
           <View style={s.iconWrap}>
             <Ionicons name="wallet-outline" size={18} color="#6366F1" />
           </View>
           <Text style={s.cardLabel}>Общий баланс</Text>
-          <Text style={s.balanceValue}>{formatCurrency(totalBalance)}</Text>
+          <Text style={s.balanceValue} numberOfLines={1} adjustsFontSizeToFit>{formatCurrency(totalBalance)}</Text>
         </View>
 
         {accounts.length === 0 ? (
@@ -284,34 +314,71 @@ export default function AccountsScreen() {
               </Pressable>
             </View>
 
-            <View style={s.modalFields}>
-              <Text style={s.fieldLabel}>Название</Text>
-              <TextInput
-                style={s.input}
-                value={editModal.name}
-                onChangeText={(text) => setEditModal((prev) => ({ ...prev, name: text }))}
-                placeholder="Название счёта"
-                placeholderTextColor="#52525B"
-              />
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 500 }}>
+              <View style={s.modalFields}>
+                <Text style={s.fieldLabel}>Название</Text>
+                <TextInput
+                  style={s.input}
+                  value={editModal.name}
+                  onChangeText={(text) => setEditModal((prev) => ({ ...prev, name: text }))}
+                  placeholder="Название счёта"
+                  placeholderTextColor="#52525B"
+                />
 
-              <Text style={s.fieldLabel}>Баланс</Text>
-              <TextInput
-                style={s.input}
-                value={editModal.balance}
-                onChangeText={(text) => setEditModal((prev) => ({ ...prev, balance: text }))}
-                placeholder="0"
-                placeholderTextColor="#52525B"
-                keyboardType="numeric"
-              />
+                <Text style={s.fieldLabel}>Тип</Text>
+                <View style={s.typeRow}>
+                  {accountTypes.map((at) => {
+                    const active = editModal.type === at.value;
+                    return (
+                      <Pressable
+                        key={at.value}
+                        onPress={() => setEditModal((prev) => ({ ...prev, type: at.value }))}
+                        style={[s.typeChip, active && s.typeChipActive]}
+                      >
+                        <Text style={[s.typeChipText, active && s.typeChipTextActive]}>
+                          {at.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
 
-              <Pressable
-                onPress={handleSaveEdit}
-                disabled={!editModal.name}
-                style={[s.createBtn, !editModal.name && s.createBtnDisabled]}
-              >
-                <Text style={s.createBtnText}>Сохранить</Text>
-              </Pressable>
-            </View>
+                <Text style={s.fieldLabel}>Баланс</Text>
+                <TextInput
+                  style={s.input}
+                  value={editModal.balance}
+                  onChangeText={(text) => setEditModal((prev) => ({ ...prev, balance: text }))}
+                  placeholder="0"
+                  placeholderTextColor="#52525B"
+                  keyboardType="numeric"
+                />
+
+                <Text style={s.fieldLabel}>Валюта</Text>
+                <View style={s.currencyValue}>
+                  <Text style={s.currencyText}>{editModal.currency}</Text>
+                </View>
+
+                <Pressable
+                  onPress={() => setEditModal((prev) => ({ ...prev, includeInTotal: !prev.includeInTotal }))}
+                  style={s.checkboxRow}
+                >
+                  <View style={s.checkbox}>
+                    {editModal.includeInTotal && (
+                      <Ionicons name="checkmark" size={16} color="#6366F1" />
+                    )}
+                  </View>
+                  <Text style={s.checkboxLabel}>Учитывать в общем балансе</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleSaveEdit}
+                  disabled={!editModal.name}
+                  style={[s.createBtn, !editModal.name && s.createBtnDisabled]}
+                >
+                  <Text style={s.createBtnText}>Сохранить</Text>
+                </Pressable>
+              </View>
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>
@@ -341,7 +408,7 @@ export default function AccountsScreen() {
                 />
                 <Text style={s.transactionInfoText}>
                   {transactionModal.type === TransactionTypeEnum.INCOME ? 'Доход' : 'Расход'}:{' '}
-                  <Text style={s.transactionAmount}>{transactionModal.amount} ₽</Text>
+                  <Text style={s.transactionAmount}>{transactionModal.amount} {userCurrency}</Text>
                 </Text>
               </View>
 
@@ -394,6 +461,13 @@ const s = StyleSheet.create({
   content: { paddingHorizontal: 16, paddingBottom: 120, gap: 10 },
   listContent: { gap: 10 },
 
+  totalCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 18,
+  },
   card: {
     backgroundColor: CARD_BG,
     borderRadius: 16,
@@ -407,7 +481,7 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginBottom: 10,
   },
   cardLabel: { fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 },
-  balanceValue: { fontSize: 32, fontWeight: '700', color: '#FFFFFF', letterSpacing: -1 },
+  balanceValue: { fontSize: 26, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5 },
 
   empty: { alignItems: 'center', paddingVertical: 40 },
   emptyText: { fontSize: 14, color: '#3F3F46', marginTop: 8 },
@@ -416,7 +490,9 @@ const s = StyleSheet.create({
   acctIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   acctInfo: { marginLeft: 12, flex: 1 },
   acctName: { fontSize: 15, fontWeight: '600', color: '#E4E4E7' },
-  acctType: { fontSize: 12, color: '#52525B', marginTop: 2 },
+  acctMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  acctType: { fontSize: 12, color: '#52525B' },
+  acctCurrency: { fontSize: 11, color: '#3F3F46', marginLeft: 8 },
   acctBalance: { fontSize: 20, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5 },
 
   fab: {
@@ -451,6 +527,14 @@ const s = StyleSheet.create({
   createBtn: { backgroundColor: '#6366F1', paddingVertical: 13, borderRadius: 12, alignItems: 'center', marginTop: 4 },
   createBtnDisabled: { opacity: 0.4 },
   createBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
+
+  checkboxRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  checkbox: {
+    width: 22, height: 22, borderRadius: 6, borderWidth: 1.5,
+    borderColor: '#6366F1', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(99,102,241,0.1)',
+  },
+  checkboxLabel: { fontSize: 14, color: '#E4E4E7', fontWeight: '500' },
 
   transactionInfo: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 12, padding: 14, gap: 12 },
   transactionInfoText: { fontSize: 15, color: '#E4E4E7', fontWeight: '500', flex: 1 },

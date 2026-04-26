@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { AccountsService } from '../accounts/accounts.service';
+import { CategoriesService } from '../categories/categories.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -11,6 +12,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private accountsService: AccountsService,
+    private categoriesService: CategoriesService,
     private jwtService: JwtService,
   ) {}
 
@@ -26,8 +28,9 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    // Create default accounts for new user
+    // Create default accounts and categories for new user
     await this.accountsService.createDefaultsForUser(user.id);
+    await this.categoriesService.createDefaultsForUser(user.id);
 
     const token = await this.generateToken(user.id, user.email);
     

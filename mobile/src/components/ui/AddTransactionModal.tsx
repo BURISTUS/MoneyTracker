@@ -14,6 +14,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
+import { formatCurrency } from '../../utils/formatters';
 import type { TransactionType } from '../../types';
 import { TransactionType as TransactionTypeEnum } from '../../types';
 
@@ -59,6 +60,7 @@ export function AddTransactionModal({
   const addTransaction = useDataStore((s) => s.addTransaction);
   const accounts = useDataStore((s) => s.accounts);
   const categories = useDataStore((s) => s.categories);
+  const budgets = useDataStore((s) => s.budgets);
   const user = useAuthStore((s) => s.user);
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
 
@@ -303,6 +305,30 @@ export function AddTransactionModal({
               </Text>
             </TouchableOpacity>
           </View>
+
+          {type === 'EXPENSE' && selectedCategory && (() => {
+            const budget = budgets.find((b) => b.categoryId === selectedCategory);
+            if (!budget) return null;
+            const percent = budget.percentUsed || budget.progress || 0;
+            const threshold = budget.alertThreshold || 80;
+            const barColor = percent > 100 ? '#F87171' : percent >= threshold ? '#FBBF24' : '#34D399';
+            const remaining = (budget.remaining ?? 0) / 100;
+            return (
+              <View className="px-4 mb-2">
+                <View className="bg-[rgba(255,255,255,0.05)] rounded-xl px-4 py-2.5">
+                  <View className="flex-row justify-between items-center mb-1.5">
+                    <Text className="text-xs text-[#8E8E93]">Лимит категории</Text>
+                    <Text className="text-xs font-semibold" style={{ color: barColor }}>
+                      {percent > 100 ? `Превышен на ${formatCurrency(Math.abs(remaining) * 100)}` : `Осталось ${formatCurrency(remaining * 100)}`}
+                    </Text>
+                  </View>
+                  <View className="h-1.5 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                    <View className="h-1.5 rounded-full" style={{ width: `${Math.min(percent, 100)}%`, backgroundColor: barColor }} />
+                  </View>
+                </View>
+              </View>
+            );
+          })()}
 
           {showNoteInput && (
             <View className="px-4 mb-2">
