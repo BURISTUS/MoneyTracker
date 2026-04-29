@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Pressable, ScrollView } from 'react-native';
+import { View, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,31 +7,78 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { Text } from '../../../components/ui/text';
 import { CurrencyPicker } from '../../../src/components/ui/CurrencyPicker';
-import { XPBar } from '../../../src/components/features/XPBar';
 import { useTranslation } from 'react-i18next';
-import { GAMIFICATION_STATUS_LABELS } from '../../../src/types';
 import type { ExchangeRate } from '../../../src/services/currency';
 
-const IconButton = ({ name, size = 22, color = '#A1A1AA' }: { name: React.ComponentProps<typeof Ionicons>['name']; size?: number; color?: string }) => (
-  <Ionicons name={name} size={size} color={color} />
-);
+const BORDER = 'rgba(255,255,255,0.08)';
+const CARD_BG = '#141418';
+
+const S = StyleSheet.create({
+  card: {
+    backgroundColor: CARD_BG,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: CARD_BG,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(239,68,68,0.06)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.15)',
+  },
+  divider: { height: 1, backgroundColor: BORDER },
+  sectionTitle: { fontSize: 13, fontWeight: '600', color: '#8C8C8C', marginBottom: 8, marginTop: 4 },
+  statCard: {
+    flex: 1,
+    backgroundColor: CARD_BG,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 14,
+    alignItems: 'center',
+  },
+  statValue: { fontSize: 18, fontWeight: '800', color: '#F5F5F5' },
+  statLabel: { fontSize: 11, color: '#8C8C8C', marginTop: 4, fontWeight: '500' },
+});
 
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuthStore();
   const { t } = useTranslation();
-  const gamification = useDataStore((s) => s.gamification);
+  const wishlist = useDataStore((s) => s.wishlist);
   const userCurrency = useDataStore((s) => s.userCurrency);
   const currencySymbol = useDataStore((s) => s.currencySymbol);
   const setUserCurrency = useDataStore((s) => s.setUserCurrency);
 
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
 
-  const xp = gamification?.xp ?? 0;
-  const level = gamification?.level ?? 1;
-  const status = gamification?.status ?? 'CONSUMER_DRONE';
-  const statusLabel = GAMIFICATION_STATUS_LABELS[status as keyof typeof GAMIFICATION_STATUS_LABELS] || 'Потребитель';
+  const rejectedCount = wishlist.filter((w) => w.status === 'REJECTED').length;
+  const totalSavedKopecks = wishlist.filter((w) => w.status === 'REJECTED').reduce((s, w) => s + w.price, 0);
 
   const handleCurrencySelect = useCallback(
     (currency: ExchangeRate) => {
@@ -50,93 +97,94 @@ export default function ProfileScreen() {
 
   return (
     <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
-      <View className="px-6 pt-4 pb-2">
+      <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 }}>
         <Text className="text-2xl font-bold text-typography-white">{t('profile.title', 'Профиль')}</Text>
       </View>
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 80 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="gap-5">
-          <View className="bg-background-50 rounded-2xl border border-outline-200 p-6">
-            <View className="flex-row items-center gap-4 mb-5">
-              <View className="w-14 h-14 rounded-full bg-primary-500/20 items-center justify-center">
-                <Text className="text-xl font-bold text-primary-400">
+        <View style={{ gap: 10 }}>
+          {/* Hero Card */}
+          <View style={S.card}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+              <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(99,102,241,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 20, fontWeight: '800', color: '#6366F1' }}>
                   {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                 </Text>
               </View>
-              <View className="flex-1">
-                <Text className="text-xl font-bold text-typography-white">
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: '#F5F5F5' }}>
                   {user?.name || 'Пользователь'}
                 </Text>
-                <Text className="text-sm text-typography-400 mt-0.5">
+                <Text style={{ fontSize: 13, color: '#8C8C8C', marginTop: 2 }}>
                   {user?.email}
                 </Text>
               </View>
-              <View className="bg-primary-500/15 px-2.5 py-1 rounded-md border border-primary-500/30">
-                <Text className="text-xs font-semibold text-primary-400">
-                  {statusLabel}
-                </Text>
-              </View>
             </View>
-            <XPBar xp={xp} level={level} />
           </View>
 
+          {/* Stats */}
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={S.statCard}>
+              <Text style={[S.statValue, { color: '#34D399' }]}>{rejectedCount}</Text>
+              <Text style={S.statLabel}>Отказов</Text>
+            </View>
+            <View style={S.statCard}>
+              <Text style={[S.statValue, { color: '#34D399' }]}>
+                {totalSavedKopecks > 0 ? `${(totalSavedKopecks / 100).toLocaleString('ru-RU')} ₽` : '—'}
+              </Text>
+              <Text style={S.statLabel}>Сэкономлено</Text>
+            </View>
+          </View>
+
+          {/* Navigation */}
+          <Text style={S.sectionTitle}>Финансы</Text>
+          {menuItems.map((item) => (
+            <Pressable
+              key={item.path}
+              onPress={() => router.push(item.path as never)}
+              style={S.row}
+            >
+              <View style={[S.iconWrap, { backgroundColor: `${item.color}15` }]}>
+                <Ionicons name={item.icon} size={18} color={item.color} />
+              </View>
+              <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: '#F5F5F5' }}>
+                {item.label}
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color="#71717A" />
+            </Pressable>
+          ))}
+
+          {/* Settings */}
+          <Text style={S.sectionTitle}>Настройки</Text>
           <Pressable
             onPress={() => setShowCurrencyPicker(true)}
-            className="flex-row items-center gap-3 py-4 px-4 bg-primary-500/8 rounded-xl border border-primary-500/15"
+            style={S.row}
           >
-            <View className="w-9 h-9 rounded-[10px] bg-primary-500/15 items-center justify-center">
-              <IconButton name="cash-outline" size={18} color="#818CF8" />
+            <View style={[S.iconWrap, { backgroundColor: 'rgba(99,102,241,0.12)' }]}>
+              <Ionicons name="cash-outline" size={18} color="#818CF8" />
             </View>
-            <View className="flex-1">
-              <Text className="text-base font-medium text-typography-white">
-                {t('profile.currency', 'Основная валюта')}
-              </Text>
-              <Text className="text-sm text-typography-400 mt-0.5">
-                {userCurrency} · {currencySymbol}
-              </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: '#F5F5F5' }}>Валюта</Text>
+              <Text style={{ fontSize: 12, color: '#8C8C8C', marginTop: 1 }}>{userCurrency} · {currencySymbol}</Text>
             </View>
-            <Text className="text-lg font-bold text-primary-400 mr-1">
-              {currencySymbol}
-            </Text>
-            <IconButton name="chevron-forward" size={18} color="#71717A" />
+            <Ionicons name="chevron-forward" size={18} color="#71717A" />
           </Pressable>
 
-          <View className="gap-2">
-            {menuItems.map((item) => (
-              <Pressable
-                key={item.path}
-                onPress={() => router.push(item.path as never)}
-                className="flex-row items-center gap-3 py-4 px-4 bg-background-50/50 rounded-xl"
-              >
-                <View
-                  className="w-9 h-9 rounded-[10px] items-center justify-center"
-                  style={{ backgroundColor: `${item.color}15` }}
-                >
-                  <IconButton name={item.icon} size={18} color={item.color} />
-                </View>
-                <Text className="text-base font-medium text-typography-white flex-1">
-                  {item.label}
-                </Text>
-                <IconButton name="chevron-forward" size={18} color="#71717A" />
-              </Pressable>
-            ))}
-          </View>
-
-          <View className="h-px bg-outline-200" />
+          <View style={S.divider} />
 
           <Pressable
             onPress={async () => {
               await logout();
               router.replace('/auth/login');
             }}
-            className="flex-row items-center gap-3 py-4 px-4 bg-error-500/6 rounded-xl"
+            style={S.logoutBtn}
           >
-            <IconButton name="log-out-outline" size={20} color="#F87171" />
-            <Text className="text-base font-medium text-error-500">
+            <Ionicons name="log-out-outline" size={20} color="#F87171" />
+            <Text style={{ fontSize: 15, fontWeight: '500', color: '#EF4444' }}>
               {t('profile.logout', 'Выйти')}
             </Text>
           </Pressable>

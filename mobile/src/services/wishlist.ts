@@ -1,9 +1,16 @@
 import { apiGet, apiPost } from './api';
 import type { WishlistItem } from '../types';
 
+export interface WishlistGroupedResponse {
+  ready: WishlistItem[];
+  pending: WishlistItem[];
+  history: WishlistItem[];
+  all: WishlistItem[];
+}
+
 export const wishlistService = {
-  async getAll(): Promise<WishlistItem[]> {
-    return apiGet<WishlistItem[]>('/wishlist');
+  async getAll(): Promise<WishlistGroupedResponse> {
+    return apiGet<WishlistGroupedResponse>('/wishlist');
   },
 
   async create(data: {

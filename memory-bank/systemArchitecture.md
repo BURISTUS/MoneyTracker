@@ -6,7 +6,7 @@
 **MoneyTracker** — «Побег из общества потребления»
 
 ### Суть продукта
-Финансовый трекер с геймификацией, который не просто учитывает расходы, а меняет отношение пользователя к деньгам. Приложение конвертирует цены в **часы жизни** и помогает бороться с импульсивными покупками через «Инкубатор желаний».
+Финансовый трекер, который не просто учитывает расходы, а меняет отношение пользователя к деньгам. Приложение конвертирует цены в **часы жизни** и помогает бороться с импульсивными покупками через «Инкубатор желаний».
 
 ### Целевая аудитория
 Люди 20-40 лет, которые хотят осознанно управлять финансами, избавиться от импульсивных покупок и начать накапливать.
@@ -23,30 +23,15 @@
 - Желание добавляется с таймером остывания (7 дней по умолчанию)
 - Кнопка «Купить» заблокирована до окончания таймера
 - Через 7 дней — вопрос: «Ты всё ещё хочешь это?»
-- Отказ = дофаминовая награда: XP, визуализация сэкономленного, прогноз инвестиционного роста
+- Отказ = отображение сэкономленного времени, статистика savings
 - Покупка тоже доступна, но UI подталкивает к отказу (зелёная кнопка «Мне это не нужно» крупнее красной «Купить»)
-
-#### 3. RPG-прогрессия (Уровни осознанности)
-| Уровень | Статус | Описание |
-|---------|--------|----------|
-| 1 | Потребитель (Consumer Drone) | Есть долги, нет накоплений |
-| 2 | Пробудившийся (Awakened) | Начал отслеживать траты |
-| 3 | Аскет (Ascetic) | Закрыл долги, отказался от 5+ импульсивных покупок |
-| 4 | Стратег (Strategist) | Есть подушка безопасности |
-| 5 | Капиталист (Capitalist) | Пассивный доход покрывает 10% трат |
-| 6 | Архитектор (Financial Architect) | Финансовая независимость |
-
-#### 4. Ачивки (примеры)
-- 🏆 «Убийца маркетинга» — не покупал одежду 3 месяца (кроме базы)
-- ☕ «Кофеин-детокс» — 30 дней без кофе на вынос
-- 📉 «Шорт трендов» — отказ от вещи после инкубатора
 
 ### Месседж
 Приложение не говорит «Не трать». Оно говорит: **«Не меняй свою жизнь на мусор»**.
 
 ### Монетизация (план)
-- **Free:** Учёт расходов, базовые категории, инкубатор (лимит 3 желания), life-hours
-- **Premium:** Безлимитный инкубатор с аналитикой, продвинутые ачивки, кастомные скины аватара, семейный бюджет, прогнозы
+- **Free:** Учёт расходов, базовые категории, инкубатор, life-hours
+- **Premium:** Безлимитный инкубатор с аналитикой, кастомные скины аватара, семейный бюджет, прогнозы
 
 ### Дизайн-референс
 Стиль **1Money** — тёмная тема, donut-диаграмма расходов на главном экране, bottom-sheet модалки, calculator numpad при вводе суммы, иконки категорий вокруг диаграммы.
@@ -99,9 +84,7 @@
 | Transaction | userId, accountId, categoryId, amount(BigInt), type(INCOME/EXPENSE/TRANSFER), date |
 | Budget | userId, categoryId, amount(BigInt), period(MONTHLY default), startDate/endDate(auto текущий месяц), alertThreshold(default 80) |
 | Goal | userId, name, targetAmount, currentAmount, deadline |
-| UserGamification | userId(unique), xp, level, savedAmount, status |
 | WishlistItem | userId, name, price, description(String, обязательное), status(PENDING/READY/REJECTED/PURCHASED), cooldownDays(7) |
-| Achievement | code(unique), name, xpReward, conditionType, tier |
 | Deposit | userId, type, principal, annualRate, compounding |
 | Loan | userId, type, principal, currentBalance, monthlyPayment |
 | SavingsGoal | userId, name, targetAmount, currentAmount |
@@ -110,12 +93,12 @@
 | Translation | language, group, key, value (unique combo) |
 
 ### Нереализованные модели (файлы есть, модули не подключены)
-Family, FamilyMember, Notification, Challenge, UserChallenge, DepositTransaction, LoanPayment
+Family, FamilyMember, Notification, DepositTransaction, LoanPayment
 
 ## Backend — структура папок
 ```
 backend/src/
-├── app.module.ts          # Root (PrismaModule, RedisModule, AuthModule, UsersModule, TransactionsModule, CategoriesModule, AccountsModule, BudgetModule, GoalsModule, WishlistModule, GamificationModule, LifeCostModule)
+├── app.module.ts          # Root (PrismaModule, RedisModule, AuthModule, UsersModule, TransactionsModule, CategoriesModule, AccountsModule, BudgetModule, GoalsModule, WishlistModule, LifeCostModule)
 ├── main.ts                # CORS, ValidationPipe, Swagger, BigInt.toJSON, port 3001
 ├── prisma/                # PrismaService
 ├── redis/                 # RedisService
@@ -127,43 +110,44 @@ backend/src/
 ├── budget/                # CRUD budgets
 ├── goals/                 # CRUD goals
 ├── wishlist/              # CRUD wishlist
-├── gamification/          # XP, level, status
 ├── life-cost/             # Hourly rate, calculate hours
+├── chat/                  # Chat messages
 ├── currency/              # Currency rates (~300+ currencies, Redis cache, exchange-api, upsert on refresh)
 ├── i18n-controller/       # GET /api/i18n/translations/:lang, GET /api/i18n/languages
 ├── i18n/                  # Translation JSON files: en/, ru/, es/, pt/, fr/, de/, ja/, zh/
-└── (не подключены: notifications, family)
+└── (не подключены: notifications, family, deposits, loans)
 ```
 
 ## Mobile — структура папок
 ```
 mobile/
 ├── app/                   # expo-router routes
-│   ├── _layout.tsx        # Root: GluestackUIProvider + QueryClientProvider + ThemeProvider + Stack, import global.css
+│   ├── _layout.tsx        # Root: GluestackUIProvider + ToastProvider + QueryClientProvider + ThemeProvider + Stack, import global.css
 │   ├── index.tsx          # Auth gate (checkAuth → /main или /auth/login)
 │   ├── auth/              # login.tsx, register.tsx
 │   └── main/              # Authenticated screens
-│       ├── _layout.tsx    # TabBar + Stack (12 экранов)
+│       ├── _layout.tsx    # TabBar + Stack
 │       ├── index.tsx      # Home (balance, monthly stats, recent transactions)
 │       ├── transactions/  # Dashboard с DonutChart + TransactionActionModal
 │       ├── categories/    # List + Create + Chart
 │       ├── wishlist/      # Incubator (cooldown 7 дней, life-hours)
+│       ├── chat/          # AI чат с пресетами
 │       ├── accounts/      # Accounts list
 │       ├── budget/        # Budget page
 │       ├── goals/         # Goals page
 │       ├── life-cost/     # Life cost calculator
 │       └── profile/       # Profile settings
 ├── src/
-│   ├── types/index.ts     # Все TypeScript типы (430 строк)
+│   ├── types/index.ts     # Все TypeScript типы
 │   ├── utils/formatters.ts # formatCurrency (копейки→рубли), formatDate
 │   ├── services/          # API services (api.ts, auth, accounts, categories, transactions, lifeCost)
 │   ├── stores/            # Zustand stores
 │   │   ├── authStore.ts   # user, isAuthenticated, isDemoMode, login/logout/loginMock/checkAuth
-│   │   └── dataStore.ts   # accounts, transactions, categories, budgets, goals, wishlist, gamification, getHourlyRate/setHourlyRate
+│   │   └── dataStore.ts   # accounts, transactions, categories, budgets, goals, wishlist, hourlyRate
 │   ├── hooks/             # Custom hooks (useAccounts, useTransactions, etc.)
 │   └── components/
-│       ├── ui/            # Базовые: Loading, CategoryIcon, DonutChart, SpendingChart, AddTransactionModal, TransactionActionModal, DatePickerModal, DateRangePickerModal, CurrencyPicker
-│       ├── features/      # Составные: AccountCard, TransactionItem, WishlistCard, XPBar, BalanceHero, BudgetCard, GoalCard, StatCard
+│       ├── ui/            # Базовые: Loading, CategoryIcon, DonutChart, SpendingChart, AddTransactionModal, TransactionActionModal, DatePickerModal, DateRangePickerModal, CurrencyPicker, Toast (ToastProvider+useToast), ConfirmModal
+│       ├── features/      # Составные: AccountCard, TransactionItem, WishlistCard, BudgetCard, GoalCard, StatCard
 │       └── layout/        # TabBar
 ```
 
@@ -214,8 +198,8 @@ mobile/
 ### Users
 | Метод | Путь | Описание |
 |-------|------|----------|
-| GET | /users/profile | Профиль юзера (с gamification) |
-| PATCH | /users/profile | Обновить name, monthlyHours |
+| GET | /users/profile | Профиль юзера |
+| PATCH | /users/profile | Обновить name, monthlyHours, currency, language |
 | PATCH | /users/hourly-rate | Установить hourlyRate (копейки) |
 
 ### Life-Cost
@@ -238,12 +222,45 @@ mobile/
 | GET | /i18n/translations/:lang | Все переводы для языка |
 | GET | /i18n/languages | Список поддерживаемых языков |
 
+### Chat
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | /chat/messages | История сообщений |
+| POST | /chat/message | Отправить сообщение (USER → ASSISTANT) |
+| DELETE | /chat/messages | Очистить историю |
+
 ## Демо-режим
 - Кнопка «Начать (демо)» на login/register → `loginMock()`
 - `isDemoMode: true` в authStore (persisted)
 - `initializeData()` пропускает API-вызовы в демо-режиме
 - `checkAuth()` пропускает `/auth/me` в демо-режиме
 - Нет реального JWT-токена — только моковые данные в Zustand
+
+## Spec-Driven Development (OpenSpec)
+```
+openspec/
+├── config.yaml           # Project context, tech stack, conventions, rules
+├── specs/                # Capability specs (living documentation)
+│   ├── auth-users/spec.md
+│   ├── accounts/spec.md
+│   ├── categories/spec.md
+│   ├── transactions/spec.md
+│   ├── budgets/spec.md
+│   ├── goals/spec.md
+│   ├── wishlist/spec.md
+│   ├── life-cost/spec.md
+│   ├── currency/spec.md
+│   ├── notifications/spec.md
+│   └── family/spec.md
+└── changes/              # Change proposals (archive/)
+    └── <change-id>/
+        ├── proposal.md
+        ├── design.md
+        └── tasks.md
+```
+- Каждая спека: Purpose + Requirements в формате GIVEN/WHEN/THEN
+- Контекст проекта (стек, конвенции, API) — в `config.yaml`
+- Новые фичи: создавать change proposal в `openspec/changes/`
 
 ## Docker
 ```yaml

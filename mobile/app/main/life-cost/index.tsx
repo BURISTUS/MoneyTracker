@@ -3,7 +3,6 @@ import {
   View,
   Pressable,
   TextInput,
-  Alert,
   Animated,
   StyleSheet,
   KeyboardAvoidingView,
@@ -14,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { Text } from '../../../components/ui/text';
+import { useToast } from '../../../src/components/ui/Toast';
+import { ToastContainer } from '../../../src/components/ui/Toast';
 
 type SalaryPeriod = 'hour' | 'week' | 'month' | 'year';
 
@@ -42,6 +43,7 @@ export default function LifeCostScreen() {
   const insets = useSafeAreaInsets();
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
   const setHourlyRate = useDataStore((s) => s.setHourlyRate);
+  const { showSuccess } = useToast();
   const hourlyRate = getHourlyRate();
 
   const [salaryPeriod, setSalaryPeriod] = useState<SalaryPeriod>('month');
@@ -79,7 +81,6 @@ export default function LifeCostScreen() {
   const handleTabPress = useCallback(
     (period: SalaryPeriod) => {
       setSalaryPeriod(period);
-      setSalaryInput('');
       Animated.spring(indicatorX, {
         toValue: tabXPositions[period],
         useNativeDriver: true,
@@ -93,7 +94,7 @@ export default function LifeCostScreen() {
   const handleSaveRate = useCallback(async () => {
     if (!calculatedHourlyRate || calculatedHourlyRate <= 0) return;
     await setHourlyRate(calculatedHourlyRate);
-    Alert.alert('Сохранено', `Ставка ${calculatedHourlyRate.toFixed(0)} ₽/час`);
+    showSuccess(`Ставка ${calculatedHourlyRate.toFixed(0)} ₽/час сохранена`);
   }, [calculatedHourlyRate, setHourlyRate]);
 
   const onTabLayout = useCallback(
@@ -110,13 +111,15 @@ export default function LifeCostScreen() {
   return (
     <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[s.flex, s.container, { paddingTop: insets.top }]}>
-        <View style={s.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={s.backBtn}>
-            <Ionicons name="chevron-back" size={28} color="#A1A1AA" />
-          </Pressable>
-          <Text style={s.headerTitle}>Life Cost</Text>
+        <View style={{ position: 'relative' }}>
+          <View style={s.header}>
+            <Pressable onPress={() => router.back()} hitSlop={12} style={s.backBtn}>
+              <Ionicons name="chevron-back" size={28} color="#A1A1AA" />
+            </Pressable>
+            <Text style={s.headerTitle}>Life Cost</Text>
+          </View>
+          <ToastContainer />
         </View>
-
         <Animated.View style={[s.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={s.cardIconWrap}>
             <Ionicons name="hourglass-outline" size={22} color="#6366F1" />

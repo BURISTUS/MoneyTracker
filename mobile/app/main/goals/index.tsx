@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, FlatList, Pressable, Modal, TextInput, ScrollView, Alert } from 'react-native';
+import { View, FlatList, Pressable, Modal, TextInput, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,8 @@ import { useDataStore } from '../../../src/stores/dataStore';
 import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../../src/utils/formatters';
 import type { Goal } from '../../../src/types';
+import { ConfirmModal } from '../../../src/components/ui/ConfirmModal';
+import { ToastContainer } from '../../../src/components/ui/Toast';
 
 const BORDER = 'rgba(255,255,255,0.08)';
 const CARD_BG = '#141418';
@@ -38,6 +40,11 @@ export default function GoalsScreen() {
     goalId: string | null;
     amount: string;
   }>({ visible: false, goalId: null, amount: '' });
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{ visible: boolean; goalId: string | null }>({
+    visible: false,
+    goalId: null,
+  });
 
   const totalSaved = goals.reduce((sum, g) => sum + Number(g.currentAmount), 0);
   const totalTarget = goals.reduce((sum, g) => sum + Number(g.targetAmount), 0);
@@ -95,21 +102,18 @@ export default function GoalsScreen() {
   }, [progressModal, addGoalProgress]);
 
   const handleDelete = useCallback((id: string) => {
-    Alert.alert('Удалить цель?', 'Это действие нельзя отменить', [
-      { text: 'Отмена', style: 'cancel' },
-      {
-        text: 'Удалить',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteGoalApi(id);
-          } catch (error) {
-            console.error('Failed to delete goal:', error);
-          }
-        },
-      },
-    ]);
-  }, [deleteGoalApi]);
+    setDeleteConfirm({ visible: true, goalId: id });
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteConfirm.goalId) return;
+    try {
+      await deleteGoalApi(deleteConfirm.goalId);
+    } catch (error) {
+      console.error('Failed to delete goal:', error);
+    }
+    setDeleteConfirm({ visible: false, goalId: null });
+  }, [deleteConfirm.goalId, deleteGoalApi]);
 
   const renderGoal = useCallback(({ item }: { item: Goal }) => {
     const progress = item.progress ?? (item.targetAmount > 0 ? (Number(item.currentAmount) / Number(item.targetAmount)) * 100 : 0);
@@ -147,11 +151,14 @@ export default function GoalsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0A0A0F', paddingTop: insets.top }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 }}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4, marginLeft: -4 }}>
-          <Ionicons name="chevron-back" size={28} color="#A1A1AA" />
-        </Pressable>
-        <Text style={{ fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 }}>Цели</Text>
+      <View style={{ position: 'relative' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 }}>
+          <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4, marginLeft: -4 }}>
+            <Ionicons name="chevron-back" size={28} color="#A1A1AA" />
+          </Pressable>
+          <Text style={{ fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 }}>Цели</Text>
+        </View>
+        <ToastContainer />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
@@ -342,6 +349,15 @@ export default function GoalsScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <ConfirmModal
+        visible={deleteConfirm.visible}
+        title="Удалить цель?"
+        message="Это действие нельзя отменить"
+        confirmText="Удалить"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm({ visible: false, goalId: null })}
+      />
     </View>
   );
 }

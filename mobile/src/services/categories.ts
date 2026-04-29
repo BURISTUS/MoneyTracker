@@ -52,6 +52,8 @@ export const categoriesService = {
     icon: string;
     color: string;
     isBaseNeed: boolean;
+    excludeFromTotal: boolean;
+    monthlyLimit: number | null;
     images: string[];
   }>): Promise<Category> {
     return apiPatch<Category>(`/categories/${id}`, data);

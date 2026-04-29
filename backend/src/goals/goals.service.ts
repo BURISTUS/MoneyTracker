@@ -6,13 +6,14 @@ import { Prisma } from '@prisma/client';
 export class GoalsService {
   constructor(private prisma: PrismaService) {}
 
-  private serializeGoal(goal: { targetAmount: bigint; currentAmount: bigint; [key: string]: unknown }) {
+  private serializeGoal(goal: { targetAmount: bigint; currentAmount: bigint; isCompleted: boolean; [key: string]: unknown }) {
     return {
       ...goal,
       targetAmount: goal.targetAmount.toString(),
       currentAmount: goal.currentAmount.toString(),
       percentComplete: (Number(goal.currentAmount) / Number(goal.targetAmount)) * 100,
       remaining: Number(goal.targetAmount) - Number(goal.currentAmount),
+      isCompleted: goal.isCompleted || (Number(goal.currentAmount) >= Number(goal.targetAmount)),
     };
   }
 

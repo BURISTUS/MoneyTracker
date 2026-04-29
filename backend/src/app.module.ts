@@ -13,10 +13,10 @@ import { AccountsModule } from './accounts/accounts.module';
 import { BudgetModule } from './budget/budget.module';
 import { GoalsModule } from './goals/goals.module';
 import { WishlistModule } from './wishlist/wishlist.module';
-import { GamificationModule } from './gamification/gamification.module';
 import { LifeCostModule } from './life-cost/life-cost.module';
 import { CurrencyModule } from './currency/currency.module';
 import { I18nApiModule } from './i18n-controller/i18n-api.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -47,10 +47,10 @@ import { I18nApiModule } from './i18n-controller/i18n-api.module';
     BudgetModule,
     GoalsModule,
     WishlistModule,
-    GamificationModule,
     LifeCostModule,
     CurrencyModule,
     I18nApiModule,
+    ChatModule,
   ],
 })
 export class AppModule {}

@@ -79,7 +79,7 @@ export class CategoriesService implements OnModuleInit {
   }
 
   // Создать персональную категорию
-  async create(userId: string, data: { name: string; type: CategoryType; icon?: string; color?: string; isBaseNeed?: boolean; images?: string[] }) {
+  async create(userId: string, data: { name: string; type: CategoryType; icon?: string; color?: string; isBaseNeed?: boolean; excludeFromTotal?: boolean; monthlyLimit?: bigint; images?: string[] }) {
     const existingSystem = await this.prisma.category.findFirst({
       where: { name: data.name, userId: null },
     });
@@ -95,6 +95,8 @@ export class CategoriesService implements OnModuleInit {
         icon: data.icon,
         color: data.color,
         isBaseNeed: data.isBaseNeed ?? false,
+        excludeFromTotal: data.excludeFromTotal ?? false,
+        monthlyLimit: data.monthlyLimit,
         images: data.images ?? [],
       },
     });

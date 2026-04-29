@@ -26,6 +26,7 @@ export class AuthService {
     const user = await this.usersService.create({
       ...registerDto,
       password: hashedPassword,
+      hourlyRate: registerDto.hourlyRate ? registerDto.hourlyRate * 100 : undefined,
     });
 
     // Create default accounts and categories for new user
@@ -33,13 +34,13 @@ export class AuthService {
     await this.categoriesService.createDefaultsForUser(user.id);
 
     const token = await this.generateToken(user.id, user.email);
-    
+
     return {
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
-        hourlyRate: user.hourlyRate,
+        hourlyRate: user.hourlyRate ? user.hourlyRate / 100 : null,
         monthlyHours: user.monthlyHours,
       },
       token,
@@ -64,7 +65,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
-        hourlyRate: user.hourlyRate,
+        hourlyRate: user.hourlyRate ? user.hourlyRate / 100 : null,
         monthlyHours: user.monthlyHours,
       },
       token,
@@ -77,6 +78,11 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
     return user;
+  }
+
+  async logout(userId: string) {
+    // TODO: implement token blacklist via Session model if needed
+    return { success: true };
   }
 
   private async generateToken(userId: string, email: string): Promise<string> {

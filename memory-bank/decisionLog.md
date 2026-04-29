@@ -97,4 +97,21 @@
 
 ### Решение: getHourlyRate двойное деление на 100 (2026-04-21)
 **Почему:** Бэкенд `/life-cost/rate` уже конвертирует `user.hourlyRate` из копеек в рубли (`/ 100`). Фронтенд `fetchGamification` сохранял рубли в `gamification.hourlyRate`. Но `getHourlyRate()` делал ещё `/ 100` — двойное деление. Если hourlyRate = 150000 копеек (1500₽), бэкенд возвращал 1500, фронтенд выдавал 15. Фикс: убрал `/ 100` из `getHourlyRate()`.
+
+### Решение: Каждый период использует offset от текущего момента (2026-04-21)
 **Почему:** Каждый тип периода (DAY/WEEK/MONTH/YEAR/CUSTOM) использует offset от текущего момента. DAY: offset=-1 = вчера, offset=-2 = позавчера. WEEK: offset=-1 = прошлая неделя (с понедельника). MONTH: offset=-1 = прошлый месяц. CUSTOM: сдвиг на длину диапазона. offset ограничен сверху нулём (нельзя смотреть будущее). Система `getRange(period, offset, customRange)` централизует расчёт дат.
+
+### Решение: Переход на OpenSpec для spec-driven development (2026-04-26)
+**Почему:** Нужна единая система управления требованиями, которая живёт в репозитории и доступна AI-агентам. OpenSpec предоставляет стандартный формат: `openspec/specs/<capability>/spec.md` с Purpose + Requirements в GIVEN/WHEN/THEN. Контекст проекта (стек, конвенции, API) централизован в `openspec/config.yaml` и подаётся AI при генерации артефактов. Change proposals создаются в `openspec/changes/<change-id>/`. Это позволяет review-ить intent (изменения требований), а не только код. Старый `specs/project-overview.md` оставлен как источник, но актуальные спеки теперь в `openspec/`.
+
+### Решение: Memory Bank не заменяется OpenSpec (2026-04-26)
+**Почему:** OpenSpec хранит функциональные требования (what), а Memory Bank — оперативное состояние реализации (how + current state + история багфиксов). Оба инструмента комплементарны. Memory Bank обновляется AI перед каждой задачей, OpenSpec управляется PM для планирования.
+
+### Решение: Roadmap планируется через OpenSpec change proposals (2026-04-26)
+**Почему:** Все новые фичи оформляются как change proposals в `openspec/changes/<id>/` с `proposal.md` (summary, motivation, non-goals) и `tasks.md` (по фазам). Это позволяет PM review-ить intent до написания кода.
+
+### Решение: 1 рабочий день = 8 часов для life-cost (2026-04-27)
+**Почему:** Пользователь определил, что "рабочий день" в контексте life-cost — это 8 часов, не 24. Это влияет на все пересчёты: если где-то нужно показать "дни работы", делим часы на 8. В UI отображаем только часы (без дней), но внутренняя логика (backend `lifeCostService.calculateHours`, `dataStore.calculateLifeCost`) использует 8-часовой день. Исправлены `formatLifeHours` в `wishlist/index.tsx`, `transactions/index.tsx`, `main/index.tsx` — теперь всегда часы (или минуты), без деления на дни.
+
+### Решение: Кастомный Toast + ConfirmModal вместо Alert.alert (2026-04-27)
+**Почему:** Системный `Alert.alert` выглядит чужеродно в dark-theme приложении (белый фон, системный шрифт). Созданы два компонента: `Toast` (auto-dismiss уведомления success/error/info) через React Context + hook, и `ConfirmModal` (для подтверждений delete/buy/reject). ToastProvider обёрнут глобально в `_layout.tsx`. 17 вызовов Alert.alert заменены в 7 файлах. Toast использует Animated (fade+slide), Supports stacking (несколько тостов подряд), auto-dismiss 3s. ConfirmModal поддерживает два варианта: destructive (красный) и confirm (indigo).

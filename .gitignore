@@ -63,3 +63,6 @@ temp/
 
 # Prisma (keep schema.prisma and migrations folder, but ignore generated client)
 backend/node_modules/.prisma/
+.aider*
+.kilocode
+.cursor

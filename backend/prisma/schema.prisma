@@ -32,6 +32,8 @@ model User {
   wishlist          WishlistItem[]
   gamification      UserGamification?
   achievements      UserAchievement[]
+  xpEvents          XpEvent[]
+  streakDays        StreakDay[]
   familyMember      FamilyMember?
   challenges        UserChallenge[]
   notifications     Notification[]
@@ -39,6 +41,7 @@ model User {
   loans             Loan[]
   savingsGoals      SavingsGoal[]
   forecastScenarios ForecastScenario[]
+  chatMessages      ChatMessage[]
 
   @@map("users")
 }
@@ -85,21 +88,23 @@ enum AccountType {
 
 // Категории: системные (userId = NULL) и персональные (userId = user.id)
 model Category {
-  id          String   @id @default(uuid())
-  userId      String?  // NULL = системная категория, UUID = персональная
-  name        String
-  type        CategoryType
-  icon        String?
-  color       String?
-  isBaseNeed  Boolean  @default(false)
-  order       Int      @default(0)
-  images      String[] // Массив URL картинок категории (для 1money-стиля)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(uuid())
+  userId           String?  // NULL = системная категория, UUID = персональная
+  name             String
+  type             CategoryType
+  icon             String?
+  color            String?
+  isBaseNeed       Boolean  @default(false)
+  excludeFromTotal Boolean  @default(false)
+  monthlyLimit     BigInt?
+  order            Int      @default(0)
+  images           String[] // Массив URL картинок категории (для 1money-стиля)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-  budgets     Budget[]
+  user             User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions     Transaction[]
+  budgets          Budget[]
 
   @@index([userId])
   @@map("categories")
@@ -180,16 +185,27 @@ model Goal {
 // === GAMIFICATION ===
 
 model UserGamification {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  xp              Int      @default(0)
-  level           Int      @default(1)
-  savedAmount     BigInt   @default(0)
-  status          GamificationStatus @default(CONSUMER_DRONE)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                      String   @id @default(uuid())
+  userId                  String   @unique
+  xp                      Int      @default(0)
+  level                   Int      @default(1)
+  savedAmount             BigInt   @default(0)
+  status                  GamificationStatus @default(CONSUMER_DRONE)
+  currentStreak           Int      @default(0)
+  longestStreak           Int      @default(0)
+  lastActionAt            DateTime?
+  streakFreezeUsed        Boolean  @default(false)
+  streakFreezeResetAt     DateTime?
+  totalTransactions       Int      @default(0)
+  totalRejected           Int      @default(0)
+  totalPurchased          Int      @default(0)
+  totalGoalsCompleted     Int      @default(0)
+  consecutiveBudgetMonths Int      @default(0)
+  hourlyRateSet           Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_gamification")
 }
@@ -208,6 +224,7 @@ model Achievement {
   code            String   @unique
   name            String
   description     String
+  category        String
   iconUrl         String?
   xpReward        Int
   conditionType   AchievementCondition
@@ -234,11 +251,13 @@ model UserAchievement {
 }
 
 enum AchievementCondition {
-  NO_SPEND_CATEGORY_DAYS
+  STREAK_DAYS
   WISHLIST_REJECTED
   BUDGET_UNDER_LIMIT
-  STREAK_DAYS
+  TOTAL_TRANSACTIONS
+  GOALS_COMPLETED
   TOTAL_SAVED_AMOUNT
+  APP_USAGE_DAYS
 }
 
 enum AchievementTier {
@@ -246,6 +265,35 @@ enum AchievementTier {
   SILVER
   GOLD
   PLATINUM
+}
+
+model XpEvent {
+  id          String   @id @default(uuid())
+  userId      String
+  action      String
+  baseXp      Int
+  multiplier  Float    @default(1.0)
+  totalXp     Int
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("xp_events")
+}
+
+model StreakDay {
+  id          String   @id @default(uuid())
+  userId      String
+  date        String
+  actionCount Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("streak_days")
 }
 
 // === WISHLIST - Инкубатор желаний ===
@@ -567,6 +615,34 @@ model ExchangeRate {
   updatedAt DateTime     @updatedAt
 
   @@map("exchange_rates")
+}
+
+// === AI CHAT ===
+
+model ChatMessage {
+  id          String   @id @default(uuid())
+  userId      String
+  role        ChatRole
+  content     String
+  presetType  PresetType?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("chat_messages")
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+enum PresetType {
+  SPENDING_REPORT
+  BUDGET_ANALYSIS
+  SAVINGS_TIPS
+  DYNAMICS
 }
 
 // === TRANSLATIONS CACHE ===

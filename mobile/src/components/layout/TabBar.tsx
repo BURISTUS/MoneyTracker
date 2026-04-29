@@ -18,6 +18,7 @@ interface TabItem {
 const tabs: TabItem[] = [
   { key: 'home', label: 'Главная', icon: 'home-outline', iconActive: 'home', path: '/main' },
   { key: 'transactions', label: 'Операции', icon: 'swap-horizontal-outline', iconActive: 'swap-horizontal', path: '/main/transactions' },
+  { key: 'chat', label: 'Чат', icon: 'chatbubbles-outline', iconActive: 'chatbubbles', path: '/main/chat' },
   { key: 'wishlist', label: 'Желания', icon: 'heart-outline', iconActive: 'heart', path: '/main/wishlist' },
   { key: 'profile', label: 'Профиль', icon: 'person-outline', iconActive: 'person', path: '/main/profile' },
 ];

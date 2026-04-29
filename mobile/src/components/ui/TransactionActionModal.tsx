@@ -5,13 +5,13 @@ import {
   Modal as RNModal,
   TouchableOpacity,
   TextInput,
-  Alert,
   Platform,
 } from 'react-native';
 import { useDataStore } from '../../stores/dataStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from './CategoryIcon';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { ConfirmModal } from './ConfirmModal';
 import type { Transaction } from '../../types';
 
 interface TransactionActionModalProps {
@@ -34,6 +34,7 @@ export function TransactionActionModal({
   const [isEditing, setIsEditing] = useState(false);
   const [editDescription, setEditDescription] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const category = useMemo(
     () => (transaction ? categories.find((c) => c.id === transaction.categoryId) : null),
@@ -52,35 +53,28 @@ export function TransactionActionModal({
     const rubles = transaction.amount / 100;
     const hours = rubles / rate;
     if (hours < 1) return `${Math.round(hours * 60)} мин`;
-    if (hours < 24) return `${hours.toFixed(1)} ч`;
-    return `${(hours / 24).toFixed(1)} дн`;
+    if (hours < 100) return `${hours.toFixed(1)} ч`;
+    return `${Math.round(hours)} ч`;
   }, [transaction, getHourlyRate]);
 
   const handleDelete = useCallback(() => {
     if (!transaction) return;
-    Alert.alert(
-      'Удалить операцию?',
-      `${category?.name || 'Без категории'} — ${formatCurrency(transaction.amount)}`,
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Удалить',
-          style: 'destructive',
-          onPress: async () => {
-            setIsDeleting(true);
-            try {
-              await deleteTransaction(transaction.id);
-              onClose();
-            } catch (error) {
-              console.error('Failed to delete:', error);
-            } finally {
-              setIsDeleting(false);
-            }
-          },
-        },
-      ],
-    );
-  }, [transaction, category, deleteTransaction, onClose]);
+    setShowDeleteConfirm(true);
+  }, [transaction]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!transaction) return;
+    setShowDeleteConfirm(false);
+    setIsDeleting(true);
+    try {
+      await deleteTransaction(transaction.id);
+      onClose();
+    } catch (error) {
+      console.error('Failed to delete:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [transaction, deleteTransaction, onClose]);
 
   const handleEdit = useCallback(() => {
     if (!transaction) return;
@@ -110,6 +104,7 @@ export function TransactionActionModal({
   const amountColor = isExpense ? '#FF3B30' : '#34C759';
 
   return (
+    <>
     <RNModal visible={visible} animationType="slide" onRequestClose={handleClose} transparent>
       <View className="flex-1 bg-[rgba(0,0,0,0.5)] justify-end">
         <Pressable className="flex-1" onPress={handleClose} />
@@ -135,6 +130,16 @@ export function TransactionActionModal({
                   {isExpense ? '− ' : '+ '}{formatCurrency(transaction.amount)}
                 </Text>
               </View>
+              {lifeHours && (
+                <View className="items-end" style={{ backgroundColor: 'rgba(255,149,0,0.12)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 }}>
+                  <Text style={{ fontSize: 20, fontWeight: '800', color: '#FF9500' }}>
+                    {lifeHours}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#FF9500', opacity: 0.7 }}>
+                    работы
+                  </Text>
+                </View>
+              )}
             </View>
 
             <View className="gap-2 mb-5">
@@ -148,12 +153,6 @@ export function TransactionActionModal({
                 <View className="flex-row justify-between">
                   <Text className="text-sm text-[#8E8E93]">Счёт</Text>
                   <Text className="text-sm text-white">{account.name}</Text>
-                </View>
-              )}
-              {lifeHours && (
-                <View className="flex-row justify-between">
-                  <Text className="text-sm text-[#8E8E93]">Время работы</Text>
-                  <Text className="text-sm text-warning-400">⏱ {lifeHours}</Text>
                 </View>
               )}
             </View>
@@ -214,5 +213,15 @@ export function TransactionActionModal({
         </View>
       </View>
     </RNModal>
+
+      <ConfirmModal
+        visible={showDeleteConfirm}
+        title="Удалить операцию?"
+        message={transaction ? `${category?.name || 'Без категории'} — ${formatCurrency(transaction.amount)}` : ''}
+        confirmText="Удалить"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+    </>
   );
 }

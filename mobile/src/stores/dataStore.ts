@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Account, Transaction, Budget, Goal, Category, UserGamification, Achievement, Challenge, WishlistItem, User } from '../types';
-import { AccountType, CategoryType, TransactionType, BudgetPeriod, GamificationStatus, AchievementCondition, AchievementTier, ChallengeType, WishlistStatus } from '../types';
+import type { Account, Transaction, Budget, Goal, Category, UserGamification, Challenge, WishlistItem, User } from '../types';
+import { AccountType, CategoryType, TransactionType, BudgetPeriod, WishlistStatus } from '../types';
 import { useAuthStore } from './authStore';
 import transactionsService from '../services/transactions';
 import accountsService from '../services/accounts';
@@ -24,15 +24,10 @@ const INITIAL_GOALS: Goal[] = [];
 const INITIAL_GAMIFICATION: UserGamification = {
   id: '',
   userId: '',
-  xp: 0,
-  level: 1,
-  savedAmount: 0,
-  status: GamificationStatus.CONSUMER_DRONE,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   hourlyRate: undefined,
 };
-const INITIAL_ACHIEVEMENTS: Achievement[] = [];
 const INITIAL_CHALLENGES: Challenge[] = [];
 const INITIAL_WISHLIST: WishlistItem[] = [];
 
@@ -94,16 +89,15 @@ interface DataState {
   addGoalProgress: (id: string, amount: number) => Promise<void>;
   deleteGoalApi: (id: string) => Promise<void>;
 
-  // Gamification
+  // Gamification / Life-Cost
   gamification: UserGamification | null;
   user: User | null;
   setGamification: (gamification: UserGamification | null) => void;
   setUser: (user: User | null) => void;
-  addXp: (amount: number) => void;
   fetchGamification: () => Promise<void>;
 
-  // Achievements
-  achievements: Achievement[];
+  // Achievements (kept for backward compat, unused)
+  achievements: any[];
   earnedAchievements: string[];
   earnAchievement: (id: string) => void;
 
@@ -205,14 +199,6 @@ export const useDataStore = create<DataState>()(
       setTransactions: (transactions) => set({ transactions }),
       addTransaction: async (transaction) => {
         try {
-          console.log('📝 Creating transaction:', {
-            accountId: transaction.accountId,
-            categoryId: transaction.categoryId,
-            amount: transaction.amount,
-            type: transaction.type,
-            date: transaction.date,
-          });
-
           const amountNum = Number(transaction.amount);
           await transactionsService.create({
             accountId: transaction.accountId,
@@ -223,7 +209,6 @@ export const useDataStore = create<DataState>()(
             date: transaction.date,
           });
 
-          console.log('✅ Transaction created successfully');
           set((state) => ({ transactions: [transaction, ...state.transactions] }));
         } catch (error) {
           console.error('Failed to sync transaction:', error);
@@ -407,23 +392,11 @@ export const useDataStore = create<DataState>()(
         }
       },
 
-      // Gamification
+      // Gamification / Life-Cost
       gamification: INITIAL_GAMIFICATION,
       user: null,
       setGamification: (gamification) => set({ gamification }),
       setUser: (user: User | null) => set({ user }),
-      addXp: (amount) => set((state) => {
-        if (!state.gamification) return state;
-        const newXp = state.gamification.xp + amount;
-        const newLevel = Math.floor(newXp / 1000) + 1;
-        return {
-          gamification: {
-            ...state.gamification,
-            xp: newXp,
-            level: newLevel,
-          }
-        };
-      }),
       fetchGamification: async () => {
         try {
           const rate = await lifeCostService.getHourlyRate();
@@ -438,8 +411,8 @@ export const useDataStore = create<DataState>()(
         }
       },
 
-      // Achievements
-      achievements: INITIAL_ACHIEVEMENTS,
+      // Achievements (backward compat)
+      achievements: [],
       earnedAchievements: [],
       earnAchievement: (id) => set((state) => ({
         earnedAchievements: state.earnedAchievements.includes(id)
@@ -458,8 +431,8 @@ export const useDataStore = create<DataState>()(
       wishlist: INITIAL_WISHLIST,
       fetchWishlist: async () => {
         try {
-          const items = await wishlistService.getAll();
-          set({ wishlist: items });
+          const response = await wishlistService.getAll();
+          set({ wishlist: response.all });
         } catch (e) {
           console.error('Failed to fetch wishlist:', e);
         }
@@ -528,20 +501,24 @@ export const useDataStore = create<DataState>()(
       },
 
       getMonthlyIncome: () => {
-        const { transactions } = get();
+        const { transactions, categories } = get();
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const excludedIds = new Set(categories.filter((c) => c.excludeFromTotal).map((c) => c.id));
         return transactions
           .filter((t) => t.type === 'INCOME' && new Date(t.date) >= startOfMonth)
+          .filter((t) => !excludedIds.has(t.categoryId))
           .reduce((sum, t) => sum + Number(t.amount), 0);
       },
 
       getMonthlyExpenses: () => {
-        const { transactions } = get();
+        const { transactions, categories } = get();
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const excludedIds = new Set(categories.filter((c) => c.excludeFromTotal).map((c) => c.id));
         return transactions
           .filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= startOfMonth)
+          .filter((t) => !excludedIds.has(t.categoryId))
           .reduce((sum, t) => sum + Number(t.amount), 0);
       },
 
@@ -551,17 +528,16 @@ export const useDataStore = create<DataState>()(
       },
 
       setHourlyRate: async (rateRubles: number) => {
-        const rateKopecks = Math.round(rateRubles * 100);
         set((state) => ({
           gamification: state.gamification
-            ? { ...state.gamification, hourlyRate: rateKopecks }
+            ? { ...state.gamification, hourlyRate: rateRubles }
             : null,
         }));
 
         const { isDemoMode } = useAuthStore.getState();
         if (!isDemoMode) {
           try {
-            await lifeCostService.updateHourlyRate(rateKopecks);
+            await lifeCostService.updateHourlyRate(rateRubles);
           } catch (error) {
             console.error('Failed to save hourly rate to server:', error);
           }

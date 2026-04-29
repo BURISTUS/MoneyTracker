@@ -17,11 +17,12 @@ export class LifeCostService {
 
   async calculateHours(userId: string, amount: number) {
     const hourlyRate = await this.getHourlyRate(userId);
-    const hours = amount / hourlyRate;
+    const rubles = amount / 100;
+    const hours = rubles / hourlyRate;
     const workingDays = hours / 8;
 
     return {
-      rubles: amount,
+      rubles,
       hours: Math.round(hours * 10) / 10,
       workingDays: Math.round(workingDays * 10) / 10,
       message: this.generateMessage(hours, workingDays),
@@ -32,12 +33,13 @@ export class LifeCostService {
     const annualRate = 0.12; // 12% годовых
     const monthlyRate = annualRate / 12;
     const months = years * 12;
-    
-    const futureValue = amount * Math.pow(1 + monthlyRate, months);
-    const profit = futureValue - amount;
+
+    const rubles = amount / 100;
+    const futureValue = rubles * Math.pow(1 + monthlyRate, months);
+    const profit = futureValue - rubles;
 
     return {
-      initialAmount: amount,
+      initialAmount: rubles,
       futureValue: Math.round(futureValue),
       profit: Math.round(profit),
       years,

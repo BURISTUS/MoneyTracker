@@ -42,13 +42,15 @@ export class CategoriesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create personal category' })
-  async create(@Request() req: any, @Body() body: { name: string; type: string; icon?: string; color?: string; isBaseNeed?: boolean; images?: string[] }) {
+  async create(@Request() req: any, @Body() body: { name: string; type: string; icon?: string; color?: string; isBaseNeed?: boolean; excludeFromTotal?: boolean; monthlyLimit?: number; images?: string[] }) {
     return this.categoriesService.create(req.user.id, {
       name: body.name,
       type: body.type as any,
       icon: body.icon,
       color: body.color,
       isBaseNeed: body.isBaseNeed,
+      excludeFromTotal: body.excludeFromTotal,
+      monthlyLimit: body.monthlyLimit !== undefined && body.monthlyLimit !== null ? BigInt(Math.round(body.monthlyLimit)) : undefined,
       images: body.images,
     });
   }
@@ -57,8 +59,16 @@ export class CategoriesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update category' })
-  async update(@Param('id') id: string, @Request() req: any, @Body() body: { name?: string; icon?: string; color?: string; images?: string[] }) {
-    return this.categoriesService.update(id, req.user.id, body);
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: { name?: string; icon?: string; color?: string; excludeFromTotal?: boolean; monthlyLimit?: number | null; images?: string[] }) {
+    const data: any = {};
+    if (body.name !== undefined) data.name = body.name;
+    if (body.icon !== undefined) data.icon = body.icon;
+    if (body.color !== undefined) data.color = body.color;
+    if (body.excludeFromTotal !== undefined) data.excludeFromTotal = body.excludeFromTotal;
+    if (body.monthlyLimit === null) data.monthlyLimit = null;
+    else if (body.monthlyLimit !== undefined) data.monthlyLimit = BigInt(Math.round(body.monthlyLimit));
+    if (body.images !== undefined) data.images = body.images;
+    return this.categoriesService.update(id, req.user.id, data);
   }
 
   @Delete(':id')

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Pressable, Alert, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { View, Pressable, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDataStore } from '../../../src/stores/dataStore';
@@ -7,6 +7,8 @@ import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import type { TransactionType } from '../../../src/types';
 import { TransactionType as TransactionTypeEnum } from '../../../src/types';
+import { useToast } from '../../../src/components/ui/Toast';
+import { ToastContainer } from '../../../src/components/ui/Toast';
 
 const EXPENSE_COLORS = {
   primary: '#FF3B30',
@@ -38,6 +40,7 @@ export default function CreateTransactionScreen() {
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showError, showSuccess } = useToast();
 
   const displayCategories = useMemo(() => {
     return categories.filter((c) =>
@@ -71,7 +74,7 @@ export default function CreateTransactionScreen() {
 
   const handleSubmit = useCallback(async () => {
     if (!amount || !selectedCategory || !selectedAccount) {
-      Alert.alert('Ошибка', 'Заполните все поля');
+      showError('Заполните все поля');
       return;
     }
 
@@ -92,11 +95,10 @@ export default function CreateTransactionScreen() {
         updatedAt: new Date().toISOString(),
       });
 
-      Alert.alert('Успешно!', 'Транзакция добавлена', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showSuccess('Транзакция добавлена');
+      setTimeout(() => router.back(), 600);
     } catch {
-      Alert.alert('Ошибка', 'Не удалось добавить транзакцию');
+      showError('Не удалось добавить транзакцию');
       setIsSubmitting(false);
     }
   }, [amount, type, selectedCategory, selectedAccount, note, date, addTransaction, router]);
@@ -106,6 +108,9 @@ export default function CreateTransactionScreen() {
   return (
     <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
       <View className="flex-1">
+        <View style={{ position: 'relative' }}>
+          <ToastContainer />
+        </View>
         <View className="flex-row p-4 gap-3 border-b border-outline-200">
           <TouchableOpacity
             onPress={() => setType(TransactionTypeEnum.EXPENSE)}

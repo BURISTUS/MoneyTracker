@@ -1,15 +1,120 @@
-import React, { useMemo } from 'react';
-import { View, Pressable, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
+import { CategoryEditModal } from '../../../src/components/ui/CategoryEditModal';
+import { formatCurrency } from '../../../src/utils/formatters';
+import { useToast } from '../../../src/components/ui/Toast';
+import categoriesService from '../../../src/services/categories';
+import type { Category } from '../../../src/types';
+
+const C = {
+  card: '#141418',
+  border: 'rgba(255,255,255,0.08)',
+  textMain: '#F5F5F5',
+  textSec: '#8C8C8C',
+  indigo: '#6366F1',
+  green: '#34D399',
+  red: '#FF3B30',
+  orange: '#FF9500',
+  yellow: '#FBBF24',
+};
+
+const S = StyleSheet.create({
+  header: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: C.textMain },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: C.textSec,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  sectionGap: { marginTop: 20 },
+  actions: { paddingHorizontal: 16, marginTop: 8, marginBottom: 6 },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    backgroundColor: C.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    marginBottom: 8,
+  },
+  actionIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionText: { fontSize: 14, fontWeight: '500', color: C.textMain },
+  list: { paddingHorizontal: 16 },
+  categoryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    backgroundColor: C.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    marginBottom: 8,
+  },
+  categoryIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryInfo: { flex: 1 },
+  categoryName: { fontSize: 14, fontWeight: '600', color: C.textMain },
+  categorySub: { fontSize: 12, color: C.textSec, marginTop: 2 },
+  limitBar: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+    marginTop: 6,
+  },
+  limitFill: { height: 4, borderRadius: 2 },
+  limitLabel: { fontSize: 11, fontWeight: '500', marginTop: 4 },
+  chevron: { marginLeft: 'auto' },
+  empty: { alignItems: 'center', paddingVertical: 48 },
+});
 
 export default function CategoriesIndexScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const categories = useDataStore((s) => s.categories);
+  const toast = useToast();  const categories = useDataStore((s) => s.categories);
+  const transactions = useDataStore((s) => s.transactions);
+  const fetchCategories = useDataStore((s) => s.fetchCategories);
+
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const categoryTotals = useMemo(() => {
+    const map = new Map<string, { expense: number }>();
+    transactions
+      .filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= startOfMonth)
+      .forEach((t) => {
+        const entry = map.get(t.categoryId) || { expense: 0 };
+        entry.expense += t.amount;
+        map.set(t.categoryId, entry);
+      });
+    return map;
+  }, [transactions]);
 
   const expenseCategories = useMemo(
     () => categories.filter((c) => c.type === 'EXPENSE'),
@@ -20,80 +125,150 @@ export default function CategoriesIndexScreen() {
     [categories],
   );
 
-  const renderCategory = (category: typeof categories[0]) => (
-    <View
-      key={category.id}
-      className="flex-row items-center gap-3.5 bg-background-50/30 rounded-[14px] p-3.5"
-    >
-      <CategoryIcon
-        icon={category.icon}
-        color={category.color || '#6366F1'}
-        size={24}
-      />
-      <View className="flex-1">
-        <Text className="text-base font-medium text-typography-white">
-          {category.name}
-        </Text>
-        <Text className="text-xs text-typography-400">
-          {category.isSystem ? 'Системная' : 'Личная'}
-        </Text>
-      </View>
-    </View>
-  );
+  const handleSave = async (data: { name: string; icon?: string; color?: string; excludeFromTotal: boolean; monthlyLimit: number | null }) => {
+    if (!editingCategory) return;
+    try {
+      const body: Record<string, unknown> = {};
+      if (data.name !== editingCategory.name) body.name = data.name;
+      body.icon = data.icon;
+      body.color = data.color;
+      body.excludeFromTotal = data.excludeFromTotal;
+      body.monthlyLimit = data.monthlyLimit;
+      await categoriesService.update(editingCategory.id, body);
+      await fetchCategories();
+      setEditingCategory(null);
+    } catch (error: any) {
+      toast.showError(error?.message || 'Ошибка сохранения');
+    }
+  };
+
+  const handleDelete = async (categoryId: string) => {
+    try {
+      await categoriesService.delete(categoryId);
+      await fetchCategories();
+      toast.showSuccess('Категория удалена');
+    } catch (error: any) {
+      toast.showError(error?.message || 'Ошибка удаления');
+    }
+  };
+
+  const renderCategory = (category: Category) => {
+    const totals = categoryTotals.get(category.id);
+    const spent = totals?.expense ?? 0;
+    const monthlyLimitKopecks = category.monthlyLimit;
+    const hasLimit = monthlyLimitKopecks !== null && monthlyLimitKopecks !== undefined && monthlyLimitKopecks > 0;
+    const limitProgress = hasLimit ? Math.min(spent / monthlyLimitKopecks, 1) : 0;
+    const limitOver = hasLimit && spent > monthlyLimitKopecks;
+
+    return (
+      <Pressable
+        key={category.id}
+        onPress={() => setEditingCategory(category)}
+        style={S.categoryCard}
+      >
+        <View style={[S.categoryIconWrap, { backgroundColor: `${category.color || C.indigo}18` }]}>
+          <CategoryIcon icon={category.icon} color={category.color || C.indigo} size={20} />
+        </View>
+        <View style={S.categoryInfo}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={S.categoryName}>{category.name}</Text>
+            {category.excludeFromTotal && (
+              <Ionicons name="eye-off-outline" size={13} color="#52525B" />
+            )}
+            {hasLimit && limitOver && (
+              <Ionicons name="warning" size={13} color={C.red} />
+            )}
+          </View>
+          {spent > 0 ? (
+            <Text style={S.categorySub}>{formatCurrency(spent)} за месяц</Text>
+          ) : (
+            <Text style={S.categorySub}>Нет операций за месяц</Text>
+          )}
+
+          {hasLimit && (
+            <>
+              <View style={S.limitBar}>
+                <View
+                  style={[
+                    S.limitFill,
+                    {
+                      width: `${limitProgress * 100}%`,
+                      backgroundColor: limitOver ? C.red : limitProgress > 0.8 ? C.orange : C.green,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={[S.limitLabel, { color: limitOver ? C.red : C.textSec }]}>
+                {formatCurrency(spent)} / {formatCurrency(monthlyLimitKopecks)}
+              </Text>
+            </>
+          )}
+        </View>
+        <Ionicons name="create-outline" size={18} color="#52525B" style={S.chevron} />
+      </Pressable>
+    );
+  };
 
   return (
-    <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
-      <View className="px-4 pt-4 pb-2">
-        <Text className="text-xl font-bold text-typography-white mb-4">
-          Категории
-        </Text>
+    <View style={{ flex: 1, backgroundColor: '#0A0A0F', paddingTop: insets.top }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={S.header}>
+          <Text style={S.headerTitle}>Категории</Text>
+        </View>
 
-        <TouchableOpacity
-          onPress={() => router.push('/main/categories/create')}
-          className="bg-primary-500/10 rounded-[14px] py-4 px-4 border border-primary-500/30 flex-row items-center justify-center gap-2 mb-5"
-        >
-          <Text className="text-lg font-semibold text-primary-400">
-            + Создать категорию
-          </Text>
-        </TouchableOpacity>
+        <View style={S.actions}>
+          <Pressable onPress={() => router.push('/main/categories/create')} style={S.actionBtn}>
+            <View style={[S.actionIconWrap, { backgroundColor: 'rgba(99,102,241,0.12)' }]}>
+              <Ionicons name="add" size={18} color={C.indigo} />
+            </View>
+            <Text style={[S.actionText, { color: C.indigo }]}>Создать категорию</Text>
+          </Pressable>
 
-        <Pressable
-          onPress={() => router.push('/main/categories/chart')}
-          className="bg-background-50/30 rounded-[14px] py-4 px-4 flex-row items-center justify-between mb-5"
-        >
-          <Text className="text-base font-semibold text-typography-white">
-            📊 Диаграмма расходов
-          </Text>
-          <Text className="text-base text-typography-400">→</Text>
-        </Pressable>
-      </View>
+          <Pressable onPress={() => router.push('/main/categories/chart')} style={S.actionBtn}>
+            <View style={[S.actionIconWrap, { backgroundColor: 'rgba(52,211,153,0.1)' }]}>
+              <Ionicons name="bar-chart" size={18} color={C.green} />
+            </View>
+            <Text style={S.actionText}>Диаграмма расходов</Text>
+          </Pressable>
+        </View>
 
-      <View className="px-4 gap-2">
-        {expenseCategories.length > 0 && (
-          <>
-            <Text className="text-xs font-semibold text-typography-400 mb-1 uppercase">
-              Расходы · {expenseCategories.length}
-            </Text>
-            {expenseCategories.map(renderCategory)}
-          </>
-        )}
+        <View style={S.list}>
+          {expenseCategories.length > 0 && (
+            <>
+              <Text style={S.sectionTitle}>Расходы · {expenseCategories.length}</Text>
+              {expenseCategories.map(renderCategory)}
+            </>
+          )}
 
-        {incomeCategories.length > 0 && (
-          <>
-            <Text className="text-xs font-semibold text-typography-400 mt-4 mb-1 uppercase">
-              Доходы · {incomeCategories.length}
-            </Text>
-            {incomeCategories.map(renderCategory)}
-          </>
-        )}
+          {incomeCategories.length > 0 && (
+            <>
+              <Text style={[S.sectionTitle, S.sectionGap]}>Доходы · {incomeCategories.length}</Text>
+              {incomeCategories.map(renderCategory)}
+            </>
+          )}
 
-        {categories.length === 0 && (
-          <View className="items-center py-16">
-            <Text className="text-xl mb-3">📂</Text>
-            <Text className="text-base text-typography-400">Категории не найдены</Text>
-          </View>
-        )}
-      </View>
+          {categories.length === 0 && (
+            <View style={S.empty}>
+              <Ionicons name="folder-open-outline" size={48} color="#3A3A3C" />
+              <Text style={{ fontSize: 15, color: C.textSec, marginTop: 8 }}>Категории не найдены</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {editingCategory && (
+        <CategoryEditModal
+          visible={!!editingCategory}
+          category={editingCategory}
+          onClose={() => setEditingCategory(null)}
+          onSave={handleSave}
+          onDelete={handleDelete}
+        />
+      )}
     </View>
   );
 }

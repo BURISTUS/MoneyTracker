@@ -50,6 +50,6 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Set hourly rate' })
   async setHourlyRate(@Request() req: any, @Body() body: { hourlyRate: number }) {
-    return this.usersService.updateHourlyRate(req.user.id, body.hourlyRate);
+    return this.usersService.updateHourlyRate(req.user.id, body.hourlyRate * 100);
   }
 }

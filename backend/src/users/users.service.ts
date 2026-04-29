@@ -8,17 +8,7 @@ export class UsersService {
 
   async create(data: Prisma.UserCreateInput) {
     return this.prisma.user.create({
-      data: {
-        ...data,
-        gamification: {
-          create: {
-            xp: 0,
-            level: 1,
-            savedAmount: 0,
-            status: 'CONSUMER_DRONE',
-          },
-        },
-      },
+      data,
     });
   }
 

@@ -1,11 +1,13 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, FlatList, Pressable, Modal, TextInput, ScrollView, Alert } from 'react-native';
+import { View, FlatList, Pressable, Modal, TextInput, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../../src/utils/formatters';
 import type { Budget, Category } from '../../../src/types';
+import { ConfirmModal } from '../../../src/components/ui/ConfirmModal';
+import { ToastContainer } from '../../../src/components/ui/Toast';
 
 const BORDER = 'rgba(255,255,255,0.08)';
 const CARD_BG = '#141418';
@@ -29,6 +31,11 @@ export default function BudgetScreen() {
     amount: string;
     alertThreshold: number;
   }>({ visible: false, budget: null, amount: '', alertThreshold: 80 });
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{ visible: boolean; budgetId: string | null }>({
+    visible: false,
+    budgetId: null,
+  });
 
   const expenseCategories = useMemo(
     () => categories.filter((c) => c.type === 'EXPENSE'),
@@ -85,21 +92,18 @@ export default function BudgetScreen() {
   }, [editModal, updateBudget]);
 
   const handleDelete = useCallback((id: string) => {
-    Alert.alert('Удалить бюджет?', 'Это действие нельзя отменить', [
-      { text: 'Отмена', style: 'cancel' },
-      {
-        text: 'Удалить',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteBudgetApi(id);
-          } catch (error) {
-            console.error('Failed to delete budget:', error);
-          }
-        },
-      },
-    ]);
-  }, [deleteBudgetApi]);
+    setDeleteConfirm({ visible: true, budgetId: id });
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteConfirm.budgetId) return;
+    try {
+      await deleteBudgetApi(deleteConfirm.budgetId);
+    } catch (error) {
+      console.error('Failed to delete budget:', error);
+    }
+    setDeleteConfirm({ visible: false, budgetId: null });
+  }, [deleteConfirm.budgetId, deleteBudgetApi]);
 
   const renderBudget = useCallback(({ item }: { item: Budget }) => {
     const percent = item.percentUsed || item.progress || 0;
@@ -130,9 +134,12 @@ export default function BudgetScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0A0A0F', paddingTop: insets.top }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 }}>
-        <Ionicons name="wallet-outline" size={22} color="#6366F1" />
-        <Text style={{ fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 }}>Бюджеты</Text>
+      <View style={{ position: 'relative' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 }}>
+          <Ionicons name="wallet-outline" size={22} color="#6366F1" />
+          <Text style={{ fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 }}>Бюджеты</Text>
+        </View>
+        <ToastContainer />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
@@ -303,6 +310,15 @@ export default function BudgetScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <ConfirmModal
+        visible={deleteConfirm.visible}
+        title="Удалить бюджет?"
+        message="Это действие нельзя отменить"
+        confirmText="Удалить"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm({ visible: false, budgetId: null })}
+      />
     </View>
   );
 }

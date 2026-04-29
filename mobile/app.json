@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "android": {
       "jsEngine": "jsc",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#007AFF"
       },

@@ -41,8 +41,8 @@ function formatLifeHours(amountKopecks: number, hourlyRateRubles: number): strin
   const rubles = amountKopecks / 100;
   const hours = rubles / hourlyRateRubles;
   if (hours < 1) return `${Math.round(hours * 60)} мин`;
-  if (hours < 24) return `${hours.toFixed(1)} ч`;
-  return `${(hours / 24).toFixed(1)} дн`;
+  if (hours < 100) return `${hours.toFixed(1)} ч`;
+  return `${Math.round(hours)} ч`;
 }
 
 function getRange(period: TimePeriod, offset: number, customRange: DateRange | null): { startDate: Date; endDate: Date } {
@@ -145,6 +145,9 @@ export default function TransactionsDashboardScreen() {
   const range = useMemo(() => getRange(period, offset, customRange), [period, offset, customRange]);
 
   const periodSummary = useMemo(() => {
+    const excludedCategoryIds = new Set(
+      categories.filter((c) => c.excludeFromTotal).map((c) => c.id)
+    );
     const inRange = transactions.filter((t) => {
       const d = new Date(t.date);
       return d >= range.startDate && d <= range.endDate;
@@ -152,13 +155,15 @@ export default function TransactionsDashboardScreen() {
     const income = inRange
       .filter((t) => t.type === 'INCOME')
       .filter((t) => !currentAccountId || t.accountId === currentAccountId)
+      .filter((t) => !excludedCategoryIds.has(t.categoryId))
       .reduce((s, t) => s + Number(t.amount), 0);
     const expense = inRange
       .filter((t) => t.type === 'EXPENSE')
       .filter((t) => !currentAccountId || t.accountId === currentAccountId)
+      .filter((t) => !excludedCategoryIds.has(t.categoryId))
       .reduce((s, t) => s + Number(t.amount), 0);
     return { income, expense, balance: income - expense };
-  }, [transactions, range, currentAccountId]);
+  }, [transactions, range, currentAccountId, categories]);
 
   const filteredTransactions = useMemo(() => {
     const filtered = transactions
@@ -269,7 +274,8 @@ export default function TransactionsDashboardScreen() {
           <TouchableOpacity
             onPress={() => setShowAccountPicker(true)}
             activeOpacity={0.6}
-            className="self-start flex-row items-center gap-1.5 bg-[#1C1C1E] rounded-full px-3 py-1.5"
+            className="self-start flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
+            style={{ backgroundColor: '#141418', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
           >
             <Text className="text-sm font-medium text-[#F5F5F5]">
               {currentAccountId
@@ -289,7 +295,8 @@ export default function TransactionsDashboardScreen() {
         <View className="flex-row items-center px-4 mb-2 gap-2">
           <TouchableOpacity
             onPress={() => animateOffset(-1)}
-            className="w-9 h-9 items-center justify-center rounded-full bg-background-50/40"
+            className="w-9 h-9 items-center justify-center rounded-full"
+            style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
           >
             <Ionicons name="chevron-back" size={22} color="#818CF8" />
           </TouchableOpacity>
@@ -333,8 +340,8 @@ export default function TransactionsDashboardScreen() {
           <TouchableOpacity
             onPress={() => animateOffset(1)}
             disabled={offset >= 0}
-            className="w-9 h-9 items-center justify-center rounded-full bg-background-50/40"
-            style={{ opacity: offset >= 0 ? 0.2 : 1 }}
+            className="w-9 h-9 items-center justify-center rounded-full"
+            style={{ opacity: offset >= 0 ? 0.2 : 1, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
           >
             <Ionicons name="chevron-forward" size={22} color="#818CF8" />
           </TouchableOpacity>
@@ -360,10 +367,11 @@ export default function TransactionsDashboardScreen() {
                     setSelectedCategory(null);
                   }}
                   activeOpacity={0.7}
-                  className="flex-1 rounded-2xl p-4 border-2"
+                  className="flex-1 rounded-2xl p-4 border"
                   style={{
                     backgroundColor: type === 'EXPENSE' ? 'rgba(255, 59, 48, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                    borderColor: type === 'EXPENSE' ? 'rgba(255, 59, 48, 0.4)' : 'transparent',
+                    borderColor: type === 'EXPENSE' ? 'rgba(255, 59, 48, 0.4)' : 'rgba(255,255,255,0.08)',
+                    borderWidth: 1,
                   }}
                 >
                   <RNText style={{ fontSize: 13, color: '#FF6B6B', fontWeight: '600' }}>РАСХОДЫ</RNText>
@@ -381,10 +389,11 @@ export default function TransactionsDashboardScreen() {
                     setSelectedCategory(null);
                   }}
                   activeOpacity={0.7}
-                  className="flex-1 rounded-2xl p-4 border-2"
+                  className="flex-1 rounded-2xl p-4 border"
                   style={{
                     backgroundColor: type === 'INCOME' ? 'rgba(52, 199, 89, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                    borderColor: type === 'INCOME' ? 'rgba(52, 199, 89, 0.4)' : 'transparent',
+                    borderColor: type === 'INCOME' ? 'rgba(52, 199, 89, 0.4)' : 'rgba(255,255,255,0.08)',
+                    borderWidth: 1,
                   }}
                 >
                   <RNText style={{ fontSize: 13, color: '#5ED98A', fontWeight: '600' }}>ДОХОДЫ</RNText>
@@ -401,15 +410,15 @@ export default function TransactionsDashboardScreen() {
                   const isSelected = selectedCategory === item.category.id;
                   return (
                       <Pressable
-                        key={item.category.id}
-                        onPress={() => handleCategoryPress(item.category.id)}
-                        className={`flex-row items-center gap-2 px-3.5 py-2 rounded-full border ${
-                          isSelected
-                            ? 'bg-background-50/80'
-                            : 'bg-background-50/30 border-transparent'
-                        }`}
-                        style={isSelected ? { borderColor: item.category.color || '#6366F1' } : undefined}
-                      >
+                         key={item.category.id}
+                         onPress={() => handleCategoryPress(item.category.id)}
+                         className={`flex-row items-center gap-2 px-3.5 py-2 rounded-full`}
+                         style={{
+                           backgroundColor: isSelected ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+                           borderWidth: 1,
+                           borderColor: isSelected ? (item.category.color || '#6366F1') : 'rgba(255,255,255,0.08)',
+                         }}
+                       >
                         <CategoryIcon
                           icon={item.category.icon}
                           color={item.category.color || '#6366F1'}
@@ -461,7 +470,12 @@ export default function TransactionsDashboardScreen() {
                         <TouchableOpacity
                           key={transaction.id}
                           onPress={() => setSelectedTransaction(transaction)}
-                           className="flex-row items-center bg-background-50/30 rounded-[16px] p-4 gap-4"
+                           className="flex-row items-center rounded-[16px] p-4 gap-4"
+                           style={{
+                             backgroundColor: '#141418',
+                             borderWidth: 1,
+                             borderColor: 'rgba(255,255,255,0.08)',
+                           }}
                         >
                            <CategoryIcon
                             icon={category?.icon || ''}
@@ -481,7 +495,7 @@ export default function TransactionsDashboardScreen() {
                                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }} />
                                  );
                                })()}
-                               <Text className="text-lg font-medium text-typography-white">
+                               <Text className="text-sm text-typography-400">
                                  {category?.name || 'Без категории'}
                                </Text>
                              </View>
@@ -490,28 +504,33 @@ export default function TransactionsDashboardScreen() {
                                 {transaction.description}
                               </Text>
                             )}
-                            {transaction.type === 'EXPENSE' && (() => {
-                              const hours = formatLifeHours(transaction.amount, getHourlyRate());
-                              return hours ? (
-                                <Text className="text-sm text-warning-400">
-                                  ⏱ {hours} работы
-                                </Text>
-                              ) : null;
-                            })()}
                             {account && (
                               <Text className="text-sm text-typography-400">
                                 {account.name}
                               </Text>
                             )}
-                          </View>
+                           </View>
 
-                      <Text
-                        className="text-lg font-bold"
-                        style={{ color: type === 'EXPENSE' ? '#FF3B30' : '#34C759' }}
-                      >
-                            {type === 'EXPENSE' ? '− ' : '+ '}
-                            {formatCurrency(transaction.amount)}
-                          </Text>
+                      <View className="items-end" style={{ gap: 2 }}>
+                            {(() => {
+                              const hours = type === 'EXPENSE' ? formatLifeHours(transaction.amount, getHourlyRate()) : null;
+                              return hours ? (
+                                <Text style={{ fontSize: 16, fontWeight: '700', color: '#FF9500' }}>
+                                  {hours}
+                                </Text>
+                              ) : null;
+                            })()}
+                            <Text
+                              style={{
+                                fontSize: 14,
+                                fontWeight: '500',
+                                color: type === 'EXPENSE' ? '#FF3B30' : '#34C759',
+                              }}
+                            >
+                              {type === 'EXPENSE' ? '− ' : '+ '}
+                              {formatCurrency(transaction.amount)}
+                            </Text>
+                          </View>
                         </TouchableOpacity>
                       );
                     })}

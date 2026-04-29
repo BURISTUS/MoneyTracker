@@ -59,6 +59,8 @@ export interface Category {
   color: string | null;
   isSystem: boolean;
   isBaseNeed: boolean;
+  excludeFromTotal: boolean;
+  monthlyLimit: number | null;
   images: string[];
   createdAt: string;
   updatedAt: string;
@@ -139,74 +141,15 @@ export interface Goal {
   progress?: number;
 }
 
-// Gamification Types
+// Life-Cost Types
 export interface UserGamification {
   id: string;
   userId: string;
-  xp: number;
-  level: number;
-  savedAmount: number;
-  status: GamificationStatus;
+  hourlyRate?: number;
   createdAt: string;
   updatedAt: string;
-  hourlyRate?: number; // Stored in kopecks, for life cost calculation
 }
 
-export enum GamificationStatus {
-  CONSUMER_DRONE = 'CONSUMER_DRONE',
-  AWAKENED = 'AWAKENED',
-  ASCETIC = 'ASCETIC',
-  STRATEGIST = 'STRATEGIST',
-  CAPITALIST = 'CAPITALIST',
-  FINANCIAL_ARCHITECT = 'FINANCIAL_ARCHITECT',
-}
-
-export const GAMIFICATION_STATUS_LABELS: Record<GamificationStatus, string> = {
-  [GamificationStatus.CONSUMER_DRONE]: 'Потребитель',
-  [GamificationStatus.AWAKENED]: 'Просыпающийся',
-  [GamificationStatus.ASCETIC]: 'Аскет',
-  [GamificationStatus.STRATEGIST]: 'Стратег',
-  [GamificationStatus.CAPITALIST]: 'Капиталист',
-  [GamificationStatus.FINANCIAL_ARCHITECT]: 'Архитектор',
-};
-
-// Achievement Types
-export interface Achievement {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  iconUrl: string | null;
-  xpReward: number;
-  conditionType: AchievementCondition;
-  conditionValue: Record<string, unknown>;
-  tier: AchievementTier;
-}
-
-export interface UserAchievement {
-  id: string;
-  userId: string;
-  achievementId: string;
-  earnedAt: string;
-  achievement?: Achievement;
-}
-
-export enum AchievementCondition {
-  NO_SPEND_CATEGORY_DAYS = 'NO_SPEND_CATEGORY_DAYS',
-  WISHLIST_REJECTED = 'WISHLIST_REJECTED',
-  BUDGET_UNDER_LIMIT = 'BUDGET_UNDER_LIMIT',
-  STREAK_DAYS = 'STREAK_DAYS',
-  TOTAL_SAVED_AMOUNT = 'TOTAL_SAVED_AMOUNT',
-}
-
-export enum AchievementTier {
-  BRONZE = 'BRONZE',
-  SILVER = 'SILVER',
-  GOLD = 'GOLD',
-  PLATINUM = 'PLATINUM',
-}
-
-// Wishlist Types
 export interface WishlistItem {
   id: string;
   userId: string;
@@ -432,4 +375,16 @@ export enum NotificationType {
   LEVEL_UP = 'LEVEL_UP',
   ACHIEVEMENT_EARNED = 'ACHIEVEMENT_EARNED',
   STREAK_WARNING = 'STREAK_WARNING',
+}
+
+// Chat Types
+export type PresetType = 'SPENDING_REPORT' | 'BUDGET_ANALYSIS' | 'SAVINGS_TIPS' | 'DYNAMICS';
+
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  role: 'USER' | 'ASSISTANT';
+  content: string;
+  presetType: PresetType | null;
+  createdAt: string;
 }

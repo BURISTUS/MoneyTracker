@@ -98,7 +98,7 @@ export function AddTransactionModal({
 
   const hourlyRate = useMemo(() => {
     const rate = getHourlyRate();
-    return rate > 0 ? rate : (user?.hourlyRate ? user.hourlyRate / 100 : 0);
+    return rate > 0 ? rate : (user?.hourlyRate ?? 0);
   }, [getHourlyRate, user?.hourlyRate]);
 
   const displayAmount = useMemo(() => {

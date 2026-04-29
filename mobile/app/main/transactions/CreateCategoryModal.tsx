@@ -1,11 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, Alert, Pressable, Modal } from 'react-native';
+import { View, ScrollView, Pressable, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { Text } from '../../../components/ui/text';
 import type { CategoryType } from '../../../src/types';
 import { CategoryType as CategoryTypeEnum } from '../../../src/types';
+import { useToast } from '../../../src/components/ui/Toast';
+import { ToastContainer } from '../../../src/components/ui/Toast';
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
@@ -34,6 +36,7 @@ interface CreateCategoryModalProps {
 export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCategoryModalProps) {
   const router = useRouter();
   const addCategory = useDataStore((s) => s.addCategory);
+  const { showError } = useToast();
 
   const [name, setName] = useState('');
   const [type, setType] = useState<CategoryType>(CategoryTypeEnum.EXPENSE);
@@ -63,7 +66,7 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
 
   const handleCreate = useCallback(async () => {
     if (!name || !selectedColor || !selectedIcon) {
-      Alert.alert('Ошибка', 'Пожалуйста, заполните все поля');
+      showError('Заполните все поля');
       return;
     }
 
@@ -77,7 +80,7 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
       handleReset();
       onCreate();
     } catch (error) {
-      Alert.alert('Ошибка', 'Не удалось создать категорию');
+      showError('Не удалось создать категорию');
       console.error('Failed to create category:', error);
     }
   }, [name, type, selectedColor, selectedIcon, addCategory, onCreate, handleReset]);
@@ -89,6 +92,9 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
       onRequestClose={onClose}
     >
       <View className="flex-1 bg-[#0A0A0F]">
+        <View style={{ position: 'relative' }}>
+          <ToastContainer />
+        </View>
         <ScrollView contentContainerStyle={{ gap: 24, paddingBottom: 40 }}>
         <View className="flex-row justify-between items-center">
           <Text bold className="text-xl text-white">Новая категория</Text>
