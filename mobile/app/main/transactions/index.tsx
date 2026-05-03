@@ -10,6 +10,7 @@ import {
   Platform,
   Text as RNText,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ import { useDataStore } from '../../../src/stores/dataStore';
 import { Text } from '../../../components/ui/text';
 import { AddTransactionModal } from '../../../src/components/ui/AddTransactionModal';
 import { TransactionActionModal } from '../../../src/components/ui/TransactionActionModal';
+import { TransferModal } from '../../../src/components/ui/TransferModal';
 import { DateRangePickerModal } from '../../../src/components/ui/DateRangePickerModal';
 import type { DateRange } from '../../../src/components/ui/DateRangePickerModal';
 import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
@@ -121,6 +123,7 @@ function getRangeLabel(period: TimePeriod, offset: number, customRange: DateRang
 }
 
 export default function TransactionsDashboardScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const transactions = useDataStore((s) => s.transactions);
@@ -135,6 +138,7 @@ export default function TransactionsDashboardScreen() {
   const [offset, setOffset] = useState(0);
   const [type, setType] = useState<TransactionType>(TransactionTypeEnum.EXPENSE);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [customRange, setCustomRange] = useState<DateRange | null>(null);
@@ -166,13 +170,17 @@ export default function TransactionsDashboardScreen() {
   }, [transactions, range, currentAccountId, categories]);
 
   const filteredTransactions = useMemo(() => {
-    const filtered = transactions
-      .filter((t) => t.type === type)
+    let filtered = transactions
       .filter((t) => !currentAccountId || t.accountId === currentAccountId)
       .filter((t) => {
         const d = new Date(t.date);
         return d >= range.startDate && d <= range.endDate;
       });
+
+    // Type filter: show matching type + always show TRANSFER
+    if (type !== ('ALL' as any)) {
+      filtered = filtered.filter((t) => t.type === type || t.type === 'TRANSFER');
+    }
 
     if (selectedCategory) {
       return filtered.filter((t) => t.categoryId === selectedCategory);
@@ -181,7 +189,9 @@ export default function TransactionsDashboardScreen() {
   }, [transactions, type, range, selectedCategory, currentAccountId]);
 
   const totalAmount = useMemo(() => {
-    return filteredTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
+    return filteredTransactions
+      .filter((t) => t.type !== 'TRANSFER')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
   }, [filteredTransactions]);
 
   const totalLifeHours = useMemo(() => {
@@ -190,18 +200,24 @@ export default function TransactionsDashboardScreen() {
 
   const categoryData = useMemo(() => {
     const categoryTotals = new Map<string, number>();
-    filteredTransactions.forEach((t) => {
-      const current = categoryTotals.get(t.categoryId) || 0;
-      categoryTotals.set(t.categoryId, current + Number(t.amount));
-    });
-    const data = Array.from(categoryTotals.entries()).map(([categoryId, amount]) => ({
-      category: categories.find((c) => c.id === categoryId)!,
-      amount,
-      percentage: totalAmount > 0 ? (amount / totalAmount) * 100 : 0,
-    }));
+    filteredTransactions
+      .filter((t) => t.type !== 'TRANSFER')
+      .forEach((t) => {
+        const current = categoryTotals.get(t.categoryId) || 0;
+        categoryTotals.set(t.categoryId, current + Number(t.amount));
+      });
+    const nonTransferTotal = Array.from(categoryTotals.values()).reduce((s, v) => s + v, 0);
+    const data = Array.from(categoryTotals.entries())
+      .map(([categoryId, amount]) => ({
+        category: categories.find((c) => c.id === categoryId),
+        amount,
+        percentage: nonTransferTotal > 0 ? (amount / nonTransferTotal) * 100 : 0,
+      }))
+      .filter((d) => d.category != null)
+      .map((d) => ({ ...d, category: d.category! }));
     data.sort((a, b) => b.amount - a.amount);
     return data.slice(0, 8);
-  }, [filteredTransactions, categories, totalAmount]);
+  }, [filteredTransactions, categories]);
 
   const groupedTransactions = useMemo(() => {
     const groups: Record<string, typeof filteredTransactions> = {};
@@ -374,7 +390,7 @@ export default function TransactionsDashboardScreen() {
                     borderWidth: 1,
                   }}
                 >
-                  <RNText style={{ fontSize: 13, color: '#FF6B6B', fontWeight: '600' }}>РАСХОДЫ</RNText>
+                  <RNText style={{ fontSize: 13, color: '#FF6B6B', fontWeight: '600' }}>{t("transactions.expenses").toUpperCase()}</RNText>
                   <RNText style={{ fontSize: 32, fontWeight: 'bold', color: '#FF3B30', marginTop: 4 }}>
                     {formatCurrency(periodSummary.expense)}
                   </RNText>
@@ -396,7 +412,7 @@ export default function TransactionsDashboardScreen() {
                     borderWidth: 1,
                   }}
                 >
-                  <RNText style={{ fontSize: 13, color: '#5ED98A', fontWeight: '600' }}>ДОХОДЫ</RNText>
+                  <RNText style={{ fontSize: 13, color: '#5ED98A', fontWeight: '600' }}>{t("transactions.income").toUpperCase()}</RNText>
                   <RNText style={{ fontSize: 32, fontWeight: 'bold', color: '#34C759', marginTop: 4 }}>
                     {formatCurrency(periodSummary.income)}
                   </RNText>
@@ -437,18 +453,16 @@ export default function TransactionsDashboardScreen() {
             )}
 
             <View className="px-4">
-            <Text className="text-base font-semibold text-typography-400 mb-5 uppercase">
-              Операции
-            </Text>
+            <Text className="text-base font-semibold text-typography-400 mb-5 uppercase">{t("transactions.operations")}</Text>
 
             {isLoading ? (
               <View className="items-center py-16">
-                <Text className="text-base text-typography-400">Загрузка...</Text>
+                <Text className="text-base text-typography-400">{t("common.loading")}</Text>
               </View>
             ) : Object.keys(groupedTransactions).length === 0 ? (
               <View className="items-center py-20">
                 <Ionicons name="receipt-outline" size={64} color="#3A3A3C" />
-                <Text className="text-base text-typography-400 mt-4">Нет операций</Text>
+                <Text className="text-base text-typography-400 mt-4">{t("transactions.noOperations")}</Text>
               </View>
             ) : (
               Object.entries(groupedTransactions).map(([date, items]) => (
@@ -479,7 +493,7 @@ export default function TransactionsDashboardScreen() {
                         >
                            <CategoryIcon
                             icon={category?.icon || ''}
-                            color={category?.color || (type === 'EXPENSE' ? '#FF3B30' : '#34C759')}
+                            color={category?.color || '#6366F1'}
                             size={28}
                           />
 
@@ -512,8 +526,8 @@ export default function TransactionsDashboardScreen() {
                            </View>
 
                       <View className="items-end" style={{ gap: 2 }}>
-                            {(() => {
-                              const hours = type === 'EXPENSE' ? formatLifeHours(transaction.amount, getHourlyRate()) : null;
+                            {transaction.type !== 'TRANSFER' && (() => {
+                              const hours = transaction.type === 'EXPENSE' ? formatLifeHours(transaction.amount, getHourlyRate()) : null;
                               return hours ? (
                                 <Text style={{ fontSize: 16, fontWeight: '700', color: '#FF9500' }}>
                                   {hours}
@@ -524,10 +538,14 @@ export default function TransactionsDashboardScreen() {
                               style={{
                                 fontSize: 14,
                                 fontWeight: '500',
-                                color: type === 'EXPENSE' ? '#FF3B30' : '#34C759',
+                                color: transaction.type === 'TRANSFER' ? '#818CF8'
+                                  : transaction.type === 'EXPENSE' ? '#FF3B30'
+                                  : '#34C759',
                               }}
                             >
-                              {type === 'EXPENSE' ? '− ' : '+ '}
+                              {transaction.type === 'TRANSFER' ? '⇄ '
+                                : transaction.type === 'EXPENSE' ? '− '
+                                : '+ '}
                               {formatCurrency(transaction.amount)}
                             </Text>
                           </View>
@@ -549,6 +567,16 @@ export default function TransactionsDashboardScreen() {
         >
           <Ionicons name="add" size={28} color="#FFFFFF" />
         </TouchableOpacity>
+
+        {accounts.length >= 2 && (
+          <TouchableOpacity
+            onPress={() => setShowTransferModal(true)}
+            className="absolute right-5 w-12 h-12 rounded-full items-center justify-center"
+            style={{ bottom: 160, backgroundColor: 'rgba(99,102,241,0.15)', borderWidth: 1, borderColor: 'rgba(99,102,241,0.25)' }}
+          >
+            <Ionicons name="swap-horizontal" size={22} color="#6366F1" />
+          </TouchableOpacity>
+        )}
       </View>
 
       <AddTransactionModal
@@ -562,6 +590,18 @@ export default function TransactionsDashboardScreen() {
         visible={!!selectedTransaction}
         transaction={selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
+      />
+
+      <TransferModal
+        visible={showTransferModal}
+        accounts={accounts}
+        hourlyRate={getHourlyRate()}
+        onClose={() => setShowTransferModal(false)}
+        onComplete={async () => {
+          setShowTransferModal(false);
+          await useDataStore.getState().fetchAccounts();
+          await useDataStore.getState().fetchTransactions();
+        }}
       />
 
       <DateRangePickerModal
@@ -586,7 +626,7 @@ export default function TransactionsDashboardScreen() {
 
             <View className="px-5">
               <View className="flex-row items-center justify-between mb-4">
-                <Text bold className="text-lg text-white">Выбрать счёт</Text>
+                <Text bold className="text-lg text-white">{t("transactions.selectAccount")}</Text>
                 <Pressable onPress={() => setShowAccountPicker(false)} hitSlop={12}>
                   <Ionicons name="close" size={22} color="#71717A" />
                 </Pressable>
@@ -607,7 +647,7 @@ export default function TransactionsDashboardScreen() {
                     <Ionicons name="layers" size={20} color="#818CF8" />
                   </View>
                   <View>
-                    <Text bold className="text-base text-white">Все счета</Text>
+                    <Text bold className="text-base text-white">{t("transactions.allAccounts")}</Text>
                     <Text className="text-sm text-typography-400">{formatCurrency(accounts.reduce((sum, a) => sum + Number(a.balance), 0))}</Text>
                   </View>
                 </View>

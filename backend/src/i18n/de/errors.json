@@ -1,0 +1,18 @@
+{
+  "insufficientFunds": "Unzureichende Mittel. Verfügbar {{available}} ₽, benötigt {{needed}} ₽",
+  "negativeBalance": "Überweisung von \"{{account}}\" nicht möglich — Kontostand {{balance}}",
+  "accountNotFound": "Konto nicht gefunden",
+  "categoryNotFound": "Kategorie nicht gefunden",
+  "transactionNotFound": "Transaktion nicht gefunden",
+  "sameAccount": "Überweisung auf dasselbe Konto nicht möglich",
+  "unauthorized": "Authentifizierung erforderlich",
+  "forbidden": "Zugriff verweigert",
+  "validationError": "Validierungsfehler",
+  "internalError": "Interner Serverfehler",
+  "sessionExpired": "Sitzung abgelaufen. Bitte melden Sie sich erneut an.",
+  "budgetNotFound": "Budget nicht gefunden",
+  "goalNotFound": "Ziel nicht gefunden",
+  "wishlistNotFound": "Wunsch nicht gefunden",
+  "invalidCredentials": "Ungültige E-Mail oder Passwort",
+  "emailExists": "Benutzer mit dieser E-Mail existiert bereits"
+}

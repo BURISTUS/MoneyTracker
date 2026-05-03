@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
 import { useRouter, usePathname } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -16,17 +17,18 @@ interface TabItem {
 }
 
 const tabs: TabItem[] = [
-  { key: 'home', label: 'Главная', icon: 'home-outline', iconActive: 'home', path: '/main' },
-  { key: 'transactions', label: 'Операции', icon: 'swap-horizontal-outline', iconActive: 'swap-horizontal', path: '/main/transactions' },
-  { key: 'chat', label: 'Чат', icon: 'chatbubbles-outline', iconActive: 'chatbubbles', path: '/main/chat' },
-  { key: 'wishlist', label: 'Желания', icon: 'heart-outline', iconActive: 'heart', path: '/main/wishlist' },
-  { key: 'profile', label: 'Профиль', icon: 'person-outline', iconActive: 'person', path: '/main/profile' },
+  { key: 'home', label: 'tabs.home', icon: 'home-outline', iconActive: 'home', path: '/main' },
+  { key: 'transactions', label: 'tabs.transactions', icon: 'swap-horizontal-outline', iconActive: 'swap-horizontal', path: '/main/transactions' },
+  { key: 'chat', label: 'tabs.chat', icon: 'chatbubbles-outline', iconActive: 'chatbubbles', path: '/main/chat' },
+  { key: 'wishlist', label: 'tabs.wishlist', icon: 'heart-outline', iconActive: 'heart', path: '/main/wishlist' },
+  { key: 'profile', label: 'tabs.profile', icon: 'person-outline', iconActive: 'person', path: '/main/profile' },
 ];
 
 export const TabBar: React.FC = React.memo(() => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const isActive = (tab: TabItem) => {
     if (tab.key === 'home') return pathname === '/main';
@@ -55,7 +57,7 @@ export const TabBar: React.FC = React.memo(() => {
                 color={active ? '#818CF8' : '#71717A'}
               />
               <Text bold={active} className={`text-[10px] ${active ? 'text-primary-300' : 'text-typography-400'}`}>
-                {tab.label}
+                {t(tab.label)}
               </Text>
               {active && (
                 <View className="w-1 h-1 rounded-full bg-primary-400 mt-0.5" />

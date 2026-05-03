@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +10,7 @@ import { formatCurrency } from '../../../src/utils/formatters';
 type ViewMode = 'EXPENSE' | 'INCOME';
 
 export default function CategoriesChartScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const transactions = useDataStore((s) => s.transactions);
   const categories = useDataStore((s) => s.categories);
@@ -62,14 +64,12 @@ export default function CategoriesChartScreen() {
   return (
     <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
       <View className="px-4 pt-4 pb-3">
-        <Text className="text-xl font-bold text-typography-white mb-3">
-          Структура расходов
-        </Text>
+        <Text className="text-xl font-bold text-typography-white mb-3">{t("categories.expenseStructure")}</Text>
 
         <View className="flex-row gap-2">
           {[
             { key: 'EXPENSE' as const, label: 'Расходы', color: '#FF3B30' },
-            { key: 'INCOME' as const, label: 'Доходы', color: '#34C759' },
+            { key: 'INCOME' as const, label: t("categories.income"), color: '#34C759' },
           ].map((tab) => (
             <TouchableOpacity
               key={tab.key}
@@ -101,7 +101,7 @@ export default function CategoriesChartScreen() {
           {totalLifeHours && (
             <View className="flex-row items-center gap-1.5 mt-1.5 bg-background-50/50 px-3.5 py-1 rounded-full">
               <Text className="text-xs">⏱</Text>
-              <Text className="text-xs text-warning-400">{totalLifeHours} работы</Text>
+              <Text className="text-xs text-warning-400">{t("categories.hoursOfWorkValue", { hours: totalLifeHours })}</Text>
             </View>
           )}
         </View>
@@ -112,7 +112,7 @@ export default function CategoriesChartScreen() {
           <View className="items-center py-16">
             <Text className="text-lg text-typography-400">📊</Text>
             <Text className="text-base text-typography-400 mt-3">
-              Нет данных за период
+              {t("categories.noData")}
             </Text>
           </View>
         ) : (

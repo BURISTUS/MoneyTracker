@@ -8,7 +8,7 @@ import ru from './locales/ru.json';
 
 const LANGUAGE_KEY = 'app_language';
 
-const SUPPORTED_LANGUAGES = ['en', 'ru', 'es', 'pt', 'fr', 'de', 'ja', 'zh'];
+const SUPPORTED_LANGUAGES = ['en', 'ru', 'es', 'pt', 'fr', 'de', 'ja', 'zh', 'ar', 'hi', 'ko', 'it', 'tr', 'vi', 'id', 'th', 'pl', 'uk', 'nl', 'bn'];
 
 const LOCALE_RESOURCES: Record<string, any> = { en, ru };
 
@@ -38,7 +38,8 @@ const FALLBACK_TRANSLATIONS: Record<string, any> = {
       incomeCategory: 'Income',
     },
     wishlist: { title: 'Wish incubator' },
-    profile: { title: 'Profile', language: 'Language', currency: 'Currency', logout: 'Log out' },
+    profile: { title: 'Profile', finances: 'Finances', settings: 'Settings', refusals: 'Refusals', saved: 'Saved', accounts: 'Accounts', categories: 'Categories', budgets: 'Budgets', goals: 'Goals', analytics: 'Analytics', lifeCost: 'Life Cost', language: 'Language', currency: 'Currency', logout: 'Log out' },
+    tabs: { home: 'Home', transactions: 'Transactions', chat: 'Chat', wishlist: 'Wishes', profile: 'Profile' },
     currencyPicker: { searchPlaceholder: 'Search by code or name...', notFound: 'Currency not found', tab_POPULAR: 'Popular', tab_ALL: 'All', tab_FIAT: 'Fiat', tab_CRYPTO: 'Crypto', tab_METAL: 'Metals' },
     time: { minutes: '{{count}} min', hours: '{{count}}h', days: '{{count}}d' },
   },
@@ -67,7 +68,8 @@ const FALLBACK_TRANSLATIONS: Record<string, any> = {
       incomeCategory: 'Доход',
     },
     wishlist: { title: 'Инкубатор желаний' },
-    profile: { title: 'Профиль', language: 'Язык', currency: 'Валюта', logout: 'Выйти' },
+    profile: { title: 'Профиль', finances: 'Финансы', settings: 'Настройки', refusals: 'Отказы', saved: 'Сохранено', accounts: 'Счета', categories: 'Категории', budgets: 'Бюджеты', goals: 'Цели', analytics: 'Аналитика', lifeCost: 'Life Cost', language: 'Язык', currency: 'Валюта', logout: 'Выйти' },
+    tabs: { home: 'Главная', transactions: 'Операции', chat: 'Чат', wishlist: 'Желания', profile: 'Профиль' },
     currencyPicker: { searchPlaceholder: 'Поиск по коду или названию...', notFound: 'Валюта не найдена', tab_POPULAR: 'Популярные', tab_ALL: 'Все', tab_FIAT: 'Фиат', tab_CRYPTO: 'Крипто', tab_METAL: 'Металлы' },
     time: { minutes: '{{count}} мин', hours: '{{count}} ч', days: '{{count}} дн' },
   },
@@ -107,18 +109,39 @@ export async function loadTranslationsFromServer(
     const lang = i18n.language || 'en';
     const data = await apiGet(`/i18n/translations/${lang}`);
     if (data && typeof data === 'object') {
-      i18n.addResourceBundle(lang, 'translation', data, true, true);
+      // Server returns { common: { home: {...}, auth: {...}, ... }, errors: {...} }
+      // Flatten to { home: {...}, auth: {...}, ... } so t('home.tabOverview') works
+      const flat: Record<string, any> = {};
+      for (const group of Object.values(data)) {
+        if (group && typeof group === 'object') {
+          Object.assign(flat, group);
+        }
+      }
+      i18n.addResourceBundle(lang, 'translation', flat, true, true);
     }
   } catch (error) {
     console.warn('Failed to load translations from server, using fallback');
   }
 }
 
+let _apiGet: ((url: string) => Promise<any>) | null = null;
+
+export function setApiGet(fn: (url: string) => Promise<any>) {
+  _apiGet = fn;
+}
+
 export async function changeLanguage(lang: string) {
   if (!SUPPORTED_LANGUAGES.includes(lang)) return;
   await i18n.changeLanguage(lang);
-  if (Platform.OS !== 'web') {
-    await AsyncStorage.setItem(LANGUAGE_KEY, lang);
+  if (_apiGet) {
+    await loadTranslationsFromServer(_apiGet);
+  }
+  try {
+    if (Platform.OS !== 'web') {
+      await AsyncStorage.setItem(LANGUAGE_KEY, lang);
+    }
+  } catch {
+    // AsyncStorage may not be available (e.g. Expo Go without native build)
   }
 }
 

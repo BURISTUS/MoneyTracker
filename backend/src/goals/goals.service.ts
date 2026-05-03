@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { AppException } from '../common/app-exception';
 
 @Injectable()
 export class GoalsService {
@@ -42,7 +43,7 @@ export class GoalsService {
   async update(id: string, userId: string, data: { name?: string; targetAmount?: bigint; deadline?: Date | string }) {
     const goal = await this.prisma.goal.findFirst({ where: { id, userId } });
     if (!goal) {
-      throw new NotFoundException('Goal not found');
+      throw new AppException('errors.goalNotFound', 404);
     }
     const updateData: { name?: string; targetAmount?: bigint; deadline?: Date | string } = {};
     if (data.name !== undefined) updateData.name = data.name;
@@ -55,7 +56,7 @@ export class GoalsService {
   async updateProgress(id: string, userId: string, amount: bigint) {
     const goal = await this.prisma.goal.findFirst({ where: { id, userId } });
     if (!goal) {
-      throw new NotFoundException('Goal not found');
+      throw new AppException('errors.goalNotFound', 404);
     }
 
     const newCurrentAmount = Number(goal.currentAmount) + Number(amount);
@@ -74,7 +75,7 @@ export class GoalsService {
   async delete(id: string, userId: string) {
     const goal = await this.prisma.goal.findFirst({ where: { id, userId } });
     if (!goal) {
-      throw new NotFoundException('Goal not found');
+      throw new AppException('errors.goalNotFound', 404);
     }
     return this.prisma.goal.delete({ where: { id } });
   }

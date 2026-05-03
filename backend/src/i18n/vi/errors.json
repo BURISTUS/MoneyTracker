@@ -1,0 +1,18 @@
+{
+  "insufficientFunds": "Số dư không đủ. Có sẵn {{available}} ₽, cần {{needed}} ₽",
+  "negativeBalance": "Không thể chuyển từ \"{{account}}\" — số dư {{balance}}",
+  "accountNotFound": "Không tìm thấy tài khoản",
+  "categoryNotFound": "Không tìm thấy danh mục",
+  "transactionNotFound": "Không tìm thấy giao dịch",
+  "sameAccount": "Không thể chuyển đến cùng một tài khoản",
+  "unauthorized": "Yêu cầu xác thực",
+  "forbidden": "Truy cập bị từ chối",
+  "validationError": "Lỗi xác thực",
+  "internalError": "Lỗi máy chủ nội bộ",
+  "sessionExpired": "Phiên đã hết hạn. Vui lòng đăng nhập lại.",
+  "budgetNotFound": "Không tìm thấy ngân sách",
+  "goalNotFound": "Không tìm thấy mục tiêu",
+  "wishlistNotFound": "Không tìm thấy mục yêu thích",
+  "invalidCredentials": "Email hoặc mật khẩu không hợp lệ",
+  "emailExists": "Người dùng với email này đã tồn tại"
+}

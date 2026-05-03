@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AppException } from '../common/app-exception';
 
 @Injectable()
 export class BudgetService {
@@ -106,7 +107,7 @@ export class BudgetService {
   async update(id: string, userId: string, data: { amount?: bigint; alertThreshold?: number }) {
     const budget = await this.prisma.budget.findFirst({ where: { id, userId } });
     if (!budget) {
-      throw new NotFoundException('Budget not found');
+      throw new AppException('errors.budgetNotFound', 404);
     }
     return this.prisma.budget.update({
       where: { id },
@@ -118,7 +119,7 @@ export class BudgetService {
   async delete(id: string, userId: string) {
     const budget = await this.prisma.budget.findFirst({ where: { id, userId } });
     if (!budget) {
-      throw new NotFoundException('Budget not found');
+      throw new AppException('errors.budgetNotFound', 404);
     }
     return this.prisma.budget.delete({ where: { id } });
   }
@@ -129,7 +130,7 @@ export class BudgetService {
       include: { category: true },
     });
     if (!budget) {
-      throw new NotFoundException('Budget not found');
+      throw new AppException('errors.budgetNotFound', 404);
     }
 
     const progress = await this.calculateProgress(budget, userId);

@@ -6,15 +6,20 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useDataStore } from '../../src/stores/dataStore';
 import { Text } from '../../components/ui/text';
+// import { VoiceInputModal } from '../../src/components/ui/VoiceInputButton';
+import { ReceiptScannerButton } from '../../src/components/ui/ReceiptScanner';
+import { AiTransactionPreview } from '../../src/components/ui/AiTransactionPreview';
+import type { AiTransactionResult, AiReceiptResult } from '../../src/services/ai';
 import { Loading } from '../../src/components/ui/Loading';
 import { formatCurrency } from '../../src/utils/formatters';
-import { ToastContainer } from '../../src/components/ui/Toast';
 import { AddTransactionModal } from '../../src/components/ui/AddTransactionModal';
 import { TransactionType as TransactionTypeEnum } from '../../src/types';
 
@@ -172,29 +177,30 @@ const ARTICLES = [
   {
     id: '1',
     tag: 'Life-Cost',
-    title: 'Что такое цена вашей жизни',
-    sub: 'Каждая трата — это часы работы. Узнайте, сколько часов стоит ваша следующая покупка.',
-    time: '3 мин',
+    titleKey: 'home.article1Title',
+    subKey: 'home.article1Desc',
+    timeKey: 'home.article1Time',
   },
   {
     id: '2',
     tag: 'Психология',
-    title: 'Правило 7 дней перед покупкой',
-    sub: 'Как заморозить импульс и принять осознанное решение о трате денег.',
-    time: '4 мин',
+    titleKey: 'home.article2Title',
+    subKey: 'home.article2Desc',
+    timeKey: 'home.article2Time',
   },
   {
     id: '3',
     tag: 'Практика',
-    title: 'Бюджет за 5 минут',
-    sub: 'Простой способ контролировать расходы без сложных таблиц и приложений.',
-    time: '5 мин',
+    titleKey: 'home.article3Title',
+    subKey: 'home.article3Desc',
+    timeKey: 'home.article3Time',
   },
 ];
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const initializeData = useDataStore((s) => s.initializeData);
   const transactions = useDataStore((s) => s.transactions);
   const wishlist = useDataStore((s) => s.wishlist);
@@ -205,6 +211,9 @@ export default function HomeScreen() {
   const [tab, setTab] = useState<'overview' | 'read'>('overview');
   const [showAddModal, setShowAddModal] = useState(false);
   const [addType, setAddType] = useState<TransactionTypeEnum>(TransactionTypeEnum.EXPENSE);
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [showAiPreview, setShowAiPreview] = useState(false);
+  const [aiResult, setAiResult] = useState<AiTransactionResult | AiReceiptResult | null>(null);
 
   useEffect(() => {
     initializeData();
@@ -294,29 +303,28 @@ export default function HomeScreen() {
             onPress={() => setTab('overview')}
             style={[S.tabPill, { backgroundColor: tab === 'overview' ? C.indigo : 'transparent' }]}
           >
-            <Text style={[S.tabText, { color: tab === 'overview' ? '#FFF' : C.textSec }]}>Обзор</Text>
+            <Text style={[S.tabText, { color: tab === 'overview' ? '#FFF' : C.textSec }]}>{t('home.tabOverview')}</Text>
           </Pressable>
           <Pressable
             onPress={() => setTab('read')}
             style={[S.tabPill, { backgroundColor: tab === 'read' ? C.indigo : 'transparent' }]}
           >
-            <Text style={[S.tabText, { color: tab === 'read' ? '#FFF' : C.textSec }]}>Читать</Text>
+            <Text style={[S.tabText, { color: tab === 'read' ? '#FFF' : C.textSec }]}>{t('home.tabRead')}</Text>
           </Pressable>
         </View>
 
-        <ToastContainer />
 
         {tab === 'overview' ? (
           <View style={{ gap: 12 }}>
             {/* Life-Cost Hero */}
             <View style={S.heroCard}>
-              <Text style={S.heroLabel}>Потрачено сегодня</Text>
+              <Text style={S.heroLabel}>{t('home.spentToday')}</Text>
               <Text style={S.heroValue}>{todayHours > 0 ? formatHours(todayHours) : '—'}</Text>
               <Text style={S.heroSub}>
-                {todayExpenses > 0 ? formatCurrency(todayExpenses) : 'Нет трат'}
+                {todayExpenses > 0 ? formatCurrency(todayExpenses) : t('home.noExpenses')}
               </Text>
               {hourlyRate > 0 && (
-                <Text style={S.heroRate}>{hourlyRate.toFixed(0)} ₽/час</Text>
+                <Text style={S.heroRate}>{t('home.ratePerHour', { rate: hourlyRate.toFixed(0) })}</Text>
               )}
             </View>
 
@@ -330,8 +338,8 @@ export default function HomeScreen() {
                   <Text style={S.alertCountText}>{readyCount}</Text>
                 </View>
                 <View style={S.flex}>
-                  <Text style={S.alertTitle}>Требуется решение</Text>
-                  <Text style={S.alertSub}>Желания остыли — примите решение</Text>
+                  <Text style={S.alertTitle}>{t('home.decisionRequired')}</Text>
+                  <Text style={S.alertSub}>{t('home.wishesCooledDown')}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={C.orange} />
               </TouchableOpacity>
@@ -346,7 +354,7 @@ export default function HomeScreen() {
                 <Text style={[S.statValue, { color: C.green }]}>
                   {savedHours > 0 ? formatHours(savedHours) : '—'}
                 </Text>
-                <Text style={S.statLabel}>Сэкономлено</Text>
+                <Text style={S.statLabel}>{t("home.saved")}</Text>
               </View>
               <View style={S.statCard}>
                 <View style={[S.statIconWrap, { backgroundColor: 'rgba(255,149,0,0.12)' }]}>
@@ -355,27 +363,27 @@ export default function HomeScreen() {
                 <Text style={[S.statValue, { color: C.orange }]}>
                   {wishlist.filter((w) => w.status === 'PENDING').length}
                 </Text>
-                <Text style={S.statLabel}>В инкубаторе</Text>
+                <Text style={S.statLabel}>{t("home.inIncubator")}</Text>
               </View>
             </View>
 
             {/* Daily Pulse */}
             <View style={S.pulseCard}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: C.textMain, marginBottom: 4 }}>
-                Сегодня
+                {t('home.todayTitle')}
               </Text>
               <View style={S.pulseRow}>
-                <Text style={S.pulseLabel}>Самая крупная трата</Text>
+                <Text style={S.pulseLabel}>{t("home.biggestExpense")}</Text>
                 <Text style={S.pulseValue}>
                   {biggestToday ? formatCurrency(biggestToday.amount) : '—'}
                 </Text>
               </View>
               <View style={S.pulseRow}>
-                <Text style={S.pulseLabel}>Топ-категория</Text>
+                <Text style={S.pulseLabel}>{t("home.topCategory")}</Text>
                 <Text style={S.pulseValue}>{topCategoryName ?? '—'}</Text>
               </View>
               <View style={S.pulseLast}>
-                <Text style={S.pulseLabel}>Транзакций</Text>
+                <Text style={S.pulseLabel}>{t("home.transactionsCount")}</Text>
                 <Text style={S.pulseValue}>
                   {transactions.filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= today).length}
                 </Text>
@@ -389,21 +397,56 @@ export default function HomeScreen() {
                 style={[S.actionBtn, { backgroundColor: 'rgba(255,59,48,0.08)', borderColor: 'rgba(255,59,48,0.15)' }]}
               >
                 <Ionicons name="remove-circle" size={22} color={C.red} />
-                <Text style={[S.actionText, { color: C.red }]}>Трата</Text>
+                <Text style={[S.actionText, { color: C.red }]}>{t("home.addExpense")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => router.push('/main/wishlist/' as never)}
-                style={[S.actionBtn, { backgroundColor: 'rgba(79,110,247,0.08)', borderColor: 'rgba(79,110,247,0.15)' }]}
+                onPress={() => setShowVoiceModal(true)}
+                style={[S.actionBtn, { backgroundColor: 'rgba(99,102,241,0.08)', borderColor: 'rgba(99,102,241,0.15)' }]}
               >
-                <Ionicons name="snow" size={22} color={C.blue} />
-                <Text style={[S.actionText, { color: C.blue }]}>Заморозить</Text>
+                <Ionicons name="mic" size={22} color="#6366F1" />
+                <Text style={[S.actionText, { color: '#6366F1' }]}>{t("home.voiceInput")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  try {
+                    const ImagePicker = require('expo-image-picker');
+                    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+                    if (status !== 'granted') {
+                      Alert.alert('Нет доступа', 'Разрешите доступ к камере');
+                      return;
+                    }
+                    const result = await ImagePicker.launchCameraAsync({
+                      mediaTypes: ['images'],
+                      quality: 0.7,
+                      base64: true,
+                      allowsEditing: true,
+                    });
+                    if (!result.canceled && result.assets?.[0]?.base64) {
+                      const asset = result.assets[0];
+                      const aiService = require('../../src/services/ai').aiService;
+                      const receiptResult = await aiService.parseReceipt(
+                        asset.base64,
+                        asset.mimeType || 'image/jpeg',
+                      );
+                      setAiResult(receiptResult);
+                      setShowAiPreview(true);
+                    }
+                  } catch (error) {
+                    console.error('Receipt scan error:', error);
+                    Alert.alert('Ошибка', 'Не удалось распознать чек');
+                  }
+                }}
+                style={[S.actionBtn, { backgroundColor: 'rgba(99,102,241,0.08)', borderColor: 'rgba(99,102,241,0.15)' }]}
+              >
+                <Ionicons name="camera" size={22} color="#818CF8" />
+                <Text style={[S.actionText, { color: '#818CF8' }]}>{t("home.receiptScan")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => { setAddType(TransactionTypeEnum.INCOME); setShowAddModal(true); }}
                 style={[S.actionBtn, { backgroundColor: 'rgba(52,211,153,0.08)', borderColor: 'rgba(52,211,153,0.15)' }]}
               >
                 <Ionicons name="add-circle" size={22} color={C.green} />
-                <Text style={[S.actionText, { color: C.green }]}>Доход</Text>
+                <Text style={[S.actionText, { color: C.green }]}>{t("home.addIncome")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -415,9 +458,9 @@ export default function HomeScreen() {
                 <View style={S.articleTag}>
                   <Text style={S.articleTagText}>{article.tag}</Text>
                 </View>
-                <Text style={S.articleTitle}>{article.title}</Text>
-                <Text style={S.articleSub}>{article.sub}</Text>
-                <Text style={S.articleTime}>{article.time} чтения</Text>
+                <Text style={S.articleTitle}>{t(article.titleKey as any)}</Text>
+                <Text style={S.articleSub}>{t(article.subKey as any)}</Text>
+                <Text style={S.articleTime}>{t(article.timeKey as any)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -429,6 +472,26 @@ export default function HomeScreen() {
         onClose={() => setShowAddModal(false)}
         onComplete={() => setShowAddModal(false)}
         initialType={addType}
+      />
+
+      {/* <VoiceInputModal
+        visible={showVoiceModal}
+        onClose={() => setShowVoiceModal(false)}
+        onResult={(result) => {
+          setAiResult(result);
+          setShowVoiceModal(false);
+          setShowAiPreview(true);
+        }}
+      /> */}
+
+      <AiTransactionPreview
+        visible={showAiPreview}
+        onClose={() => setShowAiPreview(false)}
+        onComplete={() => {
+          setShowAiPreview(false);
+          initializeData();
+        }}
+        result={aiResult}
       />
     </View>
   );

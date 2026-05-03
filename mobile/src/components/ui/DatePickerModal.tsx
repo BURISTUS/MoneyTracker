@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
@@ -47,6 +48,7 @@ export function DatePickerModal({
   onSelect,
   onClose,
 }: DatePickerModalProps) {
+  const { t } = useTranslation();
   const [customDay, setCustomDay] = useState('');
   const [customMonth, setCustomMonth] = useState('');
 
@@ -105,7 +107,7 @@ export function DatePickerModal({
           <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-4" />
 
           <View className="px-5">
-            <Text bold className="text-lg text-white mb-1">Дата операции</Text>
+            <Text bold className="text-lg text-white mb-1">{t("transactions.transactionDate")}</Text>
             <Text className="text-sm text-[#8E8E93] mb-5">{formatDayMonth(currentDate)}</Text>
 
             <View className="gap-2 mb-5">
@@ -130,7 +132,7 @@ export function DatePickerModal({
               })}
             </View>
 
-            <Text bold className="text-xs text-[#8E8E93] mb-2 uppercase">Выбрать дату</Text>
+            <Text bold className="text-xs text-[#8E8E93] mb-2 uppercase">{t("common.selectDate")}</Text>
             <View className="flex-row gap-2 mb-4">
               <TextInput
                 ref={dayRef}

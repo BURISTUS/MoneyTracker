@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import '../global.css';
 import '../src/i18n';
-import { loadTranslationsFromServer } from '../src/i18n';
+import i18n from '../src/i18n';
+import { I18nextProvider } from 'react-i18next';
+import { loadTranslationsFromServer, setApiGet } from '../src/i18n';
 import { apiGet } from '../src/services/api';
 import { GluestackUIProvider } from '../components/ui/gluestack-ui-provider';
 
@@ -30,10 +32,12 @@ const customDarkTheme = {
 
 export default function RootLayout() {
   useEffect(() => {
+    setApiGet(apiGet);
     loadTranslationsFromServer(apiGet);
   }, []);
 
   return (
+    <I18nextProvider i18n={i18n}>
     <GluestackUIProvider mode="dark">
       <QueryClientProvider client={queryClient}>
         <ThemeProvider value={customDarkTheme}>
@@ -57,5 +61,6 @@ export default function RootLayout() {
         </ThemeProvider>
       </QueryClientProvider>
     </GluestackUIProvider>
+    </I18nextProvider>
   );
 }

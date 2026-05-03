@@ -1,0 +1,18 @@
+{
+  "insufficientFunds": "เงินไม่เพียงพอ มี {{available}} ₽ ต้องการ {{needed}} ₽",
+  "negativeBalance": "ไม่สามารถโอนจาก \"{{account}}\" — ยอดคงเหลือ {{balance}}",
+  "accountNotFound": "ไม่พบบัญชี",
+  "categoryNotFound": "ไม่พบหมวดหมู่",
+  "transactionNotFound": "ไม่พบธุรกรรม",
+  "sameAccount": "ไม่สามารถโอนไปยังบัญชีเดียวกัน",
+  "unauthorized": "ต้องมีการตรวจสอบสิทธิ์",
+  "forbidden": "ถูกปฏิเสธการเข้าถึง",
+  "validationError": "ข้อผิดพลาดในการตรวจสอบ",
+  "internalError": "ข้อผิดพลาดภายในเซิร์ฟเวอร์",
+  "sessionExpired": "เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง",
+  "budgetNotFound": "ไม่พบงบประมาณ",
+  "goalNotFound": "ไม่พบเป้าหมาย",
+  "wishlistNotFound": "ไม่พบรายการสิ่งที่อยากได้",
+  "invalidCredentials": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+  "emailExists": "มีผู้ใช้ด้วยอีเมลนี้อยู่แล้ว"
+}

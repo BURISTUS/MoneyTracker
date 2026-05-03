@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback } from 'react';
 import { View, ScrollView, Pressable, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +8,6 @@ import { Text } from '../../../components/ui/text';
 import type { CategoryType } from '../../../src/types';
 import { CategoryType as CategoryTypeEnum } from '../../../src/types';
 import { useToast } from '../../../src/components/ui/Toast';
-import { ToastContainer } from '../../../src/components/ui/Toast';
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
@@ -34,6 +34,7 @@ interface CreateCategoryModalProps {
 }
 
 export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCategoryModalProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const addCategory = useDataStore((s) => s.addCategory);
   const { showError } = useToast();
@@ -93,11 +94,10 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
     >
       <View className="flex-1 bg-[#0A0A0F]">
         <View style={{ position: 'relative' }}>
-          <ToastContainer />
         </View>
         <ScrollView contentContainerStyle={{ gap: 24, paddingBottom: 40 }}>
         <View className="flex-row justify-between items-center">
-          <Text bold className="text-xl text-white">Новая категория</Text>
+          <Text bold className="text-xl text-white">{t("categories.newCategory")}</Text>
           <Pressable onPress={onClose}>
             <Text className="text-xl text-typography-400">✕</Text>
           </Pressable>
@@ -105,14 +105,14 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
 
         <View className="gap-4">
           <View>
-            <Text className="text-base text-typography-400 mb-2">Название</Text>
+            <Text className="text-base text-typography-400 mb-2">{t("common.name")}</Text>
             <Text className="text-white p-4 bg-[rgba(255,255,255,0.05)] rounded-xl mt-2">
               {name}
             </Text>
           </View>
 
           <View>
-            <Text className="text-base text-typography-400 mb-2">Тип</Text>
+            <Text className="text-base text-typography-400 mb-2">{t("common.type")}</Text>
             <View className="flex-row gap-3">
               <Pressable
                 onPress={() => setType(CategoryTypeEnum.EXPENSE)}
@@ -125,9 +125,7 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
                     : 'rgba(255, 255, 255, 0.05)',
                 }}
               >
-                <Text bold={type === CategoryTypeEnum.EXPENSE} className={`text-base ${type === CategoryTypeEnum.EXPENSE ? 'text-error-400' : 'text-typography-400'}`}>
-                  ⛔ Расход
-                </Text>
+                <Text bold={type === CategoryTypeEnum.EXPENSE} className={`text-base ${type === CategoryTypeEnum.EXPENSE ? 'text-error-400' : 'text-typography-400'}`}>{t("transactions.expenseTypeLabel")}</Text>
               </Pressable>
               <Pressable
                 onPress={() => setType(CategoryTypeEnum.INCOME)}
@@ -140,15 +138,13 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
                     : 'rgba(255, 255, 255, 0.05)',
                 }}
               >
-                <Text bold={type === CategoryTypeEnum.INCOME} className={`text-base ${type === CategoryTypeEnum.INCOME ? 'text-success-400' : 'text-typography-400'}`}>
-                  ✅ Доход
-                </Text>
+                <Text bold={type === CategoryTypeEnum.INCOME} className={`text-base ${type === CategoryTypeEnum.INCOME ? 'text-success-400' : 'text-typography-400'}`}>{t("transactions.incomeTypeLabel")}</Text>
               </Pressable>
             </View>
           </View>
 
           <View>
-            <Text className="text-base text-typography-400 mb-2">Цвет</Text>
+            <Text className="text-base text-typography-400 mb-2">{t("categories.colorLabel")}</Text>
             <View className="flex-row flex-wrap gap-3">
               {colors.map((color) => (
                 <Pressable
@@ -170,7 +166,7 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
           </View>
 
           <View>
-            <Text className="text-base text-typography-400 mb-2">Иконка</Text>
+            <Text className="text-base text-typography-400 mb-2">{t("categories.iconLabel")}</Text>
             <View className="flex-row flex-wrap gap-3">
               {icons.map((icon) => (
                 <Pressable
@@ -194,7 +190,7 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
           </View>
 
           <View>
-            <Text className="text-base text-typography-400 mb-2">Дата создания</Text>
+            <Text className="text-base text-typography-400 mb-2">{t("common.createdAt")}</Text>
             <View className="flex-row gap-2">
               {(['today', 'yesterday', 'day_before_yesterday'] as DateRangeType[]).map((dr) => {
                 const labels: Record<string, string> = { today: 'Сегодня', yesterday: 'Вчера', day_before_yesterday: 'Позавчера' };
@@ -260,7 +256,7 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
                 : 'bg-primary-500'
             }`}
           >
-            <Text bold className="text-lg text-white">Создать категорию</Text>
+            <Text bold className="text-lg text-white">{t("categories.create")}</Text>
           </Pressable>
 
           <View className="mt-4">
@@ -268,7 +264,7 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
               onPress={handleReset}
               className="py-3 rounded-xl items-center bg-[rgba(255,255,255,0.04)]"
             >
-              <Text className="text-base text-typography-400">Сбросить</Text>
+              <Text className="text-base text-typography-400">{t("common.reset")}</Text>
             </Pressable>
           </View>
         </View>

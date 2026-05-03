@@ -1,0 +1,18 @@
+{
+  "insufficientFunds": "Dana tidak mencukupi. Tersedia {{available}} ₽, diperlukan {{needed}} ₽",
+  "negativeBalance": "Tidak dapat mentransfer dari \"{{account}}\" — saldo {{balance}}",
+  "accountNotFound": "Akun tidak ditemukan",
+  "categoryNotFound": "Kategori tidak ditemukan",
+  "transactionNotFound": "Transaksi tidak ditemukan",
+  "sameAccount": "Tidak dapat mentransfer ke akun yang sama",
+  "unauthorized": "Autentikasi diperlukan",
+  "forbidden": "Akses ditolak",
+  "validationError": "Kesalahan validasi",
+  "internalError": "Kesalahan server internal",
+  "sessionExpired": "Sesi berakhir. Silakan masuk kembali.",
+  "budgetNotFound": "Anggaran tidak ditemukan",
+  "goalNotFound": "Tujuan tidak ditemukan",
+  "wishlistNotFound": "Item wishlist tidak ditemukan",
+  "invalidCredentials": "Email atau kata sandi tidak valid",
+  "emailExists": "Pengguna dengan email ini sudah ada"
+}

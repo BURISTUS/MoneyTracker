@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { TabBar } from '../../src/components/layout/TabBar';
-import { ToastProvider } from '../../src/components/ui/Toast';
+import { ToastProvider, ToastContainer } from '../../src/components/ui/Toast';
 
 export default function MainLayout() {
   return (
@@ -27,7 +27,10 @@ export default function MainLayout() {
           <Stack.Screen name="budget/index" />
           <Stack.Screen name="goals/index" />
           <Stack.Screen name="life-cost/index" />
+          <Stack.Screen name="chat/index" />
+          <Stack.Screen name="analytics/index" />
         </Stack>
+        <ToastContainer />
         <TabBar />
       </View>
     </ToastProvider>

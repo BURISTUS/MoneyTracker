@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { AppException } from '../common/app-exception';
 
 @Injectable()
 export class UsersService {
@@ -28,7 +29,7 @@ export class UsersService {
   async update(id: string, data: Prisma.UserUpdateInput) {
     const user = await this.findById(id);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException('errors.accountNotFound', 404);
     }
     return this.prisma.user.update({
       where: { id },

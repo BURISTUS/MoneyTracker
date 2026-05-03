@@ -1,0 +1,18 @@
+{
+  "insufficientFunds": "Fondos insuficientes. Disponible {{available}} ₽, necesario {{needed}} ₽",
+  "negativeBalance": "No se puede transferir desde \"{{account}}\" — saldo {{balance}}",
+  "accountNotFound": "Cuenta no encontrada",
+  "categoryNotFound": "Categoría no encontrada",
+  "transactionNotFound": "Transacción no encontrada",
+  "sameAccount": "No se puede transferir a la misma cuenta",
+  "unauthorized": "Autenticación requerida",
+  "forbidden": "Acceso denegado",
+  "validationError": "Error de validación",
+  "internalError": "Error interno del servidor",
+  "sessionExpired": "Sesión expirada. Inicie sesión de nuevo.",
+  "budgetNotFound": "Presupuesto no encontrado",
+  "goalNotFound": "Objetivo no encontrado",
+  "wishlistNotFound": "Deseo no encontrado",
+  "invalidCredentials": "Email o contraseña inválidos",
+  "emailExists": "Ya existe un usuario con este email"
+}

@@ -1,0 +1,18 @@
+{
+  "insufficientFunds": "Yetersiz bakiye. Mevcut {{available}} ₽, gerekli {{needed}} ₽",
+  "negativeBalance": "\"{{account}}\" hesabından transfer yapılamaz — bakiye {{balance}}",
+  "accountNotFound": "Hesap bulunamadı",
+  "categoryNotFound": "Kategori bulunamadı",
+  "transactionNotFound": "İşlem bulunamadı",
+  "sameAccount": "Aynı hesaba transfer yapılamaz",
+  "unauthorized": "Kimlik doğrulama gerekli",
+  "forbidden": "Erişim reddedildi",
+  "validationError": "Doğrulama hatası",
+  "internalError": "Dahili sunucu hatası",
+  "sessionExpired": "Oturum süresi doldu. Lütfen tekrar giriş yapın.",
+  "budgetNotFound": "Bütçe bulunamadı",
+  "goalNotFound": "Hedef bulunamadı",
+  "wishlistNotFound": "İstek listesi öğesi bulunamadı",
+  "invalidCredentials": "Geçersiz e-posta veya şifre",
+  "emailExists": "Bu e-postaya sahip bir kullanıcı zaten var"
+}

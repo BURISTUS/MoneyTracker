@@ -11,12 +11,13 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../../src/utils/formatters';
-import { useToast, ToastContainer } from '../../../src/components/ui/Toast';
+import { useToast } from '../../../src/components/ui/Toast';
 import { ConfirmModal } from '../../../src/components/ui/ConfirmModal';
 import { WishlistStatus as WishlistStatusEnum } from '../../../src/types';
 import wishlistService from '../../../src/services/wishlist';
@@ -267,11 +268,12 @@ function StatusIcon({ status, size = 22 }: { status: keyof typeof STATUS_CONFIG;
 }
 
 function HeroLifeCost({ hoursCost, price }: { hoursCost: string | null; price: number }) {
+  const { t } = useTranslation();
   return (
     <View style={S.heroBlock}>
       <View style={S.heroLabelRow}>
         <Ionicons name="time-outline" size={14} color={C.orange} />
-        <Text style={S.heroLabel}>Сколько часов работы</Text>
+        <Text style={S.heroLabel}>{t("wishlist.hoursOfWork")}</Text>
       </View>
       <Text style={S.heroValue}>{hoursCost ?? '—'}</Text>
       <Text style={S.heroPrice}>{formatCurrency(price)}</Text>
@@ -415,6 +417,7 @@ const MS = StyleSheet.create({
 });
 
 function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: AddWishlistModalProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
@@ -479,13 +482,13 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
           <TouchableOpacity onPress={onClose} style={MS.modalClose}>
             <Ionicons name="close" size={26} color={C.textSec} />
           </TouchableOpacity>
-          <Text style={MS.modalTitle}>Новое желание</Text>
+          <Text style={MS.modalTitle}>{t("wishlist.newWish")}</Text>
           <View style={{ width: 34 }} />
         </View>
 
         <ScrollView contentContainerStyle={MS.form} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={MS.field}>
-            <Text style={MS.fieldLabel}>Что хотите?</Text>
+            <Text style={MS.fieldLabel}>{t("wishlist.whatDoYouWant")}</Text>
             <TextInput
               ref={nameRef}
               value={name}
@@ -498,7 +501,7 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
           </View>
 
           <View style={MS.field}>
-            <Text style={MS.fieldLabel}>Сколько стоит? (₽)</Text>
+            <Text style={MS.fieldLabel}>{t("wishlist.howMuch")}</Text>
             <TextInput
               value={price}
               onChangeText={(t) => setPrice(t.replace(/[^0-9]/g, ''))}
@@ -511,16 +514,16 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
             {lifePreview && (
               <View style={MS.previewBox}>
                 <Ionicons name="time-outline" size={14} color={C.orange} />
-                <Text style={MS.previewText}>Это {lifePreview} работы</Text>
+                <Text style={MS.previewText}>{t('wishlist.thisIsWorkValue', { hours: lifePreview })}</Text>
               </View>
             )}
           </View>
 
           <View style={MS.field}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text style={MS.fieldLabel}>Зачем вам это?</Text>
+              <Text style={MS.fieldLabel}>{t("wishlist.whyYouNeed")}</Text>
               <Text style={[MS.charCount, { color: description.trim().length < 10 ? C.red : C.textSec }]}>
-                {description.trim().length}/200 (мин. 10)
+                {description.trim().length}/200 {t('wishlist.minLengthSuffix')}
               </Text>
             </View>
             <TextInput
@@ -541,13 +544,11 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
             activeOpacity={0.8}
             style={[MS.submitBtn, { backgroundColor: canSubmit ? C.indigo : 'rgba(99,102,241,0.2)' }]}
           >
-            <Text style={[MS.submitText, { color: canSubmit ? '#FFF' : 'rgba(255,255,255,0.3)' }]}>
-              Заморозить на 7 дней
-            </Text>
+            <Text style={[MS.submitText, { color: canSubmit ? '#FFF' : 'rgba(255,255,255,0.3)' }]}>{t("wishlist.freezeFor7Days")}</Text>
           </TouchableOpacity>
           <View style={MS.lockRow}>
             <Ionicons name="lock-closed" size={12} color={C.textSec} />
-            <Text style={MS.lockText}>Через 7 дней ты примешь осознанное решение</Text>
+            <Text style={MS.lockText}>{t("wishlist.decisionCountdown")}</Text>
           </View>
         </ScrollView>
       </View>
@@ -558,6 +559,7 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
 /* ─── Main Screen ─── */
 
 export default function WishlistScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const wishlist = useDataStore((s) => s.wishlist);
   const updateWishlistItem = useDataStore((s) => s.updateWishlistItem);
@@ -705,9 +707,9 @@ export default function WishlistScreen() {
             <Ionicons name={cfg.icon as any} size={12} color={cfg.color} />
             <Text style={[S.statusText, { color: cfg.color }]}>
               {isReady && isPending
-                ? 'Остывание завершено. Решение за тобой.'
+                ? t('wishlist.coolingComplete')
                 : isPending
-                  ? `Остыло: ${daysLeft} дн.`
+                  ? t('wishlist.coolingDaysLeft', { days: daysLeft })
                   : cfg.label}
             </Text>
           </View>
@@ -717,9 +719,9 @@ export default function WishlistScreen() {
               <TouchableOpacity onPress={() => setRejectConfirm(item)} style={S.btnReject}>
                 <View style={S.btnRejectRow}>
                   <Ionicons name="close-circle" size={16} color="#FFF" />
-                  <Text style={S.btnRejectText}>Отказаться</Text>
+                  <Text style={S.btnRejectText}>{t("wishlist.reject")}</Text>
                 </View>
-                <Text style={S.btnRejectSub}>Сэкономить {formatCurrency(item.price)}</Text>
+                <Text style={S.btnRejectSub}>{t("wishlist.saveMoneyColon")} {formatCurrency(item.price)}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -736,7 +738,7 @@ export default function WishlistScreen() {
                 ]}
               >
                 <Ionicons name="cart-outline" size={16} color={isReady ? C.red : C.textSec} />
-                <Text style={[S.btnBuyText, { color: isReady ? C.red : C.textSec }]}>Купить</Text>
+                <Text style={[S.btnBuyText, { color: isReady ? C.red : C.textSec }]}>{t("wishlist.buy")}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -845,12 +847,12 @@ export default function WishlistScreen() {
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={DS.badge}>
                 <Ionicons name="flame" size={12} color="#FFF" />
-                <Text style={DS.badgeText}>ГОТОВО К РЕШЕНИЮ</Text>
+                <Text style={DS.badgeText}>{t("wishlist.readyToDecide")}</Text>
               </View>
 
               <Timeline daysPassed={daysPassed} totalDays={item.cooldownDays} />
               <Text style={[S.statusText, { textAlign: 'center', marginTop: 8, marginBottom: 20, color: C.textSec }]}>
-                Заморожено {daysPassed} дн. назад
+                {t("wishlist.frozenDaysAgo", { days: daysPassed })}
               </Text>
 
               <Text style={DS.title}>{item.name}</Text>
@@ -859,7 +861,7 @@ export default function WishlistScreen() {
               <View style={DS.hero}>
                 <View style={DS.heroLabelRow}>
                   <Ionicons name="time-outline" size={14} color={C.orange} />
-                  <Text style={DS.heroLabel}>Это займёт</Text>
+                  <Text style={DS.heroLabel}>{t("wishlist.thisTakes")}</Text>
                 </View>
                 <Text style={DS.heroValue}>{hoursCost ?? '—'}</Text>
                 <Text style={DS.heroPrice}>{formatCurrency(item.price)}</Text>
@@ -870,21 +872,21 @@ export default function WishlistScreen() {
                 style={DS.btnReject}
               >
                 <Ionicons name="close-circle" size={20} color="#FFF" />
-                <Text style={DS.btnRejectText}>Отказаться</Text>
+                <Text style={DS.btnRejectText}>{t("wishlist.reject")}</Text>
               </TouchableOpacity>
-              <Text style={DS.subText}>Сэкономить {formatCurrency(item.price)} · +50 XP</Text>
+              <Text style={DS.subText}>{t("wishlist.saveMoneyColon")} {formatCurrency(item.price)} · +50 XP</Text>
 
               <TouchableOpacity
                 onPress={() => { setDecisionItem(null); setBuyConfirm(item); }}
                 style={DS.btnBuy}
               >
                 <Ionicons name="cart-outline" size={18} color={C.red} />
-                <Text style={DS.btnBuyText}>Купить</Text>
+                <Text style={DS.btnBuyText}>{t("wishlist.buy")}</Text>
               </TouchableOpacity>
-              <Text style={DS.subText}>Потратить {hoursCost ?? '—'}</Text>
+              <Text style={DS.subText}>{t("wishlist.spendLabel")} {hoursCost ?? "—"}</Text>
 
               <TouchableOpacity onPress={() => setDecisionItem(null)} style={DS.cancel}>
-                <Text style={DS.cancelText}>Отмена</Text>
+                <Text style={DS.cancelText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -976,21 +978,21 @@ export default function WishlistScreen() {
               </View>
             </Animated.View>
 
-            <Text style={RS.title}>Осознанный выбор</Text>
-            <Text style={RS.sub}>Вы сэкономили {formatCurrency(item.price)}</Text>
+            <Text style={RS.title}>{t("wishlist.consciousChoice")}</Text>
+            <Text style={RS.sub}>{t("wishlist.youSaved")} {formatCurrency(item.price)}</Text>
 
             <View style={RS.cardsRow}>
               <View style={RS.card}>
                 <View style={RS.cardLabel}>
                   <Ionicons name="wallet-outline" size={12} color={C.textSec} />
-                  <Text style={RS.cardLabelText}>Сумма</Text>
+                  <Text style={RS.cardLabelText}>{t("goals.amount")}</Text>
                 </View>
                 <Text style={[RS.cardValue, { color: C.green }]}>{formatCurrency(item.price)}</Text>
               </View>
               <View style={RS.card}>
                 <View style={RS.cardLabel}>
                   <Ionicons name="time-outline" size={12} color={C.textSec} />
-                  <Text style={RS.cardLabelText}>Время</Text>
+                  <Text style={RS.cardLabelText}>{t("wishlist.time")}</Text>
                 </View>
                 <Text style={[RS.cardValue, { color: C.orange }]}>{hoursCost}</Text>
               </View>
@@ -1002,7 +1004,7 @@ export default function WishlistScreen() {
             </View>
 
             <TouchableOpacity onPress={() => setRewardItem(null)} style={RS.closeBtn}>
-              <Text style={RS.closeText}>Продолжить</Text>
+              <Text style={RS.closeText}>{t("common.continue")}</Text>
             </TouchableOpacity>
           </Animated.View>
         </Animated.View>
@@ -1018,11 +1020,11 @@ export default function WishlistScreen() {
         <View style={S.emptyIconWrap}>
           <Ionicons name="snow" size={36} color={C.indigo} />
         </View>
-        <Text style={S.emptyTitle}>Инкубатор пуст</Text>
-        <Text style={S.emptySub}>Заморозь желание на 7 дней. Когда страсть остынет — прими осознанное решение.</Text>
+        <Text style={S.emptyTitle}>{t("wishlist.emptyIncubator")}</Text>
+        <Text style={S.emptySub}>{t("wishlist.freezeDescription")}</Text>
         <TouchableOpacity onPress={() => setShowAddModal(true)} style={S.emptyCta}>
           <Ionicons name="add-circle" size={18} color="#FFF" />
-          <Text style={S.emptyCtaText}>Заморозить первое желание</Text>
+          <Text style={S.emptyCtaText}>{t("wishlist.freezeFirstWish")}</Text>
         </TouchableOpacity>
       </View>
     ),
@@ -1036,14 +1038,13 @@ export default function WishlistScreen() {
       <View style={{ position: 'relative' }}>
         <View style={S.headerRow}>
           <View>
-            <Text style={S.headerTitle}>Инкубатор</Text>
-            <Text style={S.headerSub}>Заморозь импульс</Text>
+            <Text style={S.headerTitle}>{t("wishlist.incubatorTitle")}</Text>
+            <Text style={S.headerSub}>{t("wishlist.freezeImpulse")}</Text>
           </View>
           <TouchableOpacity onPress={() => setShowAddModal(true)} style={S.addBtn}>
             <Ionicons name="add" size={22} color="#FFF" />
           </TouchableOpacity>
         </View>
-        <ToastContainer />
       </View>
 
       {filteredItems.length === 0 ? (
@@ -1072,14 +1073,18 @@ export default function WishlistScreen() {
       />
       <ConfirmModal
         visible={buyConfirm !== null}
-        title="Подтвердить покупку?"
+        title={t('wishlist.confirmPurchaseTitle')}
         message={
           buyConfirm
-            ? `Вы уверены, что хотите потратить ${formatLifeHours(buyConfirm.price, hourlyRate) ?? formatCurrency(buyConfirm.price)} (${formatCurrency(buyConfirm.price)}) работы на ${buyConfirm.name}?`
+            ? t('wishlist.spendConfirm', {
+                hours: formatLifeHours(buyConfirm.price, hourlyRate) ?? formatCurrency(buyConfirm.price),
+                price: formatCurrency(buyConfirm.price),
+                name: buyConfirm.name,
+              })
             : ''
         }
         variant="destructive"
-        confirmText="Купить"
+        confirmText={t('wishlist.buy')}
         onConfirm={() => buyConfirm && handleBuy(buyConfirm)}
         onCancel={() => setBuyConfirm(null)}
       />

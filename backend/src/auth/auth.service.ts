@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
@@ -6,6 +6,7 @@ import { AccountsService } from '../accounts/accounts.service';
 import { CategoriesService } from '../categories/categories.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { AppException } from '../common/app-exception';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +20,7 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(registerDto.email);
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new AppException('errors.emailExists', 409);
     }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
@@ -50,12 +51,12 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findByEmail(loginDto.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new AppException('errors.invalidCredentials', 401);
     }
 
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new AppException('errors.invalidCredentials', 401);
     }
 
     const token = await this.generateToken(user.id, user.email);
@@ -75,7 +76,7 @@ export class AuthService {
   async validateUser(userId: string) {
     const user = await this.usersService.findById(userId);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new AppException('errors.accountNotFound', 401);
     }
     return user;
   }

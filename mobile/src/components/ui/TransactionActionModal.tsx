@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -25,6 +26,7 @@ export function TransactionActionModal({
   transaction,
   onClose,
 }: TransactionActionModalProps) {
+  const { t } = useTranslation();
   const categories = useDataStore((s) => s.categories);
   const accounts = useDataStore((s) => s.accounts);
   const deleteTransaction = useDataStore((s) => s.deleteTransaction);
@@ -196,7 +198,7 @@ export function TransactionActionModal({
                 onPress={handleEdit}
                 className="flex-1 py-3.5 rounded-[14px] bg-[rgba(99,102,241,0.15)] items-center"
               >
-                <Text bold className="text-base text-primary-400">📝 Редактировать</Text>
+                <Text bold className="text-base text-primary-400">{t("common.editAction")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDelete}

@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, CategoryType } from '@prisma/client';
+import { AppException } from '../common/app-exception';
 
 // Доступные иконки для категорий
 const AVAILABLE_ICONS = [
@@ -73,7 +74,7 @@ export class CategoriesService implements OnModuleInit {
       },
     });
     if (!category) {
-      throw new NotFoundException('Category not found');
+      throw new AppException('errors.categoryNotFound', 404);
     }
     return category;
   }
@@ -107,7 +108,7 @@ export class CategoriesService implements OnModuleInit {
       where: { id, userId: { not: null } }, // Только персональные
     });
     if (!category) {
-      throw new NotFoundException('Category not found or is system category');
+      throw new AppException('errors.categoryNotFound', 404);
     }
     return this.prisma.category.update({
       where: { id },
@@ -124,7 +125,7 @@ export class CategoriesService implements OnModuleInit {
       where: { id, userId: { not: null } }, // Только персональные
     });
     if (!category) {
-      throw new NotFoundException('Category not found or is system category');
+      throw new AppException('errors.categoryNotFound', 404);
     }
     return this.prisma.category.delete({
       where: { id },

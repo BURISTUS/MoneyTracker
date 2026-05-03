@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { View, Animated, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { View, Animated, TouchableOpacity, StyleSheet, Platform, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
 
@@ -31,6 +31,30 @@ const ToastContext = createContext<ToastContextValue>({
 
 export const useToast = () => useContext(ToastContext);
 
+// Global emitter for non-React code (api.ts interceptor)
+type ToastEmitter = {
+  showError: (message: string) => void;
+  showSuccess: (message: string) => void;
+  showInfo: (message: string) => void;
+} | null;
+let globalToast: ToastEmitter = null;
+
+export function showGlobalError(message: string) {
+  if (globalToast) {
+    globalToast.showError(message);
+  } else {
+    console.error('[Toast]', message);
+  }
+}
+
+export function showGlobalSuccess(message: string) {
+  if (globalToast) {
+    globalToast.showSuccess(message);
+  } else {
+    console.log('[Toast]', message);
+  }
+}
+
 const TOAST_CONFIG: Record<ToastType, { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string; border: string }> = {
   success: {
     icon: 'checkmark-circle',
@@ -57,7 +81,7 @@ const AUTO_DISMISS_MS = 3000;
 const S = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: '100%',
+    top: 50,
     left: 0,
     right: 0,
     zIndex: 100,
@@ -149,6 +173,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const showError = useCallback((message: string) => showToast(message, 'error'), [showToast]);
   const showInfo = useCallback((message: string) => showToast(message, 'info'), [showToast]);
 
+  // Register global emitter
+  useEffect(() => {
+    globalToast = { showError, showSuccess, showInfo };
+    return () => { globalToast = null; };
+  }, [showError, showSuccess, showInfo]);
+
   return (
     <ToastContext.Provider value={{ toasts, showSuccess, showError, showInfo, dismiss: removeToast }}>
       {children}
@@ -159,13 +189,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 export function ToastContainer() {
   const { toasts, dismiss } = useContext(ToastContext);
 
-  if (toasts.length === 0) return null;
-
   return (
-    <View style={S.container} pointerEvents="box-none">
-      {toasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} onDismiss={dismiss} />
-      ))}
-    </View>
+    <Modal transparent visible={toasts.length > 0} animationType="none" statusBarTranslucent>
+      <View style={S.container} pointerEvents="box-none">
+        {toasts.map((toast) => (
+          <ToastItem key={toast.id} toast={toast} onDismiss={dismiss} />
+        ))}
+      </View>
+    </Modal>
   );
 }

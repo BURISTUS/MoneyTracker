@@ -1,5 +1,6 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AppException } from '../common/app-exception';
 
 @Injectable()
 export class WishlistService {
@@ -52,7 +53,7 @@ export class WishlistService {
     const item = await this.prisma.wishlistItem.findUnique({ where: { id: itemId } });
 
     if (!item || item.userId !== userId) {
-      throw new NotFoundException('Wishlist item not found');
+      throw new AppException('errors.wishlistNotFound', 404);
     }
 
     if (item.status === 'PURCHASED' || item.status === 'REJECTED') {
@@ -77,7 +78,7 @@ export class WishlistService {
     const item = await this.prisma.wishlistItem.findUnique({ where: { id: itemId } });
 
     if (!item || item.userId !== userId) {
-      throw new NotFoundException('Wishlist item not found');
+      throw new AppException('errors.wishlistNotFound', 404);
     }
 
     if (item.status === 'PURCHASED' || item.status === 'REJECTED') {
@@ -96,7 +97,7 @@ export class WishlistService {
     const item = await this.prisma.wishlistItem.findUnique({ where: { id: itemId } });
 
     if (!item || item.userId !== userId) {
-      throw new NotFoundException('Wishlist item not found');
+      throw new AppException('errors.wishlistNotFound', 404);
     }
 
     const newCooldownEnds = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);

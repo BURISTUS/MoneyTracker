@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, FlatList, Pressable, Modal, TextInput, ScrollView, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,12 +9,12 @@ import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../../src/utils/formatters';
 import type { Goal } from '../../../src/types';
 import { ConfirmModal } from '../../../src/components/ui/ConfirmModal';
-import { ToastContainer } from '../../../src/components/ui/Toast';
 
 const BORDER = 'rgba(255,255,255,0.08)';
 const CARD_BG = '#141418';
 
 export default function GoalsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const goals = useDataStore((s) => s.goals);
@@ -123,7 +124,7 @@ export default function GoalsScreen() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <Text style={{ fontSize: 15, fontWeight: '600', color: '#E4E4E7', flex: 1 }} numberOfLines={1}>{item.name}</Text>
           {item.isCompleted ? (
-            <Text style={{ fontSize: 13, fontWeight: '600', color: '#34D399' }}>Достигнута</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#34D399' }}>{t("goals.completed")}</Text>
           ) : (
             <Text style={{ fontSize: 14, fontWeight: '700', color: '#6366F1' }}>{Math.round(clamped)}%</Text>
           )}
@@ -133,14 +134,14 @@ export default function GoalsScreen() {
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
           <Text style={{ fontSize: 12, color: '#52525B' }}>{formatCurrency(Number(item.currentAmount))}</Text>
-          <Text style={{ fontSize: 12, color: '#52525B' }}>из {formatCurrency(Number(item.targetAmount))}</Text>
+          <Text style={{ fontSize: 12, color: '#52525B' }}>{t("common.of")} {formatCurrency(Number(item.targetAmount))}</Text>
         </View>
         {!item.isCompleted && (
           <Pressable
             onPress={() => setProgressModal({ visible: true, goalId: item.id, amount: '' })}
             style={{ backgroundColor: 'rgba(99,102,241,0.12)', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}
           >
-            <Text style={{ fontSize: 13, fontWeight: '600', color: '#6366F1' }}>+ Пополнить</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#6366F1' }}>{t("goals.addProgressAction")}</Text>
           </Pressable>
         )}
       </Pressable>
@@ -156,9 +157,8 @@ export default function GoalsScreen() {
           <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4, marginLeft: -4 }}>
             <Ionicons name="chevron-back" size={28} color="#A1A1AA" />
           </Pressable>
-          <Text style={{ fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 }}>Цели</Text>
+          <Text style={{ fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 }}>{t("goals.title")}</Text>
         </View>
-        <ToastContainer />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
@@ -166,12 +166,12 @@ export default function GoalsScreen() {
           <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(99,102,241,0.12)', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
             <Ionicons name="flag-outline" size={18} color="#6366F1" />
           </View>
-          <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>Общий прогресс</Text>
+          <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>{t("goals.overallProgress")}</Text>
           <Text style={{ fontSize: 32, fontWeight: '700', color: '#FFFFFF', letterSpacing: -1, marginBottom: 2 }}>{formatCurrency(totalSaved)}</Text>
-          <Text style={{ fontSize: 13, color: '#52525B', marginBottom: 14 }}>из {formatCurrency(totalTarget)}</Text>
+          <Text style={{ fontSize: 13, color: '#52525B', marginBottom: 14 }}>{t("common.of")} {formatCurrency(totalTarget)}</Text>
           <View style={{ paddingTop: 12, borderTopWidth: 1, borderTopColor: BORDER }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ fontSize: 12, color: '#52525B' }}>Прогресс</Text>
+              <Text style={{ fontSize: 12, color: '#52525B' }}>{t("goals.progress")}</Text>
               <Text style={{ fontSize: 13, fontWeight: '700', color: '#6366F1' }}>{Math.round(overallProgress)}%</Text>
             </View>
             <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
@@ -183,7 +183,7 @@ export default function GoalsScreen() {
         {goals.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: 40 }}>
             <Ionicons name="flag-outline" size={44} color="#3F3F46" />
-            <Text style={{ fontSize: 14, color: '#3F3F46', marginTop: 8 }}>Нет целей</Text>
+            <Text style={{ fontSize: 14, color: '#3F3F46', marginTop: 8 }}>{t("goals.noGoals")}</Text>
           </View>
         ) : (
           <FlatList
@@ -204,23 +204,23 @@ export default function GoalsScreen() {
           <Pressable style={{ backgroundColor: '#1C1C20', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 }} onPress={(e) => e.stopPropagation()}>
             <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: 16 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>Новая цель</Text>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>{t("goals.newGoal")}</Text>
               <Pressable onPress={() => setShowAdd(false)} hitSlop={12}>
                 <Ionicons name="close" size={22} color="#A1A1AA" />
               </Pressable>
             </View>
 
             <View style={{ gap: 16 }}>
-              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>Название</Text>
+              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>{t("common.name")}</Text>
               <TextInput
                 style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#D4D4D8' }}
                 value={name}
                 onChangeText={setName}
-                placeholder="На что копим?"
+                placeholder={t("goals.goalNamePlaceholder")}
                 placeholderTextColor="#52525B"
               />
 
-              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>Сумма</Text>
+              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>{t("goals.amount")}</Text>
               <TextInput
                 style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#D4D4D8' }}
                 value={target}
@@ -230,7 +230,7 @@ export default function GoalsScreen() {
                 keyboardType="decimal-pad"
               />
 
-              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>Дедлайн (YYYY-MM-DD)</Text>
+              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>{t("goals.goalDeadline")}</Text>
               <TextInput
                 style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#D4D4D8' }}
                 value={deadline}
@@ -244,7 +244,7 @@ export default function GoalsScreen() {
                 disabled={!name || !target}
                 style={{ backgroundColor: '#6366F1', paddingVertical: 13, borderRadius: 12, alignItems: 'center', marginTop: 4, opacity: !name || !target ? 0.4 : 1 }}
               >
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>Создать цель</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>{t("goals.createGoal")}</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -256,23 +256,23 @@ export default function GoalsScreen() {
           <Pressable style={{ backgroundColor: '#1C1C20', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 }} onPress={(e) => e.stopPropagation()}>
             <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: 16 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>Редактировать цель</Text>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>{t("goals.editGoal")}</Text>
               <Pressable onPress={() => setEditModal({ visible: false, goal: null, name: '', target: '', deadline: '' })} hitSlop={12}>
                 <Ionicons name="close" size={22} color="#A1A1AA" />
               </Pressable>
             </View>
 
             <View style={{ gap: 16 }}>
-              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>Название</Text>
+              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>{t("common.name")}</Text>
               <TextInput
                 style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#D4D4D8' }}
                 value={editModal.name}
                 onChangeText={(text) => setEditModal((prev) => ({ ...prev, name: text }))}
-                placeholder="На что копим?"
+                placeholder={t("goals.goalNamePlaceholder")}
                 placeholderTextColor="#52525B"
               />
 
-              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>Сумма</Text>
+              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>{t("goals.amount")}</Text>
               <TextInput
                 style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#D4D4D8' }}
                 value={editModal.target}
@@ -282,7 +282,7 @@ export default function GoalsScreen() {
                 keyboardType="decimal-pad"
               />
 
-              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>Дедлайн (YYYY-MM-DD)</Text>
+              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>{t("goals.goalDeadline")}</Text>
               <TextInput
                 style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#D4D4D8' }}
                 value={editModal.deadline}
@@ -296,7 +296,7 @@ export default function GoalsScreen() {
                 disabled={!editModal.name || !editModal.target}
                 style={{ backgroundColor: '#6366F1', paddingVertical: 13, borderRadius: 12, alignItems: 'center', marginTop: 4, opacity: !editModal.name || !editModal.target ? 0.4 : 1 }}
               >
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>Сохранить</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>{t("common.save")}</Text>
               </Pressable>
 
               <Pressable
@@ -308,7 +308,7 @@ export default function GoalsScreen() {
                 }}
                 style={{ paddingVertical: 13, borderRadius: 12, alignItems: 'center', marginTop: 4 }}
               >
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#F87171' }}>Удалить цель</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#F87171' }}>{t("goals.deleteGoal")}</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -320,14 +320,14 @@ export default function GoalsScreen() {
           <Pressable style={{ backgroundColor: '#1C1C20', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 }} onPress={(e) => e.stopPropagation()}>
             <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: 16 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>Пополнить цель</Text>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>{t("goals.addProgress")}</Text>
               <Pressable onPress={() => setProgressModal({ visible: false, goalId: null, amount: '' })} hitSlop={12}>
                 <Ionicons name="close" size={22} color="#A1A1AA" />
               </Pressable>
             </View>
 
             <View style={{ gap: 16 }}>
-              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>Сумма пополнения</Text>
+              <Text style={{ fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 }}>{t("goals.addProgressAmount")}</Text>
               <TextInput
                 style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#D4D4D8' }}
                 value={progressModal.amount}
@@ -343,7 +343,7 @@ export default function GoalsScreen() {
                 disabled={!progressModal.amount}
                 style={{ backgroundColor: '#6366F1', paddingVertical: 13, borderRadius: 12, alignItems: 'center', marginTop: 4, opacity: !progressModal.amount ? 0.4 : 1 }}
               >
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>Пополнить</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>{t("goals.addProgressAction")}</Text>
               </Pressable>
             </View>
           </Pressable>

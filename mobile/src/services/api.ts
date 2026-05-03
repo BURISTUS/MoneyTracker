@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } fro
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import i18n from '../i18n';
+import { showGlobalError } from '../components/ui/Toast';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3001/api';
 
@@ -49,12 +50,25 @@ api.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
+    // Extract human-readable message from NestJS error format
+    const data = error.response?.data as any;
+    let message = error.message;
+    if (data?.message) {
+      message = Array.isArray(data.message) ? data.message.join('; ') : data.message;
+    } else if (data?.error) {
+      message = data.error;
+    }
+
     console.error('❌ API Error:', {
       url: error.config?.url,
       status: error.response?.status,
-      message: error.message,
-      data: error.response?.data,
+      message,
     });
+
+    // Show toast for 4xx/5xx errors (except 401 which is handled separately)
+    if (error.response?.status && error.response.status >= 400 && error.response.status !== 401) {
+      showGlobalError(message);
+    }
 
     if (error.response?.status === 401 && !isRedirecting) {
       isRedirecting = true;
@@ -62,7 +76,12 @@ api.interceptors.response.use(
       console.log('🔄 Token expired, redirecting to login');
       router.replace('/auth/login');
       setTimeout(() => { isRedirecting = false; }, 2000);
+      showGlobalError('Сессия истекла. Войдите заново.');
     }
+
+    // Enrich error with parsed message — so catch(e) blocks see readable text
+    (error as any).userMessage = message;
+    error.message = message;
     return Promise.reject(error);
   }
 );

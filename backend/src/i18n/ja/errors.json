@@ -1,0 +1,18 @@
+{
+  "insufficientFunds": "残高不足です。利用可能 {{available}} ₽、必要 {{needed}} ₽",
+  "negativeBalance": "\"{{account}}\"から送金できません — 残高 {{balance}}",
+  "accountNotFound": "口座が見つかりません",
+  "categoryNotFound": "カテゴリが見つかりません",
+  "transactionNotFound": "取引が見つかりません",
+  "sameAccount": "同じ口座に送金できません",
+  "unauthorized": "認証が必要です",
+  "forbidden": "アクセスが拒否されました",
+  "validationError": "検証エラー",
+  "internalError": "内部サーバーエラー",
+  "sessionExpired": "セッションの有効期限が切れました。再度ログインしてください。",
+  "budgetNotFound": "予算が見つかりません",
+  "goalNotFound": "目標が見つかりません",
+  "wishlistNotFound": "ウィッシュリスト項目が見つかりません",
+  "invalidCredentials": "メールアドレスまたはパスワードが無効です",
+  "emailExists": "このメールアドレスは既に登録されています"
+}

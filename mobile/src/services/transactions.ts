@@ -53,6 +53,22 @@ export const transactionsService = {
   async getSummary(startDate: string, endDate: string): Promise<TransactionSummary> {
     return apiGet<TransactionSummary>(`/transactions/summary?startDate=${startDate}&endDate=${endDate}`);
   },
+
+  // Transfer between accounts
+  async transfer(data: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: number;
+    description?: string;
+    date?: string;
+  }): Promise<{ fromTransaction: Transaction; toTransaction: Transaction }> {
+    return apiPost<{ fromTransaction: Transaction; toTransaction: Transaction }>('/transactions/transfer', data);
+  },
+
+  // Get analytics
+  async getAnalytics(startDate: string, endDate: string): Promise<any> {
+    return apiGet<any>(`/transactions/analytics?startDate=${startDate}&endDate=${endDate}`);
+  },
 };
 
 export default transactionsService;

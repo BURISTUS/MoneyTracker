@@ -8,7 +8,7 @@ const I18N_DIR = path.join(__dirname, '..', 'i18n');
 export class I18nController {
   @Get('translations/:lang')
   async getTranslations(@Param('lang') lang: string) {
-    const supported = ['en', 'ru', 'es', 'pt', 'fr', 'de', 'ja', 'zh'];
+    const supported = ['en', 'ru', 'es', 'pt', 'fr', 'de', 'ja', 'zh', 'ar', 'hi', 'ko', 'it', 'tr', 'vi', 'id', 'th', 'pl', 'uk', 'nl', 'bn'];
     const resolved = supported.includes(lang) ? lang : 'en';
 
     const langDir = path.join(I18N_DIR, resolved);
@@ -39,6 +39,18 @@ export class I18nController {
       { code: 'de', name: 'German', nativeName: 'Deutsch' },
       { code: 'ja', name: 'Japanese', nativeName: '日本語' },
       { code: 'zh', name: 'Chinese', nativeName: '中文' },
+      { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
+      { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
+      { code: 'ko', name: 'Korean', nativeName: '한국어' },
+      { code: 'it', name: 'Italian', nativeName: 'Italiano' },
+      { code: 'tr', name: 'Turkish', nativeName: 'Türkçe' },
+      { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt' },
+      { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia' },
+      { code: 'th', name: 'Thai', nativeName: 'ไทย' },
+      { code: 'pl', name: 'Polish', nativeName: 'Polski' },
+      { code: 'uk', name: 'Ukrainian', nativeName: 'Українська' },
+      { code: 'nl', name: 'Dutch', nativeName: 'Nederlands' },
+      { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' },
     ];
   }
 }

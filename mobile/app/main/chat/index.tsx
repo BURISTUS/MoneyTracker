@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import {
   View, Text, Pressable, FlatList, TextInput,
-  Animated, Platform, KeyboardAvoidingView, TouchableOpacity,
+  Animated, TouchableOpacity,
 } from 'react-native';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format, isToday, isYesterday } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { chatService, type ChatMessage } from '../../../src/services/chat';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useToast } from '../../../src/components/ui/Toast';
 import { ConfirmModal } from '../../../src/components/ui/ConfirmModal';
@@ -22,6 +24,9 @@ const C = {
   textSec: '#8C8C8C',
   textDark: '#52525B',
 };
+
+// TabBar is absolute-positioned in parent layout: ~52px content + safe area
+const TAB_BAR_CONTENT_HEIGHT = 52;
 
 const PRESETS = [
   { key: 'SPENDING_REPORT', label: 'Отчёт по тратам', icon: 'receipt-outline', msg: 'Сделай отчёт по тратам за период' },
@@ -144,6 +149,7 @@ const Bubble = memo(({ item }: { item: ChatMessage }) => {
 });
 
 export default function ChatScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const { isDemoMode } = useAuthStore();
@@ -154,6 +160,9 @@ export default function ChatScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [showClear, setShowClear] = useState(false);
+
+  // Space needed at the bottom so content isn't hidden behind TabBar + input area
+  const bottomSpacing = TAB_BAR_CONTENT_HEIGHT + insets.bottom;
 
   useEffect(() => {
     if (isDemoMode) { setIsInitialized(true); return; }
@@ -195,7 +204,7 @@ export default function ChatScreen() {
             <Ionicons name="sparkles" size={20} color={C.indigo} />
           </View>
           <View>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: C.textMain }}>Чат</Text>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: C.textMain }}>{t("chat.title")}</Text>
             <Text style={{ fontSize: 13, color: C.textSec }}>{isLoading ? 'Печатает...' : 'AI Ассистент'}</Text>
           </View>
         </View>
@@ -212,7 +221,12 @@ export default function ChatScreen() {
         data={messages}
         keyExtractor={item => item.id}
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, gap: 10 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 8,
+          paddingBottom: 8,
+          gap: 10,
+        }}
         onContentSizeChange={() => messages.length > 0 && flatListRef.current?.scrollToEnd({ animated: false })}
         renderItem={({ item }) => <Bubble item={item} />}
         ListFooterComponent={isLoading ? <TypingIndicator /> : null}
@@ -221,17 +235,19 @@ export default function ChatScreen() {
             <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.indigoSoft, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="sparkles" size={28} color={C.indigo} />
             </View>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: C.textMain, textAlign: 'center', marginTop: 20 }}>Привет! 👋</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: C.textMain, textAlign: 'center', marginTop: 20 }}>{t("chat.greeting")}</Text>
             <Text style={{ fontSize: 14, color: C.textSec, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
-              Я ваш финансовый ассистент.{'\n'}Выберите тему или задайте вопрос.
+              {t('chat.assistantIntro')}
             </Text>
           </View>
         }
       />
 
-      {/* Bottom: Presets + Input */}
-      <View style={{ backgroundColor: C.bg, borderTopWidth: 1, borderTopColor: C.border, paddingBottom: insets.bottom + 52 }}>
-
+      {/* Bottom: Presets + Input — sticks to keyboard */}
+      <KeyboardStickyView
+        offset={{ closed: 0, opened: 0 }}
+        style={{ backgroundColor: C.bg, borderTopWidth: 1, borderTopColor: C.border }}
+      >
         {/* Presets 2x2 */}
         <View style={{ paddingTop: 10, paddingBottom: 4 }}>
           <View style={{ flexDirection: 'row', paddingHorizontal: 12, marginBottom: 8 }}>
@@ -305,7 +321,10 @@ export default function ChatScreen() {
             {isLoading ? <Spinner size={18} /> : <Ionicons name="arrow-up" size={20} color="white" />}
           </TouchableOpacity>
         </View>
-      </View>
+
+        {/* Spacer for the absolute TabBar */}
+        <View style={{ height: bottomSpacing }} />
+      </KeyboardStickyView>
 
       <ConfirmModal
         visible={showClear}

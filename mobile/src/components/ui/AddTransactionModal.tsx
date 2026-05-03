@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -17,6 +18,10 @@ import { DatePickerModal } from './DatePickerModal';
 import { formatCurrency } from '../../utils/formatters';
 import type { TransactionType } from '../../types';
 import { TransactionType as TransactionTypeEnum } from '../../types';
+// import { VoiceInputModal } from './VoiceInputButton';
+import { ReceiptScannerButton } from './ReceiptScanner';
+import { AiTransactionPreview } from './AiTransactionPreview';
+import type { AiTransactionResult, AiReceiptResult } from '../../services/ai';
 
 interface AddTransactionModalProps {
   visible: boolean;
@@ -56,6 +61,7 @@ export function AddTransactionModal({
   onComplete,
   initialType = TransactionTypeEnum.EXPENSE,
 }: AddTransactionModalProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const addTransaction = useDataStore((s) => s.addTransaction);
   const accounts = useDataStore((s) => s.accounts);
@@ -89,6 +95,9 @@ export function AddTransactionModal({
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [showAiPreview, setShowAiPreview] = useState(false);
+  const [aiResult, setAiResult] = useState<AiTransactionResult | AiReceiptResult | null>(null);
 
   const colors = type === 'EXPENSE' ? EXPENSE_COLORS : INCOME_COLORS;
 
@@ -217,11 +226,11 @@ export function AddTransactionModal({
 
   return (
     <RNModal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
-      <View className="flex-1 bg-[rgba(0,0,0,0.5)] justify-end">
+      <View className="flex-1 bg-[rgba(0,0,0,0.7)] justify-end">
         <Pressable className="flex-1" onPress={onClose} />
 
         <View
-          className="bg-[#1C1C1E] rounded-t-3xl"
+          className="bg-[#13131A] rounded-t-3xl"
           style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16, maxHeight: '95%' }}
         >
           <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-3" />
@@ -304,6 +313,23 @@ export function AddTransactionModal({
                 {selectedCategoryData?.name || 'Категория'}
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShowVoiceModal(true)}
+              className="items-center gap-1"
+            >
+              <View className="w-12 h-12 rounded-full items-center justify-center bg-[rgba(99,102,241,0.1)]">
+                <Text className="text-xl">🎤</Text>
+              </View>
+              <Text className="text-xs text-[#8E8E93]">Голос</Text>
+            </TouchableOpacity>
+
+            <ReceiptScannerButton
+              onResult={(result) => {
+                setAiResult(result);
+                setShowAiPreview(true);
+              }}
+            />
           </View>
 
           {type === 'EXPENSE' && selectedCategory && (() => {
@@ -447,10 +473,10 @@ export function AddTransactionModal({
         />
 
         <RNModal visible={showCategoryPicker} animationType="slide" onRequestClose={() => setShowCategoryPicker(false)} transparent>
-          <View className="flex-1 bg-[rgba(0,0,0,0.5)] justify-end">
+          <View className="flex-1 bg-[rgba(0,0,0,0.7)] justify-end">
             <Pressable className="flex-1" onPress={() => setShowCategoryPicker(false)} />
             <View
-              className="bg-[#1C1C1E] rounded-t-3xl"
+              className="bg-[#13131A] rounded-t-3xl"
               style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16, maxHeight: '80%' }}
             >
               <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-3" />
@@ -472,7 +498,7 @@ export function AddTransactionModal({
                       className="px-6 py-3 rounded-xl"
                       style={{ backgroundColor: colors.primary }}
                     >
-                      <Text bold className="text-base text-white">Создать категорию</Text>
+                      <Text bold className="text-base text-white">{t("categories.create")}</Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -518,6 +544,25 @@ export function AddTransactionModal({
           </View>
         </RNModal>
       </View>
+
+      {/* Voice Input Modal */}
+      {/* <VoiceInputModal
+        visible={showVoiceModal}
+        onClose={() => setShowVoiceModal(false)}
+        onResult={(result) => {
+          setAiResult(result);
+          setShowVoiceModal(false);
+          setShowAiPreview(true);
+        }}
+      /> */}
+
+      {/* AI Transaction Preview Modal */}
+      <AiTransactionPreview
+        visible={showAiPreview}
+        onClose={() => setShowAiPreview(false)}
+        onComplete={() => setShowAiPreview(false)}
+        result={aiResult}
+      />
     </RNModal>
   );
 }

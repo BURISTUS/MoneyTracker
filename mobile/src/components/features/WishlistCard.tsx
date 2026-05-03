@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { View, Pressable, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../../../components/ui/text';
@@ -21,6 +22,7 @@ const statusConfig: Record<string, { label: string; bgClass: string; textClass: 
 
 export const WishlistCard: React.FC<WishlistCardProps> = React.memo(
   ({ item, onPurchase, onReject, style }) => {
+    const { t } = useTranslation();
     const sc = statusConfig[item.status] || statusConfig.PENDING;
     const daysLeft = item.status === 'PENDING' ? getDaysRemaining(item.cooldownEnds) : 0;
 
@@ -44,13 +46,13 @@ export const WishlistCard: React.FC<WishlistCardProps> = React.memo(
               className="flex-1 py-2 rounded-lg bg-[rgba(52,211,153,0.12)] items-center justify-center"
               onPress={() => onReject?.(item.id)}
             >
-              <Text className="text-sm font-semibold text-success-400 text-center">Пожалел</Text>
+              <Text className="text-sm font-semibold text-success-400 text-center">{t("wishlist.regretted")}</Text>
             </Pressable>
             <Pressable
               className="flex-1 py-2 rounded-lg bg-[rgba(248,113,113,0.12)] items-center justify-center"
               onPress={() => onPurchase?.(item.id)}
             >
-              <Text className="text-sm font-semibold text-error-400 text-center">Купил</Text>
+              <Text className="text-sm font-semibold text-error-400 text-center">{t("wishlist.bought")}</Text>
             </Pressable>
           </View>
         )}

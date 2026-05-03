@@ -7,6 +7,7 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { Text } from '../../../components/ui/text';
 import { CurrencyPicker } from '../../../src/components/ui/CurrencyPicker';
+import { LanguagePicker, getNativeName } from '../../../src/components/ui/LanguagePicker';
 import { useTranslation } from 'react-i18next';
 import type { ExchangeRate } from '../../../src/services/currency';
 
@@ -69,13 +70,14 @@ export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const wishlist = useDataStore((s) => s.wishlist);
   const userCurrency = useDataStore((s) => s.userCurrency);
   const currencySymbol = useDataStore((s) => s.currencySymbol);
   const setUserCurrency = useDataStore((s) => s.setUserCurrency);
 
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
 
   const rejectedCount = wishlist.filter((w) => w.status === 'REJECTED').length;
   const totalSavedKopecks = wishlist.filter((w) => w.status === 'REJECTED').reduce((s, w) => s + w.price, 0);
@@ -88,11 +90,12 @@ export default function ProfileScreen() {
   );
 
   const menuItems = [
-    { icon: 'wallet' as const, label: 'Счета', path: '/main/accounts', color: '#6366F1' },
-    { icon: 'grid' as const, label: 'Категории', path: '/main/categories', color: '#5AC8FA' },
-    { icon: 'pie-chart' as const, label: 'Бюджеты', path: '/main/budget', color: '#FBBF24' },
-    { icon: 'flag' as const, label: 'Цели', path: '/main/goals', color: '#34D399' },
-    { icon: 'time' as const, label: 'Life Cost', path: '/main/life-cost', color: '#F472B6' },
+    { icon: 'wallet' as const, label: t('profile.accounts'), path: '/main/accounts', color: '#6366F1' },
+    { icon: 'grid' as const, label: t('profile.categories'), path: '/main/categories', color: '#5AC8FA' },
+    { icon: 'pie-chart' as const, label: t('profile.budgets'), path: '/main/budget', color: '#FBBF24' },
+    { icon: 'flag' as const, label: t('profile.goals'), path: '/main/goals', color: '#34D399' },
+    { icon: 'bar-chart' as const, label: t('profile.analytics'), path: '/main/analytics', color: '#A78BFA' },
+    { icon: 'time' as const, label: t('profile.lifeCost'), path: '/main/life-cost', color: '#F472B6' },
   ];
 
   return (
@@ -130,18 +133,18 @@ export default function ProfileScreen() {
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={S.statCard}>
               <Text style={[S.statValue, { color: '#34D399' }]}>{rejectedCount}</Text>
-              <Text style={S.statLabel}>Отказов</Text>
+              <Text style={S.statLabel}>{t("profile.refusals")}</Text>
             </View>
             <View style={S.statCard}>
               <Text style={[S.statValue, { color: '#34D399' }]}>
                 {totalSavedKopecks > 0 ? `${(totalSavedKopecks / 100).toLocaleString('ru-RU')} ₽` : '—'}
               </Text>
-              <Text style={S.statLabel}>Сэкономлено</Text>
+              <Text style={S.statLabel}>{t("profile.saved")}</Text>
             </View>
           </View>
 
           {/* Navigation */}
-          <Text style={S.sectionTitle}>Финансы</Text>
+          <Text style={S.sectionTitle}>{t("profile.finances")}</Text>
           {menuItems.map((item) => (
             <Pressable
               key={item.path}
@@ -159,7 +162,7 @@ export default function ProfileScreen() {
           ))}
 
           {/* Settings */}
-          <Text style={S.sectionTitle}>Настройки</Text>
+          <Text style={S.sectionTitle}>{t("profile.settings")}</Text>
           <Pressable
             onPress={() => setShowCurrencyPicker(true)}
             style={S.row}
@@ -168,8 +171,24 @@ export default function ProfileScreen() {
               <Ionicons name="cash-outline" size={18} color="#818CF8" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '500', color: '#F5F5F5' }}>Валюта</Text>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: '#F5F5F5' }}>{t("profile.currency")}</Text>
               <Text style={{ fontSize: 12, color: '#8C8C8C', marginTop: 1 }}>{userCurrency} · {currencySymbol}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#71717A" />
+          </Pressable>
+
+          <Pressable
+            onPress={() => setShowLanguagePicker(true)}
+            style={S.row}
+          >
+            <View style={[S.iconWrap, { backgroundColor: 'rgba(52,211,153,0.12)' }]}>
+              <Ionicons name="language" size={18} color="#34D399" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: '#F5F5F5' }}>{t("profile.language")}</Text>
+              <Text style={{ fontSize: 12, color: '#8C8C8C', marginTop: 1 }}>
+                {getNativeName(i18n.language)}
+              </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#71717A" />
           </Pressable>
@@ -197,6 +216,12 @@ export default function ProfileScreen() {
         onSelect={handleCurrencySelect}
         selectedCode={userCurrency}
         title={t('profile.currency', 'Основная валюта')}
+      />
+
+      <LanguagePicker
+        visible={showLanguagePicker}
+        onClose={() => setShowLanguagePicker(false)}
+        currentLang={i18n.language}
       />
     </View>
   );

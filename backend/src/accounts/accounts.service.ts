@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { CurrencyService } from '../currency/currency.service';
+import { AppException } from '../common/app-exception';
 
 @Injectable()
 export class AccountsService {
@@ -22,7 +23,7 @@ export class AccountsService {
       where: { id, userId },
     });
     if (!account) {
-      throw new NotFoundException('Account not found');
+      throw new AppException('errors.accountNotFound', 404);
     }
     return account;
   }

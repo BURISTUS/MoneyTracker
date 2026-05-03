@@ -1,7 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { I18nService } from 'nestjs-i18n';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/http-exception.filter';
 
 // BigInt to JSON serialization fix
 declare global {
@@ -38,6 +40,10 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Global exception filter — unified error format with i18n
+  const i18n = app.get(I18nService);
+  app.useGlobalFilters(new HttpExceptionFilter(i18n as any));
 
   // Swagger
   const config = new DocumentBuilder()

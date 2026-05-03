@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Pressable, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -8,7 +9,6 @@ import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import type { TransactionType } from '../../../src/types';
 import { TransactionType as TransactionTypeEnum } from '../../../src/types';
 import { useToast } from '../../../src/components/ui/Toast';
-import { ToastContainer } from '../../../src/components/ui/Toast';
 
 const EXPENSE_COLORS = {
   primary: '#FF3B30',
@@ -25,6 +25,7 @@ const INCOME_COLORS = {
 const AMOUNT_PRESETS = [100, 500, 1000, 5000, 10000, 50000];
 
 export default function CreateTransactionScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const addTransaction = useDataStore((s) => s.addTransaction);
@@ -95,7 +96,7 @@ export default function CreateTransactionScreen() {
         updatedAt: new Date().toISOString(),
       });
 
-      showSuccess('Транзакция добавлена');
+      showSuccess(t("transactions.transactionAdded"));
       setTimeout(() => router.back(), 600);
     } catch {
       showError('Не удалось добавить транзакцию');
@@ -109,7 +110,6 @@ export default function CreateTransactionScreen() {
     <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
       <View className="flex-1">
         <View style={{ position: 'relative' }}>
-          <ToastContainer />
         </View>
         <View className="flex-row p-4 gap-3 border-b border-outline-200">
           <TouchableOpacity
@@ -118,9 +118,7 @@ export default function CreateTransactionScreen() {
               type === 'EXPENSE' ? 'bg-error-500/10 border-error-400' : 'border-transparent'
             }`}
           >
-            <Text className="text-lg font-semibold text-error-400">
-              − Расход
-            </Text>
+            <Text className="text-lg font-semibold text-error-400">{t("transactions.addExpenseBtnUc")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -129,9 +127,7 @@ export default function CreateTransactionScreen() {
               type === 'INCOME' ? 'bg-success-500/10 border-success-400' : 'border-transparent'
             }`}
           >
-            <Text className="text-lg font-semibold text-success-400">
-              + Доход
-            </Text>
+            <Text className="text-lg font-semibold text-success-400">{t("transactions.addIncomeBtnUc")}</Text>
           </TouchableOpacity>
         </View>
 
@@ -143,13 +139,11 @@ export default function CreateTransactionScreen() {
             >
               {formattedAmount}
             </Text>
-            <Text className="text-base text-typography-400 mt-2">
-              рублей
-            </Text>
+            <Text className="text-base text-typography-400 mt-2">{t("transactions.rubles")}</Text>
           </View>
 
           <View className="p-4">
-            <Text className="text-sm font-medium text-typography-400 mb-3">СЧЁТ</Text>
+            <Text className="text-sm font-medium text-typography-400 mb-3">{t("transactions.accountUc")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row gap-2">
                 {accounts.map((account) => (
@@ -176,7 +170,7 @@ export default function CreateTransactionScreen() {
           </View>
 
           <View className="p-4">
-            <Text className="text-sm font-medium text-typography-400 mb-3">КАТЕГОРИЯ</Text>
+            <Text className="text-sm font-medium text-typography-400 mb-3">{t("transactions.categoryUc")}</Text>
             <View className="flex-row flex-wrap gap-2">
               {displayCategories.map((category) => (
                 <TouchableOpacity
@@ -208,7 +202,7 @@ export default function CreateTransactionScreen() {
           </View>
 
           <View className="p-4">
-            <Text className="text-sm font-medium text-typography-400 mb-3">ЗАМЕТКА</Text>
+            <Text className="text-sm font-medium text-typography-400 mb-3">{t("transactions.noteUc")}</Text>
             <TextInput
               value={note}
               onChangeText={setNote}

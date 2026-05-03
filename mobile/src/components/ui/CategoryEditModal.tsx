@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -183,6 +184,7 @@ interface Props {
 }
 
 export function CategoryEditModal({ visible, category, onClose, onSave, onDelete }: Props) {
+  const { t } = useTranslation();
   const [name, setName] = useState(category.name);
   const [icon, setIcon] = useState(category.icon || 'wallet');
   const [color, setColor] = useState(category.color || '#6366F1');
@@ -235,7 +237,7 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
           <View style={S.handle} />
 
           <View style={S.header}>
-            <Text style={S.headerTitle}>Редактировать категорию</Text>
+            <Text style={S.headerTitle}>{t("categories.edit")}</Text>
             <Pressable style={S.closeBtn} onPress={onClose}>
               <Ionicons name="close" size={18} color={C.textSec} />
             </Pressable>
@@ -296,7 +298,7 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
             </View>
 
             <View style={S.section}>
-              <Text style={S.sectionTitle}>Лимит на месяц (₽)</Text>
+              <Text style={S.sectionTitle}>{t("categories.monthlyLimit")}</Text>
               <View style={S.limitRow}>
                 <TextInput
                   style={S.limitInput}
@@ -320,8 +322,8 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
             <View style={S.section}>
               <View style={S.toggleRow}>
                 <View style={{ flex: 1, marginRight: 12 }}>
-                  <Text style={S.toggleLabel}>Исключить из общих подсчётов</Text>
-                  <Text style={S.toggleDesc}>Транзакции этой категории не учитываются в балансе и статистике</Text>
+                  <Text style={S.toggleLabel}>{t("categories.excludeFromTotal")}</Text>
+                  <Text style={S.toggleDesc}>{t("categories.excludeDesc")}</Text>
                 </View>
                 <Switch
                   value={excludeFromTotal}
@@ -344,7 +346,7 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
               }}
             >
               <Ionicons name="trash-outline" size={18} color={C.red} />
-              <Text style={S.deleteText}>Удалить категорию</Text>
+              <Text style={S.deleteText}>{t("categories.delete")}</Text>
             </Pressable>
           </ScrollView>
         </View>

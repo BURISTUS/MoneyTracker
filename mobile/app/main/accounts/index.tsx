@@ -1,11 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { View, FlatList, Pressable, ScrollView, Modal, TextInput, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { Text } from '../../../components/ui/text';
 import { CurrencyPicker } from '../../../src/components/ui/CurrencyPicker';
+import { TransferModal } from '../../../src/components/ui/TransferModal';
 import { formatCurrency } from '../../../src/utils/formatters';
 import { currencyService } from '../../../src/services/currency';
 import type { AccountType, TransactionType } from '../../../src/types';
@@ -24,6 +26,7 @@ const accountIcons: Record<AccountType, { icon: keyof typeof Ionicons.glyphMap; 
 };
 
 export default function AccountsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const accounts = useDataStore((s) => s.accounts);
@@ -38,6 +41,7 @@ export default function AccountsScreen() {
   const [type, setType] = useState<AccountType>(AccountTypeEnum.BANK);
   const [currency, setCurrency] = useState(userCurrency);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
 
   const [editModal, setEditModal] = useState<{
     visible: boolean;
@@ -152,7 +156,7 @@ export default function AccountsScreen() {
       categoryId,
       amount: Math.abs(signedAmount),
       type: transactionModal.type,
-      description: transactionModal.note || 'Корректировка баланса счёта',
+      description: transactionModal.note || t("accounts.balanceAdjustment"),
       date: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -163,6 +167,12 @@ export default function AccountsScreen() {
 
   const handleSkipTransaction = useCallback(() => {
     setTransactionModal({ visible: false, accountId: null, amount: '', type: TransactionTypeEnum.EXPENSE, note: '' });
+  }, []);
+
+  const handleTransferComplete = useCallback(async () => {
+    setShowTransfer(false);
+    await useDataStore.getState().fetchAccounts();
+    await useDataStore.getState().fetchTransactions();
   }, []);
 
   const renderAccount = useCallback(({ item }: { item: { id: string; name: string; type: AccountType; balance: number; currency: string; includeInTotal: boolean } }) => {
@@ -198,7 +208,7 @@ export default function AccountsScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={s.backBtn}>
           <Ionicons name="chevron-back" size={28} color="#A1A1AA" />
         </Pressable>
-        <Text style={s.headerTitle}>Счета</Text>
+        <Text style={s.headerTitle}>{t("accounts.title")}</Text>
       </View>
 
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -206,14 +216,44 @@ export default function AccountsScreen() {
           <View style={s.iconWrap}>
             <Ionicons name="wallet-outline" size={18} color="#6366F1" />
           </View>
-          <Text style={s.cardLabel}>Общий баланс</Text>
+          <Text style={s.cardLabel}>{t("accounts.totalBalance")}</Text>
           <Text style={s.balanceValue} numberOfLines={1} adjustsFontSizeToFit>{formatCurrency(totalBalance)}</Text>
         </View>
+
+        {/* Transfer Card */}
+        {accounts.length >= 2 && (
+          <Pressable
+            onPress={() => setShowTransfer(true)}
+            style={{
+              backgroundColor: CARD_BG,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: 'rgba(99,102,241,0.2)',
+              padding: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 14,
+            }}
+          >
+            <View style={{
+              width: 40, height: 40, borderRadius: 12,
+              backgroundColor: 'rgba(99,102,241,0.15)',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Ionicons name="swap-horizontal" size={20} color="#6366F1" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: '#E4E4E7' }}>{t("accounts.transferBetweenAccounts")}</Text>
+              <Text style={{ fontSize: 12, color: '#52525B', marginTop: 2 }}>{t("accounts.transferDesc")}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#52525B" />
+          </Pressable>
+        )}
 
         {accounts.length === 0 ? (
           <View style={s.empty}>
             <Ionicons name="wallet-outline" size={44} color="#3F3F46" />
-            <Text style={s.emptyText}>Нет счетов</Text>
+            <Text style={s.emptyText}>{t("accounts.noAccounts")}</Text>
           </View>
         ) : (
           <FlatList
@@ -238,14 +278,14 @@ export default function AccountsScreen() {
           <Pressable style={s.modalSheet} onPress={(e) => e.stopPropagation()}>
             <View style={s.modalHandle} />
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>Новый счёт</Text>
+              <Text style={s.modalTitle}>{t("accounts.newAccount")}</Text>
               <Pressable onPress={() => setShowAdd(false)} hitSlop={12}>
                 <Ionicons name="close" size={22} color="#A1A1AA" />
               </Pressable>
             </View>
 
             <View style={s.modalFields}>
-              <Text style={s.fieldLabel}>Название</Text>
+              <Text style={s.fieldLabel}>{t("common.name")}</Text>
               <TextInput
                 style={s.input}
                 value={name}
@@ -254,7 +294,7 @@ export default function AccountsScreen() {
                 placeholderTextColor="#52525B"
               />
 
-              <Text style={s.fieldLabel}>Тип</Text>
+              <Text style={s.fieldLabel}>{t("common.type")}</Text>
               <View style={s.typeRow}>
                 {accountTypes.map((at) => {
                   const active = type === at.value;
@@ -276,7 +316,7 @@ export default function AccountsScreen() {
                 onPress={() => setShowCurrencyPicker(true)}
                 style={s.currencyRow}
               >
-                <Text style={s.fieldLabel}>Валюта</Text>
+                <Text style={s.fieldLabel}>{t("profile.currency")}</Text>
                 <View style={s.currencyValue}>
                   <Text style={s.currencyText}>{currency}</Text>
                   <Ionicons name="chevron-forward" size={14} color="#52525B" />
@@ -288,7 +328,7 @@ export default function AccountsScreen() {
                 disabled={!name}
                 style={[s.createBtn, !name && s.createBtnDisabled]}
               >
-                <Text style={s.createBtnText}>Создать</Text>
+                <Text style={s.createBtnText}>{t("common.create")}</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -305,7 +345,7 @@ export default function AccountsScreen() {
           <Pressable style={s.modalSheet} onPress={(e) => e.stopPropagation()}>
             <View style={s.modalHandle} />
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>Редактировать счёт</Text>
+              <Text style={s.modalTitle}>{t("accounts.editAccount")}</Text>
               <Pressable
                 onPress={() => setEditModal((prev) => ({ ...prev, visible: false }))}
                 hitSlop={12}
@@ -316,16 +356,16 @@ export default function AccountsScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 500 }}>
               <View style={s.modalFields}>
-                <Text style={s.fieldLabel}>Название</Text>
+                <Text style={s.fieldLabel}>{t("common.name")}</Text>
                 <TextInput
                   style={s.input}
                   value={editModal.name}
                   onChangeText={(text) => setEditModal((prev) => ({ ...prev, name: text }))}
-                  placeholder="Название счёта"
+                  placeholder={t("accounts.accountNamePlaceholder")}
                   placeholderTextColor="#52525B"
                 />
 
-                <Text style={s.fieldLabel}>Тип</Text>
+                <Text style={s.fieldLabel}>{t("common.type")}</Text>
                 <View style={s.typeRow}>
                   {accountTypes.map((at) => {
                     const active = editModal.type === at.value;
@@ -343,7 +383,7 @@ export default function AccountsScreen() {
                   })}
                 </View>
 
-                <Text style={s.fieldLabel}>Баланс</Text>
+                <Text style={s.fieldLabel}>{t("common.balance")}</Text>
                 <TextInput
                   style={s.input}
                   value={editModal.balance}
@@ -353,7 +393,7 @@ export default function AccountsScreen() {
                   keyboardType="numeric"
                 />
 
-                <Text style={s.fieldLabel}>Валюта</Text>
+                <Text style={s.fieldLabel}>{t("profile.currency")}</Text>
                 <View style={s.currencyValue}>
                   <Text style={s.currencyText}>{editModal.currency}</Text>
                 </View>
@@ -367,7 +407,7 @@ export default function AccountsScreen() {
                       <Ionicons name="checkmark" size={16} color="#6366F1" />
                     )}
                   </View>
-                  <Text style={s.checkboxLabel}>Учитывать в общем балансе</Text>
+                  <Text style={s.checkboxLabel}>{t("accounts.includeInTotal")}</Text>
                 </Pressable>
 
                 <Pressable
@@ -375,7 +415,7 @@ export default function AccountsScreen() {
                   disabled={!editModal.name}
                   style={[s.createBtn, !editModal.name && s.createBtnDisabled]}
                 >
-                  <Text style={s.createBtnText}>Сохранить</Text>
+                  <Text style={s.createBtnText}>{t("common.save")}</Text>
                 </Pressable>
               </View>
             </ScrollView>
@@ -393,7 +433,7 @@ export default function AccountsScreen() {
           <Pressable style={s.modalSheet} onPress={(e) => e.stopPropagation()}>
             <View style={s.modalHandle} />
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>Добавить транзакцию?</Text>
+              <Text style={s.modalTitle}>{t("accounts.addTransactionConfirm")}</Text>
               <Pressable onPress={handleSkipTransaction} hitSlop={12}>
                 <Ionicons name="close" size={22} color="#A1A1AA" />
               </Pressable>
@@ -412,12 +452,12 @@ export default function AccountsScreen() {
                 </Text>
               </View>
 
-              <Text style={s.fieldLabel}>Заметка</Text>
+              <Text style={s.fieldLabel}>{t("common.note")}</Text>
               <TextInput
                 style={s.input}
                 value={transactionModal.note}
                 onChangeText={(text) => setTransactionModal((prev) => ({ ...prev, note: text }))}
-                placeholder="Комментарий к транзакции"
+                placeholder={t("transactions.commentPlaceholder")}
                 placeholderTextColor="#52525B"
                 multiline
               />
@@ -427,13 +467,13 @@ export default function AccountsScreen() {
                   onPress={handleSkipTransaction}
                   style={s.skipBtn}
                 >
-                  <Text style={s.skipBtnText}>Пропустить</Text>
+                  <Text style={s.skipBtnText}>{t("common.skip")}</Text>
                 </Pressable>
                 <Pressable
                   onPress={handleAddTransaction}
                   style={s.addTransactionBtn}
                 >
-                  <Text style={s.addTransactionBtnText}>Добавить</Text>
+                  <Text style={s.addTransactionBtnText}>{t("common.add")}</Text>
                 </Pressable>
               </View>
             </View>
@@ -448,6 +488,14 @@ export default function AccountsScreen() {
         selectedCode={currency}
         title="Валюта счёта"
         filterType="FIAT"
+      />
+
+      <TransferModal
+        visible={showTransfer}
+        accounts={accounts}
+        hourlyRate={useDataStore.getState().getHourlyRate()}
+        onClose={() => setShowTransfer(false)}
+        onComplete={handleTransferComplete}
       />
     </View>
   );

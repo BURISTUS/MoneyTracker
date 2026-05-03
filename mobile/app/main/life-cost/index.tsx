@@ -8,13 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { Text } from '../../../components/ui/text';
 import { useToast } from '../../../src/components/ui/Toast';
-import { ToastContainer } from '../../../src/components/ui/Toast';
 
 type SalaryPeriod = 'hour' | 'week' | 'month' | 'year';
 
@@ -39,6 +39,7 @@ function formatNumber(n: number): string {
 }
 
 export default function LifeCostScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
@@ -94,7 +95,7 @@ export default function LifeCostScreen() {
   const handleSaveRate = useCallback(async () => {
     if (!calculatedHourlyRate || calculatedHourlyRate <= 0) return;
     await setHourlyRate(calculatedHourlyRate);
-    showSuccess(`Ставка ${calculatedHourlyRate.toFixed(0)} ₽/час сохранена`);
+    showSuccess(t('lifeCost.rateSaved', { rate: calculatedHourlyRate.toFixed(0) }));
   }, [calculatedHourlyRate, setHourlyRate]);
 
   const onTabLayout = useCallback(
@@ -118,13 +119,12 @@ export default function LifeCostScreen() {
             </Pressable>
             <Text style={s.headerTitle}>Life Cost</Text>
           </View>
-          <ToastContainer />
         </View>
         <Animated.View style={[s.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={s.cardIconWrap}>
             <Ionicons name="hourglass-outline" size={22} color="#6366F1" />
           </View>
-          <Text style={s.cardLabel}>Часовая ставка</Text>
+          <Text style={s.cardLabel}>{t("lifeCost.hourlyRateLabel")}</Text>
           {showResult ? (
             <>
               <View style={s.rateRow}>
@@ -132,13 +132,13 @@ export default function LifeCostScreen() {
                 <Text style={s.rateCurrency}>₽</Text>
               </View>
               <Text style={s.rateSubtext}>
-                ≈ {displayRates?.monthly} ₽/мес · {displayRates?.yearly} ₽/год
+                {t("lifeCost.rateSummary", { monthly: displayRates?.monthly, yearly: displayRates?.yearly })}
               </Text>
             </>
           ) : (
             <>
               <Text style={s.ratePlaceholder}>—</Text>
-              <Text style={s.rateSubtext}>Рассчитайте ставку ниже</Text>
+              <Text style={s.rateSubtext}>{t("lifeCost.calculateRateBelow")}</Text>
             </>
           )}
         </Animated.View>
@@ -146,7 +146,7 @@ export default function LifeCostScreen() {
         <View style={s.card}>
           <View style={s.sectionHeader}>
             <Ionicons name="calculator-outline" size={18} color="#A1A1AA" />
-            <Text style={s.sectionTitle}>Калькулятор</Text>
+            <Text style={s.sectionTitle}>{t("lifeCost.calculator")}</Text>
           </View>
 
           <View style={s.tabsOuter}>
@@ -186,14 +186,14 @@ export default function LifeCostScreen() {
           {calculatedHourlyRate !== null && calculatedHourlyRate > 0 && (
             <View style={s.saveArea}>
               <View style={s.saveRow}>
-                <Text style={s.saveLabel}>Это</Text>
+                <Text style={s.saveLabel}>{t("lifeCost.thisIs")}</Text>
                 <View style={s.saveRateRow}>
                   <Text style={s.saveRateValue}>{formatNumber(calculatedHourlyRate)}</Text>
-                  <Text style={s.saveRateUnit}>₽/час</Text>
+                  <Text style={s.saveRateUnit}>{t("lifeCost.rubPerHour")}</Text>
                 </View>
               </View>
               <Pressable style={s.saveBtn} onPress={handleSaveRate}>
-                <Text style={s.saveBtnText}>Применить</Text>
+                <Text style={s.saveBtnText}>{t("lifeCost.apply")}</Text>
               </Pressable>
             </View>
           )}

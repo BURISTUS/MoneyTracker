@@ -43,10 +43,41 @@ export class TransactionsController {
     return this.transactionsService.getSummary(req.user.id, new Date(startDate), new Date(endDate));
   }
 
+  @Get('analytics')
+  @ApiOperation({ summary: 'Get analytics for a period' })
+  @ApiQuery({ name: 'startDate', required: true })
+  @ApiQuery({ name: 'endDate', required: true })
+  async getAnalytics(
+    @Request() req: any,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.transactionsService.getAnalytics(
+      req.user.id,
+      new Date(startDate),
+      new Date(endDate),
+    );
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get transaction by id' })
   async findById(@Param('id') id: string, @Request() req: any) {
     return this.transactionsService.findById(id, req.user.id);
+  }
+
+  @Post('transfer')
+  @ApiOperation({ summary: 'Transfer money between accounts' })
+  async transfer(
+    @Request() req: any,
+    @Body() body: { fromAccountId: string; toAccountId: string; amount: number; description?: string; date?: string },
+  ) {
+    return this.transactionsService.transfer(req.user.id, {
+      fromAccountId: body.fromAccountId,
+      toAccountId: body.toAccountId,
+      amount: BigInt(body.amount),
+      description: body.description,
+      date: body.date ? new Date(body.date) : undefined,
+    });
   }
 
   @Post()

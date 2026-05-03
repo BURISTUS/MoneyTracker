@@ -1,0 +1,18 @@
+{
+  "insufficientFunds": "Недостаточно средств. Доступно {{available}} ₽, требуется {{needed}} ₽",
+  "negativeBalance": "Невозможно перевести со счёта «{{account}}» — баланс {{balance}}",
+  "accountNotFound": "Счёт не найден",
+  "categoryNotFound": "Категория не найдена",
+  "transactionNotFound": "Транзакция не найдена",
+  "sameAccount": "Нельзя перевести на тот же счёт",
+  "unauthorized": "Требуется авторизация",
+  "forbidden": "Доступ запрещён",
+  "validationError": "Ошибка валидации",
+  "internalError": "Внутренняя ошибка сервера",
+  "sessionExpired": "Сессия истекла. Войдите заново.",
+  "budgetNotFound": "Бюджет не найден",
+  "goalNotFound": "Цель не найдена",
+  "wishlistNotFound": "Желание не найдено",
+  "invalidCredentials": "Неверный email или пароль",
+  "emailExists": "Пользователь с таким email уже существует"
+}

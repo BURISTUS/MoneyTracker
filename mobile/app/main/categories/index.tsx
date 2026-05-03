@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -93,6 +94,7 @@ const S = StyleSheet.create({
 });
 
 export default function CategoriesIndexScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const toast = useToast();  const categories = useDataStore((s) => s.categories);
@@ -180,9 +182,9 @@ export default function CategoriesIndexScreen() {
             )}
           </View>
           {spent > 0 ? (
-            <Text style={S.categorySub}>{formatCurrency(spent)} за месяц</Text>
+            <Text style={S.categorySub}>{formatCurrency(spent)} {t("categories.monthlyTotal")}</Text>
           ) : (
-            <Text style={S.categorySub}>Нет операций за месяц</Text>
+            <Text style={S.categorySub}>{t("categories.noTransactionsMonth")}</Text>
           )}
 
           {hasLimit && (
@@ -217,7 +219,7 @@ export default function CategoriesIndexScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={S.header}>
-          <Text style={S.headerTitle}>Категории</Text>
+          <Text style={S.headerTitle}>{t("categories.title")}</Text>
         </View>
 
         <View style={S.actions}>
@@ -225,28 +227,28 @@ export default function CategoriesIndexScreen() {
             <View style={[S.actionIconWrap, { backgroundColor: 'rgba(99,102,241,0.12)' }]}>
               <Ionicons name="add" size={18} color={C.indigo} />
             </View>
-            <Text style={[S.actionText, { color: C.indigo }]}>Создать категорию</Text>
+            <Text style={[S.actionText, { color: C.indigo }]}>{t("categories.create")}</Text>
           </Pressable>
 
           <Pressable onPress={() => router.push('/main/categories/chart')} style={S.actionBtn}>
             <View style={[S.actionIconWrap, { backgroundColor: 'rgba(52,211,153,0.1)' }]}>
               <Ionicons name="bar-chart" size={18} color={C.green} />
             </View>
-            <Text style={S.actionText}>Диаграмма расходов</Text>
+            <Text style={S.actionText}>{t("categories.expenseChart")}</Text>
           </Pressable>
         </View>
 
         <View style={S.list}>
           {expenseCategories.length > 0 && (
             <>
-              <Text style={S.sectionTitle}>Расходы · {expenseCategories.length}</Text>
+              <Text style={S.sectionTitle}>{t("transactions.expenses")} · {expenseCategories.length}</Text>
               {expenseCategories.map(renderCategory)}
             </>
           )}
 
           {incomeCategories.length > 0 && (
             <>
-              <Text style={[S.sectionTitle, S.sectionGap]}>Доходы · {incomeCategories.length}</Text>
+              <Text style={[S.sectionTitle, S.sectionGap]}>{t("categories.income")} · {incomeCategories.length}</Text>
               {incomeCategories.map(renderCategory)}
             </>
           )}
@@ -254,7 +256,7 @@ export default function CategoriesIndexScreen() {
           {categories.length === 0 && (
             <View style={S.empty}>
               <Ionicons name="folder-open-outline" size={48} color="#3A3A3C" />
-              <Text style={{ fontSize: 15, color: C.textSec, marginTop: 8 }}>Категории не найдены</Text>
+              <Text style={{ fontSize: 15, color: C.textSec, marginTop: 8 }}>{t("categories.noCategories")}</Text>
             </View>
           )}
         </View>

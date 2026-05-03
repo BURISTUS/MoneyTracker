@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -31,6 +32,7 @@ const INCOME_COLORS = [
 ];
 
 export default function CreateCategoryScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const addCategory = useDataStore((s) => s.addCategory);
@@ -46,9 +48,9 @@ export default function CreateCategoryScreen() {
 
   const filteredIconBank = useMemo(() => {
     if (type === 'INCOME') {
-      return ICON_BANK.filter((g) => g.label === 'Доходы');
+      return ICON_BANK.filter((g) => g.label === t("categories.income"));
     }
-    return ICON_BANK.filter((g) => g.label !== 'Доходы');
+    return ICON_BANK.filter((g) => g.label !== t("categories.income"));
   }, [type]);
 
   const selectedIcon = selectedIconDef ? serializeIcon(selectedIconDef) : '';
@@ -125,9 +127,7 @@ export default function CreateCategoryScreen() {
           </View>
 
           <View className="p-4">
-            <Text className="text-sm font-medium text-typography-400 mb-3">
-              НАЗВАНИЕ
-            </Text>
+            <Text className="text-sm font-medium text-typography-400 mb-3">{t("categories.nameLabel")}</Text>
             <TextInput
               value={name}
               onChangeText={setName}
@@ -140,9 +140,7 @@ export default function CreateCategoryScreen() {
           </View>
 
           <View className="p-4">
-            <Text className="text-sm font-medium text-typography-400 mb-3">
-              ТИП ОПЕРАЦИИ
-            </Text>
+            <Text className="text-sm font-medium text-typography-400 mb-3">{t("categories.typeLabel")}</Text>
             <View className="flex-row gap-3">
               {[
                 { key: CategoryTypeEnum.EXPENSE, label: 'Расход', icon: '−' },
@@ -174,9 +172,7 @@ export default function CreateCategoryScreen() {
           </View>
 
           <View className="px-4 py-4 mb-2">
-            <Text className="text-xs font-medium text-typography-400 mb-3 uppercase">
-              Цвет
-            </Text>
+            <Text className="text-xs font-medium text-typography-400 mb-3 uppercase">{t("categories.colorLabel")}</Text>
             <View className="flex-row flex-wrap gap-2.5">
               {colors.map((color) => (
                 <TouchableOpacity
@@ -197,7 +193,7 @@ export default function CreateCategoryScreen() {
 
           <View className="px-4 py-4 mb-2">
             <Text className="text-xs font-medium text-typography-400 mb-3 uppercase">
-              Иконка ({filteredIconBank.reduce((sum, g) => sum + g.icons.length, 0)} шт.)
+              {t("categories.iconCountValue", { count: filteredIconBank.reduce((sum, g) => sum + g.icons.length, 0) })}
             </Text>
 
             {filteredIconBank.map((group, groupIndex) => {
@@ -213,7 +209,7 @@ export default function CreateCategoryScreen() {
                     {group.icons.length > 6 && (
                       <TouchableOpacity onPress={() => setExpandedGroup(isExpanded ? -1 : groupIndex)}>
                         <Text className="text-xs text-primary-400">
-                          {isExpanded ? 'Свернуть' : `Ещё ${group.icons.length - 6}`}
+                          {isExpanded ? t('common.collapse') : `t("common.moreCount", { count: group.icons.length - 6 })`}
                         </Text>
                       </TouchableOpacity>
                     )}

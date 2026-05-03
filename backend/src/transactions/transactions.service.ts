@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AppException } from '../common/app-exception';
 
 @Injectable()
 export class TransactionsService {
@@ -34,7 +35,7 @@ export class TransactionsService {
       include: { account: true, category: true },
     });
     if (!transaction) {
-      throw new NotFoundException('Transaction not found');
+      throw new AppException('errors.transactionNotFound', 404);
     }
     return transaction;
   }
@@ -48,7 +49,7 @@ export class TransactionsService {
     });
     if (!account) {
       console.error('❌ Invalid account:', data.accountId);
-      throw new BadRequestException('Invalid account');
+      throw new AppException('errors.accountNotFound', 400);
     }
 
     // Verify category belongs to user OR is system category
@@ -63,7 +64,7 @@ export class TransactionsService {
     });
     if (!category) {
       console.error('❌ Invalid category:', data.categoryId, 'userId:', userId);
-      throw new BadRequestException('Invalid category');
+      throw new AppException('errors.categoryNotFound', 400);
     }
 
     console.log('✅ Account and category validated:', { account: account.name, category: category.name });
@@ -136,6 +137,227 @@ export class TransactionsService {
       expenses,
       balance: income - expenses,
       transactionCount: transactions.length,
+    };
+  }
+
+  async transfer(
+    userId: string,
+    data: {
+      fromAccountId: string;
+      toAccountId: string;
+      amount: bigint;
+      description?: string;
+      date?: Date;
+    },
+  ) {
+    if (data.fromAccountId === data.toAccountId) {
+      throw new AppException('errors.sameAccount');
+    }
+
+    // Validate both accounts belong to user
+    const [fromAccount, toAccount] = await Promise.all([
+      this.prisma.account.findFirst({ where: { id: data.fromAccountId, userId } }),
+      this.prisma.account.findFirst({ where: { id: data.toAccountId, userId } }),
+    ]);
+
+    if (!fromAccount) throw new AppException('errors.accountNotFound', 404);
+    if (!toAccount) throw new AppException('errors.accountNotFound', 404);
+
+    // Prevent negative balance on non-credit accounts
+    const cannotGoNegative = ['CASH', 'BANK', 'INVESTMENT'].includes(fromAccount.type);
+    if (cannotGoNegative) {
+      const currentBalance = Number(fromAccount.balance);
+      const transferAmount = Number(data.amount);
+      
+      if (currentBalance <= 0) {
+        throw new AppException('errors.negativeBalance', 400, {
+          account: fromAccount.name,
+          balance: (currentBalance / 100).toFixed(2),
+        });
+      }
+      
+      if (currentBalance < transferAmount) {
+        const available = (currentBalance / 100).toFixed(0);
+        const needed = (transferAmount / 100).toFixed(0);
+        throw new AppException('errors.insufficientFunds', 400, {
+          available,
+          needed,
+        });
+      }
+    }
+
+    // Find or create a system category for transfers
+    let transferCategory = await this.prisma.category.findFirst({
+      where: { name: 'Transfer', userId: null },
+    });
+
+    if (!transferCategory) {
+      transferCategory = await this.prisma.category.create({
+        data: {
+          name: 'Transfer',
+          type: 'EXPENSE',
+          icon: 'swap-horizontal',
+          color: '#6366F1',
+          excludeFromTotal: true,
+        },
+      });
+    }
+
+    const transferDate = data.date || new Date();
+
+    // Create both transactions and update both balances in a transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      const fromTx = await tx.transaction.create({
+        data: {
+          userId,
+          accountId: data.fromAccountId,
+          categoryId: transferCategory.id,
+          amount: data.amount,
+          type: 'TRANSFER',
+          description: data.description || `→ ${toAccount.name}`,
+          date: transferDate,
+        },
+      });
+
+      const toTx = await tx.transaction.create({
+        data: {
+          userId,
+          accountId: data.toAccountId,
+          categoryId: transferCategory.id,
+          amount: data.amount,
+          type: 'TRANSFER',
+          description: data.description || `← ${fromAccount.name}`,
+          date: transferDate,
+        },
+      });
+
+      await tx.account.update({
+        where: { id: data.fromAccountId },
+        data: { balance: { decrement: data.amount } },
+      });
+
+      await tx.account.update({
+        where: { id: data.toAccountId },
+        data: { balance: { increment: data.amount } },
+      });
+
+      return { fromTx, toTx };
+    });
+
+    return {
+      fromTransaction: {
+        ...result.fromTx,
+        amount: result.fromTx.amount.toString(),
+      },
+      toTransaction: {
+        ...result.toTx,
+        amount: result.toTx.amount.toString(),
+      },
+    };
+  }
+
+  async getAnalytics(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ) {
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        date: { gte: startDate, lte: endDate },
+        type: { not: 'TRANSFER' },
+      },
+      include: { category: true },
+      orderBy: { date: 'asc' },
+    });
+
+    // Totals
+    const income = transactions
+      .filter((t) => t.type === 'INCOME')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+    const expense = transactions
+      .filter((t) => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    // By category
+    const categoryMap = new Map<
+      string,
+      { category: { id: string; name: string; icon: string | null; color: string | null }; amount: number; count: number }
+    >();
+
+    transactions.forEach((t) => {
+      const cat = t.category;
+      if (!cat) return;
+      const key = cat.id;
+      const entry = categoryMap.get(key) || {
+        category: { id: cat.id, name: cat.name, icon: cat.icon, color: cat.color },
+        amount: 0,
+        count: 0,
+      };
+      entry.amount += Number(t.amount);
+      entry.count += 1;
+      categoryMap.set(key, entry);
+    });
+
+    const totalForPercent = expense > 0 ? expense : income;
+    const byCategory = Array.from(categoryMap.values())
+      .map((c) => ({
+        ...c,
+        percentage: totalForPercent > 0 ? (c.amount / totalForPercent) * 100 : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
+    // By day
+    const dayMap = new Map<string, { date: string; income: number; expense: number }>();
+    transactions.forEach((t) => {
+      const dateKey = t.date.toISOString().split('T')[0];
+      const entry = dayMap.get(dateKey) || { date: dateKey, income: 0, expense: 0 };
+      if (t.type === 'INCOME') entry.income += Number(t.amount);
+      else entry.expense += Number(t.amount);
+      dayMap.set(dateKey, entry);
+    });
+
+    const byDay = Array.from(dayMap.values()).sort(
+      (a, b) => a.date.localeCompare(b.date),
+    );
+
+    // Comparison with previous period
+    const periodMs = endDate.getTime() - startDate.getTime();
+    const prevEndDate = new Date(startDate.getTime() - 1);
+    const prevStartDate = new Date(prevEndDate.getTime() - periodMs);
+
+    const prevTransactions = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        date: { gte: prevStartDate, lte: prevEndDate },
+        type: { not: 'TRANSFER' },
+      },
+    });
+
+    const prevIncome = prevTransactions
+      .filter((t) => t.type === 'INCOME')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+    const prevExpense = prevTransactions
+      .filter((t) => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const incomeChange = prevIncome > 0 ? ((income - prevIncome) / prevIncome) * 100 : (income > 0 ? 100 : 0);
+    const expenseChange = prevExpense > 0 ? ((expense - prevExpense) / prevExpense) * 100 : (expense > 0 ? 100 : 0);
+    const prevBalance = prevIncome - prevExpense;
+    const balance = income - expense;
+    const balanceChange = prevBalance !== 0 ? ((balance - prevBalance) / Math.abs(prevBalance)) * 100 : (balance > 0 ? 100 : 0);
+
+    return {
+      period: { startDate: startDate.toISOString(), endDate: endDate.toISOString() },
+      totals: { income, expense, balance },
+      byCategory,
+      byDay,
+      comparison: {
+        prevPeriod: { startDate: prevStartDate.toISOString(), endDate: prevEndDate.toISOString() },
+        incomeChange: Math.round(incomeChange * 10) / 10,
+        expenseChange: Math.round(expenseChange * 10) / 10,
+        balanceChange: Math.round(balanceChange * 10) / 10,
+      },
     };
   }
 }
