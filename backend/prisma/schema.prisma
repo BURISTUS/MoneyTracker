@@ -27,7 +27,6 @@ model User {
   accounts          Account[]
   transactions      Transaction[]
   categories        Category[]
-  budgets           Budget[]
   goals             Goal[]
   wishlist          WishlistItem[]
   gamification      UserGamification?
@@ -104,7 +103,6 @@ model Category {
 
   user             User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions     Transaction[]
-  budgets          Budget[]
 
   @@index([userId])
   @@map("categories")
@@ -140,46 +138,36 @@ enum TransactionType {
   TRANSFER
 }
 
-// === BUDGET & GOALS ===
-
-model Budget {
-  id          String   @id @default(uuid())
-  userId      String
-  categoryId  String
-  amount      BigInt
-  period      BudgetPeriod
-  startDate   DateTime
-  endDate     DateTime
-  alertThreshold Int @default(80)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  @@map("budgets")
-}
-
-enum BudgetPeriod {
-  WEEKLY
-  MONTHLY
-  YEARLY
-}
-
+// === GOALS ===
 model Goal {
   id          String   @id @default(uuid())
   userId      String
   name        String
   targetAmount BigInt
   currentAmount BigInt  @default(0)
+  currency    String   @default("RUB")
   deadline    DateTime @default(now())
   isCompleted Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions GoalContribution[]
 
   @@map("goals")
+}
+
+model GoalContribution {
+  id          String   @id @default(uuid())
+  goalId      String
+  amount      BigInt
+  note        String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  goal        Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@map("goal_contributions")
 }
 
 // === GAMIFICATION ===

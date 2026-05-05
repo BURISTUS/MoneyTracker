@@ -40,6 +40,8 @@ export const transactionsService = {
   async update(id: string, data: {
     description?: string;
     date?: string;
+    amount?: number;
+    accountId?: string;
   }): Promise<Transaction> {
     return apiPatch<Transaction>(`/transactions/${id}`, data);
   },

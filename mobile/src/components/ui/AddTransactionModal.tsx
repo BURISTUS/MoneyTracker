@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Pressable,
@@ -7,8 +7,10 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  StyleSheet,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useDataStore } from '../../stores/dataStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -23,26 +25,32 @@ import { ReceiptScannerButton } from './ReceiptScanner';
 import { AiTransactionPreview } from './AiTransactionPreview';
 import type { AiTransactionResult, AiReceiptResult } from '../../services/ai';
 
-interface AddTransactionModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onComplete: () => void;
-  initialType?: TransactionType;
-}
+// ============================================================
+// Color & Design Tokens — as CategoryEditModal
+// ============================================================
 
-const EXPENSE_COLORS = {
-  primary: '#FF3B30',
-  background: 'rgba(255, 59, 48, 0.1)',
+const C = {
+  bg: '#0A0A0F',
+  card: '#141418',
+  border: 'rgba(255,255,255,0.08)',
+  textMain: '#F5F5F5',
+  textSec: '#8C8C8C',
+  indigo: '#6366F1',
+  red: '#FF3B30',
+  green: '#34C759',
+  inputBg: 'rgba(255,255,255,0.05)',
 };
 
-const INCOME_COLORS = {
-  primary: '#34C759',
-  background: 'rgba(52, 199, 89, 0.1)',
-};
+const EXPENSE_COLORS = { primary: '#FF3B30', background: 'rgba(255,59,48,0.1)' };
+const INCOME_COLORS = { primary: '#34C759', background: 'rgba(52,199,89,0.1)' };
 
 type MathOp = '+' | '−' | '×' | '÷' | null;
 
-function evaluateExpression(left: string, op: MathOp, right: string): number | null {
+// ============================================================
+// Helpers
+// ============================================================
+
+const evaluateExpression = (left: string, op: MathOp, right: string): number | null => {
   const a = parseFloat(left);
   const b = parseFloat(right);
   if (isNaN(a) || isNaN(b)) return null;
@@ -53,43 +61,354 @@ function evaluateExpression(left: string, op: MathOp, right: string): number | n
     case '÷': return b !== 0 ? a / b : null;
     default: return null;
   }
-}
+};
+
+const MONTHS_GEN = [
+  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+];
+const formatDateFull = (d: Date) => `${d.getDate()} ${MONTHS_GEN[d.getMonth()]} ${d.getFullYear()}`;
+
+const NUMPAD_KEYS = ['7','8','9','÷','4','5','6','×','1','2','3','−','.','0','⌫','+'];
+
+// ============================================================
+// Styles — matching CategoryEditModal
+// ============================================================
+
+const S = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: '#13131A',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingBottom: 34,
+    maxHeight: '95%',
+  },
+  handle: {
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: C.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  section: { paddingHorizontal: 20, marginBottom: 16 },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: C.textSec,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+
+  // Type toggle
+  typeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  typeBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.card,
+  },
+  typeBtnActive: { borderColor: 'transparent' },
+  typeLabel: { fontSize: 15, fontWeight: '600', color: C.textSec },
+  typeLabelActive: {},
+
+  // Amount display
+  amountWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  amountText: { fontSize: 32, fontWeight: '800', letterSpacing: -1, lineHeight: 40 },
+  lifeCostBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+    backgroundColor: C.inputBg,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  lifeCostText: { fontSize: 16, color: '#FBBF24', fontWeight: '700' },
+
+  // Date row
+  dateBtn: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    backgroundColor: C.inputBg,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  dateText: { fontSize: 13, fontWeight: '600', color: C.textMain },
+  dateChevron: { fontSize: 12, color: C.textSec },
+
+  // Quick actions row
+  actionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+  },
+  actionBtn: { alignItems: 'center', gap: 4 },
+  actionIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  actionIconWrapActive: {},
+  actionLabel: { fontSize: 11, color: C.textSec },
+
+  // Budget bar
+  budgetBar: {
+    backgroundColor: C.inputBg,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  budgetRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  budgetLabel: { fontSize: 12, color: C.textSec },
+  budgetValue: { fontSize: 12, fontWeight: '600' },
+  budgetTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+  },
+  budgetFill: { height: 4, borderRadius: 2 },
+
+  // Note input
+  noteInput: {
+    backgroundColor: C.inputBg,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: C.textMain,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+
+  // Account picker
+  accountRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  accountBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: C.inputBg,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  accountBtnActive: { borderColor: 'transparent' },
+  accountLabel: { fontSize: 14, color: C.textMain },
+  accountLabelActive: {},
+
+  // Numpad
+  numpadGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 12,
+  },
+  numpadKey: {
+    width: '25%',
+    aspectRatio: 1.3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  numpadInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  numpadOp: { backgroundColor: 'rgba(99,102,241,0.1)' },
+  numpadOpActive: { backgroundColor: 'rgba(99,102,241,0.25)' },
+  numpadDel: { backgroundColor: 'rgba(255,59,48,0.1)' },
+  numpadKeyText: { fontSize: 20, fontWeight: '600', color: C.textMain },
+  numpadOpText: { color: C.indigo },
+  numpadDelText: { color: C.red },
+
+  // Bottom row (equals + save)
+  bottomRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    gap: 10,
+  },
+  equalsBtn: {
+    width: 60,
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(99,102,241,0.12)',
+  },
+  equalsText: { fontSize: 32, fontWeight: '700', color: C.indigo },
+  saveBtn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.indigo,
+  },
+  saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+});
+
+// Styles for the embedded category picker modal
+const SC = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: '#13131A',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingBottom: 34,
+    maxHeight: '80%',
+  },
+  handle: {
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: C.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingHorizontal: 20 },
+  catItem: {
+    width: '30%',
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderRadius: 14,
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  catItemActive: { borderColor: 'transparent' },
+  catName: { fontSize: 12, fontWeight: '600', color: C.textMain, textAlign: 'center', marginTop: 6 },
+  emptyWrap: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { fontSize: 15, color: C.textSec, marginBottom: 16 },
+  emptyBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  emptyBtnText: { fontSize: 15, fontWeight: '600', color: '#FFF' },
+  newCatBtn: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed' as const,
+    borderColor: C.border,
+    alignItems: 'center',
+  },
+  newCatText: { fontSize: 15, color: C.textSec },
+});
+
+// ============================================================
+// Component
+// ============================================================
 
 export function AddTransactionModal({
   visible,
   onClose,
   onComplete,
   initialType = TransactionTypeEnum.EXPENSE,
-}: AddTransactionModalProps) {
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onComplete: () => void;
+  initialType?: TransactionType;
+}) {
   const { t } = useTranslation();
   const router = useRouter();
   const addTransaction = useDataStore((s) => s.addTransaction);
   const accounts = useDataStore((s) => s.accounts);
   const categories = useDataStore((s) => s.categories);
-  const budgets = useDataStore((s) => s.budgets);
+  const transactions = useDataStore((s) => s.transactions);
   const user = useAuthStore((s) => s.user);
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
 
   const [type, setType] = useState<TransactionType>(initialType);
-
-  React.useEffect(() => {
-    if (visible) {
-      setType(initialType);
-      setAmount('');
-      setPendingOp(null);
-      setPreviousValue('');
-      setSelectedCategory(null);
-    }
-  }, [visible, initialType]);
   const [amount, setAmount] = useState('');
   const [pendingOp, setPendingOp] = useState<MathOp>(null);
   const [previousValue, setPreviousValue] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedAccount, setSelectedAccount] = useState<string>(
-    accounts.length > 0 ? accounts[0].id : '',
-  );
+  const [selectedAccount, setSelectedAccount] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date());
+
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -98,12 +417,25 @@ export function AddTransactionModal({
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [showAiPreview, setShowAiPreview] = useState(false);
   const [aiResult, setAiResult] = useState<AiTransactionResult | AiReceiptResult | null>(null);
+  const deleteTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Reset on open & cleanup timer
+  React.useEffect(() => {
+    if (visible) {
+      setType(initialType);
+      setAmount('');
+      setPendingOp(null);
+      setPreviousValue('');
+      setSelectedCategory(null);
+      if (accounts.length > 0) setSelectedAccount(accounts[0].id);
+    }
+    return () => {
+      if (deleteTimer.current) { clearInterval(deleteTimer.current); deleteTimer.current = null; }
+    };
+  }, [visible, initialType]);
 
   const colors = type === 'EXPENSE' ? EXPENSE_COLORS : INCOME_COLORS;
-
-  const displayCategories = categories.filter(
-    (c) => c.type === (type as string),
-  );
+  const displayCategories = categories.filter((c) => c.type === (type as string));
 
   const hourlyRate = useMemo(() => {
     const rate = getHourlyRate();
@@ -111,66 +443,74 @@ export function AddTransactionModal({
   }, [getHourlyRate, user?.hourlyRate]);
 
   const displayAmount = useMemo(() => {
-    if (previousValue && pendingOp) {
-      return `${previousValue} ${pendingOp} ${amount}`;
-    }
+    if (previousValue && pendingOp) return `${previousValue} ${pendingOp} ${amount}`;
     return amount || '0';
   }, [amount, previousValue, pendingOp]);
 
   const numericAmount = useMemo(() => {
     if (previousValue && pendingOp && amount) {
-      const result = evaluateExpression(previousValue, pendingOp, amount);
-      return result;
+      return evaluateExpression(previousValue, pendingOp, amount);
     }
     const parsed = parseFloat(amount);
     return isNaN(parsed) ? 0 : parsed;
   }, [amount, previousValue, pendingOp]);
 
   const lifeHours = useMemo(() => {
-    if (!numericAmount || !hourlyRate) return null;
-    if (numericAmount <= 0) return null;
-    const hours = numericAmount / hourlyRate;
-    if (hours < 1) return `${Math.round(hours * 60)} мин`;
-    if (hours < 24) return `${hours.toFixed(1)} ч`;
-    return `${(hours / 24).toFixed(1)} дн`;
+    if (!numericAmount || !hourlyRate || numericAmount <= 0) return null;
+    const h = numericAmount / hourlyRate;
+    if (h < 1) return `${Math.round(h * 60)} мин`;
+    if (h < 24) return `${h.toFixed(1)} ч`;
+    return `${(h / 24).toFixed(1)} дн`;
   }, [numericAmount, hourlyRate]);
+
+  // ---- Handlers ----
 
   const handleNumberPress = useCallback((num: string) => {
     setAmount((prev) => {
       if (prev === '0' && num !== '.') return num;
       if (prev.length >= 12) return prev;
+      // Limit to 2 decimal places
+      const dotIdx = prev.indexOf('.');
+      if (dotIdx !== -1 && prev.length - dotIdx > 2) return prev;
       return prev + num;
     });
   }, []);
 
   const handleDelete = useCallback(() => {
-    setAmount((prev) => prev.length > 1 ? prev.slice(0, -1) : '');
-  }, []);
+    if (pendingOp) {
+      setAmount(previousValue);
+      setPendingOp(null);
+      setPreviousValue('');
+      return;
+    }
+    setAmount((prev) => (prev.length > 1 ? prev.slice(0, -1) : ''));
+  }, [pendingOp, previousValue]);
 
-  const handleMathOp = useCallback((op: MathOp) => {
-    if (previousValue && pendingOp && amount) {
-      const result = evaluateExpression(previousValue, pendingOp, amount);
-      if (result !== null) {
-        const rounded = Math.round(result * 100) / 100;
-        setPreviousValue(String(rounded));
+  const handleMathOp = useCallback(
+    (op: MathOp) => {
+      if (previousValue && pendingOp && amount) {
+        const r = evaluateExpression(previousValue, pendingOp, amount);
+        if (r !== null) {
+          setPreviousValue(String(Math.round(r * 100) / 100));
+          setAmount('');
+          setPendingOp(op);
+          return;
+        }
+      }
+      if (amount) {
+        setPreviousValue(amount);
         setAmount('');
         setPendingOp(op);
-        return;
       }
-    }
-    if (amount) {
-      setPreviousValue(amount);
-      setAmount('');
-      setPendingOp(op);
-    }
-  }, [amount, previousValue, pendingOp]);
+    },
+    [amount, previousValue, pendingOp],
+  );
 
   const handleEquals = useCallback(() => {
     if (previousValue && pendingOp && amount) {
-      const result = evaluateExpression(previousValue, pendingOp, amount);
-      if (result !== null) {
-        const rounded = Math.round(result * 100) / 100;
-        setAmount(String(rounded));
+      const r = evaluateExpression(previousValue, pendingOp, amount);
+      if (r !== null) {
+        setAmount(String(Math.round(r * 100) / 100));
         setPreviousValue('');
         setPendingOp(null);
       }
@@ -179,7 +519,6 @@ export function AddTransactionModal({
 
   const handleSubmit = useCallback(async () => {
     if (!numericAmount || !selectedCategory || !selectedAccount) return;
-
     setIsSubmitting(true);
     try {
       await addTransaction({
@@ -194,13 +533,6 @@ export function AddTransactionModal({
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-
-      setAmount('');
-      setPreviousValue('');
-      setPendingOp(null);
-      setSelectedCategory(null);
-      setNote('');
-      setDate(new Date());
       onClose();
       onComplete();
     } catch (error) {
@@ -210,353 +542,413 @@ export function AddTransactionModal({
     }
   }, [numericAmount, type, selectedCategory, selectedAccount, note, date, addTransaction, onClose, onComplete]);
 
-  const selectedCategoryData = displayCategories.find((c) => c.id === selectedCategory);
-  const selectedAccountData = accounts.find((a) => a.id === selectedAccount);
+  const selectedCateData = displayCategories.find((c) => c.id === selectedCategory);
+  const selectedAccData = accounts.find((a) => a.id === selectedAccount);
 
-  const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-  const formatDateFull = (d: Date) =>
-    `${d.getDate()} ${MONTHS_GEN[d.getMonth()]}`;
+  // Category limit bar (replaces old budget system)
+  const limitInfo = useMemo(() => {
+    if (type !== 'EXPENSE' || !selectedCategory) return null;
+    const cat = categories.find((c) => c.id === selectedCategory);
+    if (!cat || !cat.monthlyLimit || cat.monthlyLimit <= 0) return null;
 
-  const NUMPAD_KEYS = [
-    '7', '8', '9', '÷',
-    '4', '5', '6', '×',
-    '1', '2', '3', '−',
-    '.', '0', '⌫', '+',
-  ];
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const spent = transactions
+      .filter((t) => t.type === 'EXPENSE' && t.categoryId === selectedCategory && new Date(t.date) >= startOfMonth)
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const limit = Number(cat.monthlyLimit);
+    const percent = limit > 0 ? (spent / limit) * 100 : 0;
+    const remaining = limit - spent;
+    const threshold = 80;
+    const barColor = percent > 100 ? '#F87171' : percent >= threshold ? '#FBBF24' : '#34D399';
+
+    return { percent, remaining, barColor, limit, spent };
+  }, [type, selectedCategory, categories, transactions]);
+
+  // ---- Render ----
 
   return (
-    <RNModal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
-      <View className="flex-1 bg-[rgba(0,0,0,0.7)] justify-end">
-        <Pressable className="flex-1" onPress={onClose} />
+    <RNModal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={S.overlay}>
+        <Pressable style={S.overlay} onPress={onClose}>
+          <View style={{ flex: 1 }} />
+        </Pressable>
 
-        <View
-          className="bg-[#13131A] rounded-t-3xl"
-          style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16, maxHeight: '95%' }}
-        >
-          <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-3" />
+        <View style={S.sheet}>
+          {/* Handle */}
+          <View style={S.handle} />
 
-          <View className="flex-row px-4 mb-2">
-            {[
-              { key: TransactionTypeEnum.EXPENSE, label: '− Расход' },
-              { key: TransactionTypeEnum.INCOME, label: '+ Доход' },
-            ].map((tab) => (
-              <TouchableOpacity
-                key={tab.key}
-                onPress={() => { setType(tab.key as TransactionType); setSelectedCategory(null); }}
-                className={`flex-1 py-2.5 items-center rounded-xl ${
-                  type === tab.key ? '' : ''
-                }`}
-                style={{ backgroundColor: type === tab.key ? colors.background : 'transparent' }}
-              >
-                <Text bold className={`text-base ${type === tab.key ? '' : 'text-[#8E8E93]'}`} style={{ color: type === tab.key ? colors.primary : '#8E8E93' }}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          {/* Header */}
+          <View style={S.header}>
+            <Text style={S.headerTitle}>
+              {type === 'EXPENSE' ? 'Добавить расход' : 'Добавить доход'}
+            </Text>
+            <Pressable style={S.closeBtn} onPress={onClose}>
+              <Ionicons name="close" size={18} color={C.textSec} />
+            </Pressable>
           </View>
 
-          <View className="items-center py-2">
-            <Text bold className="text-[40px]" style={{ color: colors.primary }} numberOfLines={1}>
-              {displayAmount}
-            </Text>
-            {lifeHours && type === 'EXPENSE' && (
-              <View className="flex-row items-center gap-1.5 mt-1.5 bg-[rgba(255,255,255,0.05)] px-3.5 py-1 rounded-full">
-                <Text className="text-sm">⏱</Text>
-                <Text className="text-sm text-warning-400">{lifeHours} работы</Text>
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            {/* ──── Тип ──── */}
+            <View style={S.section}>
+              <Text style={S.sectionTitle}>Тип</Text>
+              <View style={S.typeRow}>
+                {[
+                  { k: TransactionTypeEnum.EXPENSE, label: '− Расход' },
+                  { k: TransactionTypeEnum.INCOME, label: '+ Доход' },
+                ].map((tab) => (
+                  <TouchableOpacity
+                    key={tab.k}
+                    onPress={() => {
+                      setType(tab.k as TransactionType);
+                      setSelectedCategory(null);
+                    }}
+                    style={[
+                      S.typeBtn,
+                      type === tab.k && { backgroundColor: colors.background, borderColor: colors.primary },
+                    ]}
+                  >
+                    <Text style={[S.typeLabel, type === tab.k && { color: colors.primary }]}>
+                      {tab.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* ──── Сумма ──── */}
+            <View style={[S.section, { marginBottom: 6 }]}>
+              <Text style={S.sectionTitle}>Сумма</Text>
+              <View style={[S.amountWrap, { height: type === 'EXPENSE' ? 100 : 70 }]}>
+                <Text style={[S.amountText, { color: colors.primary }]} numberOfLines={1}>
+                  {displayAmount}
+                </Text>
+                {lifeHours && type === 'EXPENSE' && (
+                  <View style={S.lifeCostBadge}>
+                    <Ionicons name="time-outline" size={16} color="#FBBF24" />
+                    <Text style={S.lifeCostText}>{lifeHours} работы</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* ──── Дата ──── */}
+            <View style={[S.section, { marginBottom: 14, alignItems: 'center' }]}>
+              <TouchableOpacity style={S.dateBtn} onPress={() => setShowDatePicker(true)}>
+                <Ionicons name="calendar-outline" size={16} color={C.textSec} />
+                <Text style={S.dateText}>{formatDateFull(date)}</Text>
+                <Ionicons name="chevron-down" size={12} color={C.textSec} />
+              </TouchableOpacity>
+            </View>
+
+            {/* ──── Действия ──── */}
+            <View style={S.section}>
+              <Text style={S.sectionTitle}>Детали</Text>
+              <View style={S.actionsRow}>
+                {/* Заметка */}
+                <TouchableOpacity
+                  onPress={() => setShowNoteInput(!showNoteInput)}
+                  style={S.actionBtn}
+                >
+                  <View style={[S.actionIconWrap, showNoteInput && { backgroundColor: colors.background, borderColor: colors.primary }]}>
+                    <Ionicons name="document-text-outline" size={20} color={showNoteInput ? colors.primary : C.textSec} />
+                  </View>
+                  <Text style={S.actionLabel}>{note ? 'Есть' : 'Заметка'}</Text>
+                </TouchableOpacity>
+
+                {/* Счёт */}
+                <TouchableOpacity
+                  onPress={() => setShowAccountPicker(!showAccountPicker)}
+                  style={S.actionBtn}
+                >
+                  <View style={S.actionIconWrap}>
+                    <Ionicons name="card-outline" size={20} color={C.textSec} />
+                  </View>
+                  <Text style={S.actionLabel}>{selectedAccData?.name || 'Счёт'}</Text>
+                </TouchableOpacity>
+
+                {/* Категория */}
+                <TouchableOpacity
+                  onPress={() => setShowCategoryPicker(true)}
+                  style={S.actionBtn}
+                >
+                  {selectedCateData ? (
+                    <CategoryIcon
+                      icon={selectedCateData.icon || ''}
+                      color={selectedCateData.color || colors.primary}
+                      size={28}
+                    />
+                  ) : (
+                    <View style={S.actionIconWrap}>
+                      <Ionicons name="grid-outline" size={20} color={C.textSec} />
+                    </View>
+                  )}
+                  <Text style={S.actionLabel} numberOfLines={1}>
+                    {selectedCateData?.name || 'Категория'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Голос */}
+                <TouchableOpacity onPress={() => setShowVoiceModal(true)} style={S.actionBtn}>
+                  <View style={[S.actionIconWrap, { backgroundColor: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)' }]}>
+                    <Ionicons name="mic-outline" size={20} color="#6366F1" />
+                  </View>
+                  <Text style={S.actionLabel}>Голос</Text>
+                </TouchableOpacity>
+
+                {/* Чек */}
+                <ReceiptScannerButton
+                  onResult={(r) => { setAiResult(r); setShowAiPreview(true); }}
+                />
+              </View>
+            </View>
+
+            {/* ──── Нота ──── */}
+            {showNoteInput && (
+              <View style={S.section}>
+                <TextInput
+                  style={S.noteInput}
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="Добавить заметку..."
+                  placeholderTextColor="#52525B"
+                  autoFocus
+                />
               </View>
             )}
-          </View>
 
-          <View className="px-4 mb-2">
-            <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
-              className="flex-row items-center justify-center gap-2 py-2 bg-[rgba(255,255,255,0.04)] rounded-full px-4"
-            >
-              <Text className="text-sm">📅</Text>
-              <Text bold className="text-sm text-[#EBEBF5]">{formatDateFull(date)}</Text>
-              <Text className="text-xs text-[#8E8E93]">▾</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View className="flex-row justify-center gap-6 px-4 mb-2">
-            <TouchableOpacity
-              onPress={() => setShowNoteInput(!showNoteInput)}
-              className="items-center gap-1"
-            >
-              <View className={`w-12 h-12 rounded-full items-center justify-center ${showNoteInput ? '' : 'bg-[rgba(255,255,255,0.05)]'}`}
-                style={{ backgroundColor: showNoteInput ? colors.background : undefined }}>
-                <Text className="text-xl">📝</Text>
+            {/* ──── Счёт ──── */}
+            {showAccountPicker && (
+              <View style={S.section}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={S.accountRow}>
+                    {accounts.map((acc) => (
+                      <TouchableOpacity
+                        key={acc.id}
+                        onPress={() => { setSelectedAccount(acc.id); setShowAccountPicker(false); }}
+                        style={[
+                          S.accountBtn,
+                          selectedAccount === acc.id && {
+                            backgroundColor: colors.background,
+                            borderColor: colors.primary,
+                          },
+                        ]}
+                      >
+                        <Text style={S.accountLabel}>{acc.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
               </View>
-              <Text className="text-xs text-[#8E8E93]">{note ? 'Есть' : 'Заметка'}</Text>
-            </TouchableOpacity>
+            )}
 
-            <TouchableOpacity
-              onPress={() => setShowAccountPicker(!showAccountPicker)}
-              className="items-center gap-1"
-            >
-              <View className="w-12 h-12 rounded-full bg-[rgba(255,255,255,0.05)] items-center justify-center">
-                <Text className="text-xl">💳</Text>
-              </View>
-              <Text className="text-xs text-[#8E8E93]">{selectedAccountData?.name || 'Счёт'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setShowCategoryPicker(true)}
-              className="items-center gap-1"
-            >
-              <CategoryIcon
-                icon={selectedCategoryData?.icon || ''}
-                color={selectedCategoryData?.color || colors.primary}
-                size={24}
-              />
-              <Text className="text-xs text-[#8E8E93]" numberOfLines={1}>
-                {selectedCategoryData?.name || 'Категория'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setShowVoiceModal(true)}
-              className="items-center gap-1"
-            >
-              <View className="w-12 h-12 rounded-full items-center justify-center bg-[rgba(99,102,241,0.1)]">
-                <Text className="text-xl">🎤</Text>
-              </View>
-              <Text className="text-xs text-[#8E8E93]">Голос</Text>
-            </TouchableOpacity>
-
-            <ReceiptScannerButton
-              onResult={(result) => {
-                setAiResult(result);
-                setShowAiPreview(true);
-              }}
-            />
-          </View>
-
-          {type === 'EXPENSE' && selectedCategory && (() => {
-            const budget = budgets.find((b) => b.categoryId === selectedCategory);
-            if (!budget) return null;
-            const percent = budget.percentUsed || budget.progress || 0;
-            const threshold = budget.alertThreshold || 80;
-            const barColor = percent > 100 ? '#F87171' : percent >= threshold ? '#FBBF24' : '#34D399';
-            const remaining = (budget.remaining ?? 0) / 100;
-            return (
-              <View className="px-4 mb-2">
-                <View className="bg-[rgba(255,255,255,0.05)] rounded-xl px-4 py-2.5">
-                  <View className="flex-row justify-between items-center mb-1.5">
-                    <Text className="text-xs text-[#8E8E93]">Лимит категории</Text>
-                    <Text className="text-xs font-semibold" style={{ color: barColor }}>
-                      {percent > 100 ? `Превышен на ${formatCurrency(Math.abs(remaining) * 100)}` : `Осталось ${formatCurrency(remaining * 100)}`}
+            {/* ──── Лимит категории ──── */}
+            {limitInfo && (
+              <View style={S.section}>
+                <View style={S.budgetBar}>
+                  <View style={S.budgetRow}>
+                    <Text style={S.budgetLabel}>Лимит категории</Text>
+                    <Text style={[S.budgetValue, { color: limitInfo.barColor }]}>
+                      {limitInfo.percent > 100
+                        ? `Превышен на ${formatCurrency(Math.abs(limitInfo.remaining))}`
+                        : `Осталось ${formatCurrency(limitInfo.remaining)}`}
                     </Text>
                   </View>
-                  <View className="h-1.5 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
-                    <View className="h-1.5 rounded-full" style={{ width: `${Math.min(percent, 100)}%`, backgroundColor: barColor }} />
+                  <View style={S.budgetTrack}>
+                    <View
+                      style={[
+                        S.budgetFill,
+                        {
+                          width: `${Math.min(limitInfo.percent, 100)}%`,
+                          backgroundColor: limitInfo.barColor,
+                        },
+                      ]}
+                    />
                   </View>
                 </View>
               </View>
-            );
-          })()}
+            )}
 
-          {showNoteInput && (
-            <View className="px-4 mb-2">
-              <TextInput
-                value={note}
-                onChangeText={setNote}
-                placeholder="Добавить заметку..."
-                placeholderTextColor="#8E8E93"
-                autoFocus
-                className="bg-[rgba(255,255,255,0.05)] rounded-xl px-4 py-2.5 text-white text-base"
-              />
-            </View>
-          )}
+            {/* ──── Numpad ──── */}
+            <View style={S.numpadGrid}>
+              {NUMPAD_KEYS.map((key) => {
+                const isOp = ['+', '−', '×', '÷'].includes(key);
+                const isDelete = key === '⌫';
+                const isActiveOp = isOp && pendingOp === key;
 
-          {showAccountPicker && (
-            <View className="px-4 mb-2">
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View className="flex-row gap-2">
-                  {accounts.map((account) => (
-                    <TouchableOpacity
-                      key={account.id}
-                      onPress={() => { setSelectedAccount(account.id); setShowAccountPicker(false); }}
-                      className="px-4 py-2.5 rounded-xl border"
-                      style={{
-                        backgroundColor: selectedAccount === account.id ? colors.background : 'rgba(255,255,255,0.05)',
-                        borderColor: selectedAccount === account.id ? colors.primary : 'transparent',
-                      }}
-                    >
-                      <Text className="text-sm text-white">{account.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-          )}
-
-          <View className="flex-row flex-wrap px-2">
-            {NUMPAD_KEYS.map((key) => {
-              const isOp = ['+', '−', '×', '÷'].includes(key);
-              const isDelete = key === '⌫';
-              const isActiveOp = isOp && pendingOp === key;
-
-              return (
-                <TouchableOpacity
-                  key={key}
-                  onPress={() => {
-                    if (isDelete) handleDelete();
-                    else if (isOp) handleMathOp(key as MathOp);
-                    else if (key === '.' && amount.includes('.')) return;
-                    else handleNumberPress(key);
-                  }}
-                  className="w-[25%] items-center justify-center"
-                  style={{ aspectRatio: 1.3 }}
-                  activeOpacity={0.7}
-                >
-                  <View
-                    className="w-[60px] h-[60px] rounded-full items-center justify-center"
-                    style={{
-                      backgroundColor: isActiveOp
-                        ? 'rgba(99, 102, 241, 0.25)'
-                        : isOp
-                          ? 'rgba(99, 102, 241, 0.1)'
-                          : isDelete
-                            ? 'rgba(255,59,48,0.1)'
-                            : 'rgba(255,255,255,0.06)',
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => {
+                      if (isDelete) handleDelete();
+                      else if (isOp) handleMathOp(key as MathOp);
+                      else if (key === '.' && amount.includes('.')) return;
+                      else handleNumberPress(key);
                     }}
+                    onLongPress={isDelete ? () => {
+                      deleteTimer.current = setInterval(() => handleDelete(), 80);
+                    } : undefined}
+                    onPressOut={isDelete ? () => {
+                      if (deleteTimer.current) { clearInterval(deleteTimer.current); deleteTimer.current = null; }
+                    } : undefined}
+                    style={S.numpadKey}
+                    activeOpacity={0.6}
                   >
-                    <Text
-                      bold
-                      className="text-xl leading-7"
-                      style={{
-                        color: isOp
-                          ? '#6366F1'
-                          : isDelete
-                            ? '#FF3B30'
-                            : '#FFFFFF',
-                      }}
+                    <View
+                      style={[
+                        S.numpadInner,
+                        isOp && S.numpadOp,
+                        isActiveOp && S.numpadOpActive,
+                        isDelete && S.numpadDel,
+                      ]}
                     >
-                      {key}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <View className="flex-row px-4 pt-1 gap-2">
-            <TouchableOpacity
-              onPress={handleEquals}
-              className="w-16 h-14 rounded-2xl bg-[rgba(99,102,241,0.15)] items-center justify-center"
-            >
-              <Text bold className="text-3xl text-primary-400">=</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={!numericAmount || !selectedCategory || !selectedAccount || isSubmitting}
-              className="flex-1 py-4 rounded-2xl items-center"
-              style={{
-                backgroundColor: !numericAmount || !selectedCategory || !selectedAccount
-                  ? 'rgba(255,255,255,0.1)' : colors.primary,
-                opacity: isSubmitting ? 0.6 : 1,
-              }}
-            >
-              <Text bold className="text-lg text-white">
-                {isSubmitting ? 'Сохранение...' : '✓ Сохранить'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <DatePickerModal
-          visible={showDatePicker}
-          currentDate={date}
-          onSelect={(d) => { setDate(d); setShowDatePicker(false); }}
-          onClose={() => setShowDatePicker(false)}
-        />
-
-        <RNModal visible={showCategoryPicker} animationType="slide" onRequestClose={() => setShowCategoryPicker(false)} transparent>
-          <View className="flex-1 bg-[rgba(0,0,0,0.7)] justify-end">
-            <Pressable className="flex-1" onPress={() => setShowCategoryPicker(false)} />
-            <View
-              className="bg-[#13131A] rounded-t-3xl"
-              style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16, maxHeight: '80%' }}
-            >
-              <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-3" />
-
-              <View className="px-4 mb-3">
-                <Text bold className="text-lg text-white">Категория</Text>
-              </View>
-
-              <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}>
-                {displayCategories.length === 0 ? (
-                  <View className="items-center py-10">
-                    <Text className="text-base text-[#8E8E93] mb-4">Нет категорий</Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowCategoryPicker(false);
-                        onClose();
-                        router.push('/main/categories/create');
-                      }}
-                      className="px-6 py-3 rounded-xl"
-                      style={{ backgroundColor: colors.primary }}
-                    >
-                      <Text bold className="text-base text-white">{t("categories.create")}</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <>
-                    <View className="flex-row flex-wrap gap-3">
-                      {displayCategories.map((category) => (
-                        <TouchableOpacity
-                          key={category.id}
-                          onPress={() => { setSelectedCategory(category.id); setShowCategoryPicker(false); }}
-                          className="w-[31%] rounded-2xl py-4 px-2 items-center border-2"
-                          style={{
-                            backgroundColor: selectedCategory === category.id ? colors.background : 'rgba(255,255,255,0.05)',
-                            borderColor: selectedCategory === category.id ? colors.primary : 'transparent',
-                          }}
-                        >
-                          <CategoryIcon
-                            icon={category.icon}
-                            color={category.color || colors.primary}
-                            size={24}
-                            backgroundColor={selectedCategory === category.id ? colors.primary : undefined}
-                          />
-                          <Text bold className="text-xs text-white text-center" numberOfLines={1}>
-                            {category.name}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                      <Text
+                        style={[
+                          S.numpadKeyText,
+                          isOp && S.numpadOpText,
+                          isDelete && S.numpadDelText,
+                        ]}
+                      >
+                        {key}
+                      </Text>
                     </View>
-
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowCategoryPicker(false);
-                        onClose();
-                        router.push('/main/categories/create');
-                      }}
-                      className="mt-5 py-3.5 bg-[rgba(255,255,255,0.05)] rounded-xl items-center border border-[rgba(255,255,255,0.1)] border-dashed"
-                    >
-                      <Text className="text-base text-[#8E8E93]">+ Создать новую категорию</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
-              </ScrollView>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-          </View>
-        </RNModal>
+
+            {/* ──── Bottom row ──── */}
+            <View style={{ height: 6 }} />
+            <View style={S.bottomRow}>
+              {pendingOp ? (
+                <TouchableOpacity style={S.saveBtn} onPress={handleEquals}>
+                  <Text style={S.saveText}>=</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleSubmit}
+                  disabled={!numericAmount || !selectedCategory || !selectedAccount || isSubmitting}
+                  style={[
+                    S.saveBtn,
+                    {
+                      backgroundColor:
+                        !numericAmount || !selectedCategory || !selectedAccount
+                          ? 'rgba(255,255,255,0.08)'
+                          : colors.primary,
+                      opacity: isSubmitting ? 0.6 : 1,
+                    },
+                  ]}
+                >
+                  <Text style={S.saveText}>
+                    {isSubmitting ? 'Сохранение...' : '✓ Сохранить'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </ScrollView>
+        </View>
       </View>
 
-      {/* Voice Input Modal */}
+      {/* ──── Date Picker ──── */}
+      <DatePickerModal
+        visible={showDatePicker}
+        currentDate={date}
+        onSelect={(d) => { setDate(d); setShowDatePicker(false); }}
+        onClose={() => setShowDatePicker(false)}
+      />
+
+      {/* ──── Category Picker ──── */}
+      <RNModal visible={showCategoryPicker} transparent animationType="slide">
+        <View style={SC.overlay}>
+          <Pressable style={SC.overlay} onPress={() => setShowCategoryPicker(false)}>
+            <View style={{ flex: 1 }} />
+          </Pressable>
+
+          <View style={SC.sheet}>
+            <View style={SC.handle} />
+
+            <View style={SC.header}>
+              <Text style={SC.headerTitle}>Категория</Text>
+              <Pressable style={SC.closeBtn} onPress={() => setShowCategoryPicker(false)}>
+                <Ionicons name="close" size={18} color={C.textSec} />
+              </Pressable>
+            </View>
+
+            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+              {displayCategories.length === 0 ? (
+                <View style={SC.emptyWrap}>
+                  <Text style={SC.emptyText}>Нет категорий</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowCategoryPicker(false);
+                      onClose();
+                      router.push('/main/categories/create');
+                    }}
+                    style={[SC.emptyBtn, { backgroundColor: colors.primary }]}
+                  >
+                    <Text style={SC.emptyBtnText}>{t('categories.create')}</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <>
+                  <View style={SC.grid}>
+                    {displayCategories.map((cat) => (
+                      <TouchableOpacity
+                        key={cat.id}
+                        onPress={() => {
+                          setSelectedCategory(cat.id);
+                          setShowCategoryPicker(false);
+                        }}
+                        style={[
+                          SC.catItem,
+                          selectedCategory === cat.id && {
+                            backgroundColor: colors.background,
+                            borderColor: colors.primary,
+                          },
+                        ]}
+                      >
+                        <CategoryIcon
+                          icon={cat.icon}
+                          color={cat.color || colors.primary}
+                          size={26}
+                        />
+                        <Text style={SC.catName} numberOfLines={1}>
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowCategoryPicker(false);
+                      onClose();
+                      router.push('/main/categories/create');
+                    }}
+                    style={SC.newCatBtn}
+                  >
+                    <Text style={SC.newCatText}>+ Создать новую категорию</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </RNModal>
+
+      {/* ──── Voice Modal ──── */}
       {/* <VoiceInputModal
         visible={showVoiceModal}
         onClose={() => setShowVoiceModal(false)}
-        onResult={(result) => {
-          setAiResult(result);
+        onResult={(r) => {
+          setAiResult(r);
           setShowVoiceModal(false);
           setShowAiPreview(true);
         }}
       /> */}
 
-      {/* AI Transaction Preview Modal */}
+      {/* ──── AI Preview ──── */}
       <AiTransactionPreview
         visible={showAiPreview}
         onClose={() => setShowAiPreview(false)}

@@ -14,6 +14,7 @@ export const useTransactions = (filters?: TransactionFilters) => {
   const isLoading = useDataStore((s) => s.isLoadingTransactions);
   const fetchTransactions = useDataStore((s) => s.fetchTransactions);
   const addTransaction = useDataStore((s) => s.addTransaction);
+  const convertToUserCurrency = useDataStore((s) => s.convertToUserCurrency);
 
   const transactions = filters
     ? allTransactions.filter((t) => {
@@ -29,10 +30,10 @@ export const useTransactions = (filters?: TransactionFilters) => {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthlyIncome = allTransactions
     .filter((t) => t.type === 'INCOME' && new Date(t.date) >= startOfMonth)
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + convertToUserCurrency(t.amount, (t as any).account?.currency || 'RUB'), 0);
   const monthlyExpenses = allTransactions
     .filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= startOfMonth)
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + convertToUserCurrency(t.amount, (t as any).account?.currency || 'RUB'), 0);
 
   return {
     transactions,

@@ -129,7 +129,6 @@ export default function TransactionsDashboardScreen() {
   const transactions = useDataStore((s) => s.transactions);
   const categories = useDataStore((s) => s.categories);
   const accounts = useDataStore((s) => s.accounts);
-  const budgets = useDataStore((s) => s.budgets);
   const fetchTransactions = useDataStore((s) => s.fetchTransactions);
   const isLoading = useDataStore((s) => s.isLoadingTransactions);
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
@@ -148,6 +147,8 @@ export default function TransactionsDashboardScreen() {
 
   const range = useMemo(() => getRange(period, offset, customRange), [period, offset, customRange]);
 
+  const convertToUserCurrency = useDataStore((s) => s.convertToUserCurrency);
+
   const periodSummary = useMemo(() => {
     const excludedCategoryIds = new Set(
       categories.filter((c) => c.excludeFromTotal).map((c) => c.id)
@@ -160,14 +161,14 @@ export default function TransactionsDashboardScreen() {
       .filter((t) => t.type === 'INCOME')
       .filter((t) => !currentAccountId || t.accountId === currentAccountId)
       .filter((t) => !excludedCategoryIds.has(t.categoryId))
-      .reduce((s, t) => s + Number(t.amount), 0);
+      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), (t as any).account?.currency || 'RUB'), 0);
     const expense = inRange
       .filter((t) => t.type === 'EXPENSE')
       .filter((t) => !currentAccountId || t.accountId === currentAccountId)
       .filter((t) => !excludedCategoryIds.has(t.categoryId))
-      .reduce((s, t) => s + Number(t.amount), 0);
+      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), (t as any).account?.currency || 'RUB'), 0);
     return { income, expense, balance: income - expense };
-  }, [transactions, range, currentAccountId, categories]);
+  }, [transactions, range, currentAccountId, categories, convertToUserCurrency]);
 
   const filteredTransactions = useMemo(() => {
     let filtered = transactions
@@ -499,16 +500,6 @@ export default function TransactionsDashboardScreen() {
 
                            <View className="flex-1">
                              <View className="flex-row items-center gap-2">
-                               {transaction.type === 'EXPENSE' && category && (() => {
-                                 const budget = budgets.find((b) => b.categoryId === category.id);
-                                 if (!budget) return null;
-                                 const percent = budget.percentUsed || budget.progress || 0;
-                                 const threshold = budget.alertThreshold || 80;
-                                 const dotColor = percent > 100 ? '#F87171' : percent >= threshold ? '#FBBF24' : '#34D399';
-                                 return (
-                                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }} />
-                                 );
-                               })()}
                                <Text className="text-sm text-typography-400">
                                  {category?.name || 'Без категории'}
                                </Text>
@@ -546,7 +537,7 @@ export default function TransactionsDashboardScreen() {
                               {transaction.type === 'TRANSFER' ? '⇄ '
                                 : transaction.type === 'EXPENSE' ? '− '
                                 : '+ '}
-                              {formatCurrency(transaction.amount)}
+                              {formatCurrency(transaction.amount, (transaction as any).account?.currency)}
                             </Text>
                           </View>
                         </TouchableOpacity>
@@ -648,7 +639,7 @@ export default function TransactionsDashboardScreen() {
                   </View>
                   <View>
                     <Text bold className="text-base text-white">{t("transactions.allAccounts")}</Text>
-                    <Text className="text-sm text-typography-400">{formatCurrency(accounts.reduce((sum, a) => sum + Number(a.balance), 0))}</Text>
+                    <Text className="text-sm text-typography-400">{formatCurrency(accounts.reduce((sum, a) => sum + convertToUserCurrency(Number(a.balance), a.currency), 0))}</Text>
                   </View>
                 </View>
                 {!currentAccountId && <Ionicons name="checkmark" size={20} color="#818CF8" />}
@@ -673,7 +664,7 @@ export default function TransactionsDashboardScreen() {
                       </View>
                       <View>
                         <Text bold className="text-base text-white">{account.name}</Text>
-                        <Text className="text-sm text-typography-400">{formatCurrency(account.balance)}</Text>
+                        <Text className="text-sm text-typography-400">{formatCurrency(account.balance, account.currency)}</Text>
                       </View>
                     </View>
                     {isSelected && <Ionicons name="checkmark" size={20} color="#818CF8" />}

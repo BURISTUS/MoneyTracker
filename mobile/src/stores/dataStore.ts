@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { Account, Transaction, Budget, Goal, Category, UserGamification, Challenge, WishlistItem, User } from '../types';
-import { AccountType, CategoryType, TransactionType, BudgetPeriod, WishlistStatus } from '../types';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { Account, Transaction, Goal, Category, UserGamification, Challenge, WishlistItem, User } from '../types';
+import { AccountType, CategoryType, TransactionType, WishlistStatus } from '../types';
 import { useAuthStore } from './authStore';
 import transactionsService from '../services/transactions';
 import accountsService from '../services/accounts';
@@ -10,7 +11,6 @@ import authService from '../services/auth';
 import lifeCostService from '../services/lifeCost';
 import currencyService from '../services/currency';
 import wishlistService from '../services/wishlist';
-import budgetService from '../services/budget';
 import goalsService from '../services/goals';
 import type { ExchangeRate } from '../services/currency';
 import { setCurrencyConfig } from '../utils/formatters';
@@ -19,7 +19,6 @@ import { setCurrencyConfig } from '../utils/formatters';
 const INITIAL_ACCOUNTS: Account[] = [];
 const INITIAL_CATEGORIES: Category[] = [];
 const INITIAL_TRANSACTIONS: Transaction[] = [];
-const INITIAL_BUDGETS: Budget[] = [];
 const INITIAL_GOALS: Goal[] = [];
 const INITIAL_GAMIFICATION: UserGamification = {
   id: '',
@@ -57,7 +56,7 @@ interface DataState {
   addTransaction: (transaction: Transaction) => void;
   fetchTransactions: (filters?: { startDate?: string; endDate?: string; categoryId?: string; type?: string }) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
-  updateTransaction: (id: string, data: { description?: string; date?: string }) => Promise<void>;
+  updateTransaction: (id: string, data: { description?: string; date?: string; amount?: number; accountId?: string }) => Promise<void>;
 
   // Categories
   categories: Category[];
@@ -65,29 +64,14 @@ interface DataState {
   fetchCategories: () => Promise<void>;
   addCategory: (data: { name: string; type: CategoryType; icon: string; color: string; isBaseNeed?: boolean }) => Promise<void>;
 
-  // Budgets
-  budgets: Budget[];
-  isLoadingBudgets: boolean;
-  setBudgets: (budgets: Budget[]) => void;
-  addBudget: (budget: Budget) => void;
-  updateBudget: (id: string, data: Partial<Budget>) => void;
-  deleteBudget: (id: string) => void;
-  fetchBudgets: () => Promise<void>;
-  createBudget: (data: { categoryId: string; amount: number; alertThreshold?: number }) => Promise<Budget>;
-  deleteBudgetApi: (id: string) => Promise<void>;
-
   // Goals
   goals: Goal[];
   isLoadingGoals: boolean;
   setGoals: (goals: Goal[]) => void;
-  addGoal: (goal: Goal) => void;
-  updateGoal: (id: string, data: Partial<Goal>) => void;
-  deleteGoal: (id: string) => void;
   fetchGoals: () => Promise<void>;
   createGoal: (data: { name: string; targetAmount: number; deadline?: string }) => Promise<Goal>;
-  updateGoalApi: (id: string, data: Partial<{ name: string; targetAmount: number; deadline: string }>) => Promise<void>;
-  addGoalProgress: (id: string, amount: number) => Promise<void>;
-  deleteGoalApi: (id: string) => Promise<void>;
+  addGoalContribution: (id: string, amount: number, note?: string) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
 
   // Gamification / Life-Cost
   gamification: UserGamification | null;
@@ -200,7 +184,7 @@ export const useDataStore = create<DataState>()(
       addTransaction: async (transaction) => {
         try {
           const amountNum = Number(transaction.amount);
-          await transactionsService.create({
+          const created = await transactionsService.create({
             accountId: transaction.accountId,
             categoryId: String(transaction.categoryId),
             amount: amountNum,
@@ -209,7 +193,13 @@ export const useDataStore = create<DataState>()(
             date: transaction.date,
           });
 
-          set((state) => ({ transactions: [transaction, ...state.transactions] }));
+          // Use the real DB transaction, not the temp one
+          const realTx = { ...created, amount: Number(created.amount) };
+          set((state) => ({ transactions: [realTx, ...state.transactions] }));
+
+          // Update account balance
+          const accounts = await accountsService.getAll();
+          set({ accounts });
         } catch (error) {
           console.error('Failed to sync transaction:', error);
         }
@@ -234,19 +224,25 @@ export const useDataStore = create<DataState>()(
           set((state) => ({
             transactions: state.transactions.filter((t) => t.id !== id),
           }));
+          // Refresh account balances
+          const accounts = await accountsService.getAll();
+          set({ accounts });
         } catch (error) {
           console.error('Failed to delete transaction:', error);
           throw error;
         }
       },
-      updateTransaction: async (id: string, data: { description?: string; date?: string }) => {
+      updateTransaction: async (id: string, data: { description?: string; date?: string; amount?: number; accountId?: string }) => {
         try {
-          await transactionsService.update(id, data);
+          const updated = await transactionsService.update(id, data);
           set((state) => ({
             transactions: state.transactions.map((t) =>
-              t.id === id ? { ...t, ...data } : t
+              t.id === id ? { ...t, ...data, amount: data.amount ?? t.amount } : t
             ),
           }));
+          // Refresh accounts
+          const accounts = await accountsService.getAll();
+          set({ accounts });
         } catch (error) {
           console.error('Failed to update transaction:', error);
           throw error;
@@ -265,7 +261,7 @@ export const useDataStore = create<DataState>()(
           console.error('Failed to fetch categories:', error);
         }
       },
-      addCategory: async (data: { name: string; type: CategoryType; icon: string; color: string; isBaseNeed?: boolean }) => {
+      addCategory: async (data: { name: string; type: CategoryType; icon: string; color: string; isBaseNeed?: boolean; excludeFromTotal?: boolean; monthlyLimit?: number | null }) => {
         try {
           await categoriesService.create(data);
           const categories = await categoriesService.getAll();
@@ -276,64 +272,10 @@ export const useDataStore = create<DataState>()(
         }
       },
 
-      // Budgets
-      budgets: INITIAL_BUDGETS,
-      isLoadingBudgets: false,
-      setBudgets: (budgets) => set({ budgets }),
-      addBudget: (budget) => set((state) => ({ budgets: [...state.budgets, budget] })),
-      updateBudget: (id, data) => set((state) => ({
-        budgets: state.budgets.map((b) => b.id === id ? { ...b, ...data } : b)
-      })),
-      deleteBudget: (id) => set((state) => ({
-        budgets: state.budgets.filter((b) => b.id !== id)
-      })),
-      fetchBudgets: async () => {
-        set({ isLoadingBudgets: true });
-        try {
-          const budgets = await budgetService.getAll();
-          set({ budgets, isLoadingBudgets: false });
-        } catch (error) {
-          set({ isLoadingBudgets: false });
-          console.error('Failed to fetch budgets:', error);
-        }
-      },
-      createBudget: async (data) => {
-        set({ isLoadingBudgets: true });
-        try {
-          const budget = await budgetService.create(data);
-          set((state) => ({
-            budgets: [...state.budgets, budget],
-            isLoadingBudgets: false
-          }));
-          return budget;
-        } catch (error) {
-          set({ isLoadingBudgets: false });
-          throw error;
-        }
-      },
-      deleteBudgetApi: async (id) => {
-        try {
-          await budgetService.delete(id);
-          set((state) => ({
-            budgets: state.budgets.filter((b) => b.id !== id)
-          }));
-        } catch (error) {
-          console.error('Failed to delete budget:', error);
-          throw error;
-        }
-      },
-
       // Goals
       goals: INITIAL_GOALS,
       isLoadingGoals: false,
       setGoals: (goals) => set({ goals }),
-      addGoal: (goal) => set((state) => ({ goals: [...state.goals, goal] })),
-      updateGoal: (id, data) => set((state) => ({
-        goals: state.goals.map((g) => g.id === id ? { ...g, ...data } : g)
-      })),
-      deleteGoal: (id) => set((state) => ({
-        goals: state.goals.filter((g) => g.id !== id)
-      })),
       fetchGoals: async () => {
         set({ isLoadingGoals: true });
         try {
@@ -349,8 +291,8 @@ export const useDataStore = create<DataState>()(
         try {
           const goal = await goalsService.create(data);
           set((state) => ({
-            goals: [...state.goals, goal],
-            isLoadingGoals: false
+            goals: [goal, ...state.goals],
+            isLoadingGoals: false,
           }));
           return goal;
         } catch (error) {
@@ -358,33 +300,22 @@ export const useDataStore = create<DataState>()(
           throw error;
         }
       },
-      updateGoalApi: async (id, data) => {
+      addGoalContribution: async (id, amount, note) => {
         try {
-          const updated = await goalsService.update(id, data);
+          const updated = await goalsService.addContribution(id, { amount: Math.round(amount * 100), note });
           set((state) => ({
-            goals: state.goals.map((g) => g.id === id ? { ...g, ...updated } : g)
+            goals: state.goals.map((g) => (g.id === id ? updated : g)),
           }));
         } catch (error) {
-          console.error('Failed to update goal:', error);
+          console.error('Failed to add contribution:', error);
           throw error;
         }
       },
-      addGoalProgress: async (id, amount) => {
-        try {
-          const updated = await goalsService.addProgress(id, amount);
-          set((state) => ({
-            goals: state.goals.map((g) => g.id === id ? { ...g, ...updated } : g)
-          }));
-        } catch (error) {
-          console.error('Failed to add goal progress:', error);
-          throw error;
-        }
-      },
-      deleteGoalApi: async (id) => {
+      deleteGoal: async (id) => {
         try {
           await goalsService.delete(id);
           set((state) => ({
-            goals: state.goals.filter((g) => g.id !== id)
+            goals: state.goals.filter((g) => g.id !== id),
           }));
         } catch (error) {
           console.error('Failed to delete goal:', error);
@@ -496,30 +427,38 @@ export const useDataStore = create<DataState>()(
 
       // Helpers
       getTotalBalance: () => {
-        const { accounts } = get();
-        return accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
+        const { accounts, convertToUserCurrency } = get();
+        return accounts.reduce((sum, acc) => {
+          return sum + convertToUserCurrency(Number(acc.balance), acc.currency);
+        }, 0);
       },
 
       getMonthlyIncome: () => {
-        const { transactions, categories } = get();
+        const { transactions, categories, convertToUserCurrency } = get();
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const excludedIds = new Set(categories.filter((c) => c.excludeFromTotal).map((c) => c.id));
         return transactions
           .filter((t) => t.type === 'INCOME' && new Date(t.date) >= startOfMonth)
           .filter((t) => !excludedIds.has(t.categoryId))
-          .reduce((sum, t) => sum + Number(t.amount), 0);
+          .reduce((sum, t) => {
+            const accCurrency = (t as any).account?.currency || 'RUB';
+            return sum + convertToUserCurrency(Number(t.amount), accCurrency);
+          }, 0);
       },
 
       getMonthlyExpenses: () => {
-        const { transactions, categories } = get();
+        const { transactions, categories, convertToUserCurrency } = get();
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const excludedIds = new Set(categories.filter((c) => c.excludeFromTotal).map((c) => c.id));
         return transactions
           .filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= startOfMonth)
           .filter((t) => !excludedIds.has(t.categoryId))
-          .reduce((sum, t) => sum + Number(t.amount), 0);
+          .reduce((sum, t) => {
+            const accCurrency = (t as any).account?.currency || 'RUB';
+            return sum + convertToUserCurrency(Number(t.amount), accCurrency);
+          }, 0);
       },
 
       getHourlyRate: () => {
@@ -597,7 +536,7 @@ export const useDataStore = create<DataState>()(
           console.log('🎮 Demo mode — skipping API calls');
           return;
         }
-        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate, fetchCurrencyRates, fetchWishlist, fetchBudgets, fetchGoals } = get();
+        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate, fetchCurrencyRates, fetchWishlist, fetchGoals } = get();
         await Promise.all([
           fetchAccounts(),
           fetchCategories(),
@@ -606,18 +545,17 @@ export const useDataStore = create<DataState>()(
           fetchHourlyRate(),
           fetchCurrencyRates(),
           fetchWishlist(),
-          fetchBudgets(),
           fetchGoals(),
         ]);
       },
     }),
     {
       name: 'data-storage',
+      storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         accounts: state.accounts,
         transactions: state.transactions,
         categories: state.categories,
-        budgets: state.budgets,
         goals: state.goals,
         gamification: state.gamification,
         earnedAchievements: state.earnedAchievements,

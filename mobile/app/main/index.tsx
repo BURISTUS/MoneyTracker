@@ -205,6 +205,8 @@ export default function HomeScreen() {
   const transactions = useDataStore((s) => s.transactions);
   const wishlist = useDataStore((s) => s.wishlist);
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
+  const currencySymbol = useDataStore((s) => s.currencySymbol);
+  const convertToUserCurrency = useDataStore((s) => s.convertToUserCurrency);
   const isLoading = useDataStore((s) => s.isLoadingTransactions);
 
   const [refreshing, setRefreshing] = useState(false);
@@ -240,7 +242,10 @@ export default function HomeScreen() {
   const todayExpenses = useMemo(
     () => transactions
       .filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= today && !excludedIds.has(t.categoryId))
-      .reduce((sum, t) => sum + t.amount, 0),
+      .reduce((sum, t) => {
+        const accCur = (t as any).account?.currency || 'RUB';
+        return sum + convertToUserCurrency(Number(t.amount), accCur);
+      }, 0),
     [transactions, excludedIds],
   );
 
@@ -279,8 +284,12 @@ export default function HomeScreen() {
   const biggestToday = useMemo(() => {
     const todayTx = transactions.filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= today);
     if (todayTx.length === 0) return null;
-    return todayTx.reduce((max, t) => (t.amount > max.amount ? t : max), todayTx[0]);
-  }, [transactions]);
+    return todayTx.reduce((max, t) => {
+      const a = convertToUserCurrency(Number(t.amount), (t as any).account?.currency || 'RUB');
+      const maxA = convertToUserCurrency(Number(max.amount), (max as any).account?.currency || 'RUB');
+      return a > maxA ? t : max;
+    }, todayTx[0]);
+  }, [transactions, convertToUserCurrency]);
 
   const topCategoryName = useMemo(() => {
     if (!topCategoryToday.id) return null;
@@ -324,7 +333,7 @@ export default function HomeScreen() {
                 {todayExpenses > 0 ? formatCurrency(todayExpenses) : t('home.noExpenses')}
               </Text>
               {hourlyRate > 0 && (
-                <Text style={S.heroRate}>{t('home.ratePerHour', { rate: hourlyRate.toFixed(0) })}</Text>
+                <Text style={S.heroRate}>{currencySymbol}{hourlyRate.toFixed(0)}/ч</Text>
               )}
             </View>
 
@@ -375,7 +384,7 @@ export default function HomeScreen() {
               <View style={S.pulseRow}>
                 <Text style={S.pulseLabel}>{t("home.biggestExpense")}</Text>
                 <Text style={S.pulseValue}>
-                  {biggestToday ? formatCurrency(biggestToday.amount) : '—'}
+                  {biggestToday ? formatCurrency(convertToUserCurrency(biggestToday.amount, (biggestToday as any).account?.currency || 'RUB')) : '—'}
                 </Text>
               </View>
               <View style={S.pulseRow}>

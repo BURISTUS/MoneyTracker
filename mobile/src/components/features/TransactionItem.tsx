@@ -67,7 +67,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = React.memo(
           </Text>
         </View>
         <Text className="text-base font-semibold" style={{ color }}>
-          {sign}{formatCurrency(Math.abs(transaction.amount))}
+          {sign}{formatCurrency(Math.abs(transaction.amount), transaction.account?.currency)}
         </Text>
       </Pressable>
     );

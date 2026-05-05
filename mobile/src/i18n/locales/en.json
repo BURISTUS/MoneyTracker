@@ -14,7 +14,10 @@
     "ok": "OK",
     "back": "Back",
     "next": "Next",
-    "done": "Done"
+    "done": "Done",
+    "day": "Day",
+    "month": "Month",
+    "year": "Year"
   },
   "auth": {
     "login": "Log In",

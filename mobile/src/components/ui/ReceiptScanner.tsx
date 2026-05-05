@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
 import * as ImagePicker from 'expo-image-picker';
 import { aiService } from '../../services/ai';
@@ -60,15 +61,21 @@ export function ReceiptScannerButton({
       className="items-center gap-1"
     >
       <View
-        className="w-12 h-12 rounded-full items-center justify-center"
         style={{
+          width: 48,
+          height: 48,
+          borderRadius: 16,
+          alignItems: 'center',
+          justifyContent: 'center',
           backgroundColor: isLoading ? 'rgba(255,255,255,0.05)' : 'rgba(99,102,241,0.1)',
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.08)',
         }}
       >
         {isLoading ? (
-          <Text className="text-lg">⏳</Text>
+          <Ionicons name="hourglass-outline" size={20} color="#8E8E93" />
         ) : (
-          <Text className="text-xl">📷</Text>
+          <Ionicons name="camera-outline" size={20} color="#6366F1" />
         )}
       </View>
       <Text className="text-xs text-[#8E8E93]">

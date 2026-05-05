@@ -19,8 +19,8 @@ export function getCurrencySymbol(): string {
 export function formatCurrency(amount: number, currency?: string): string {
   const sym = currency ? (CURRENCY_SYMBOLS[currency] || currency) : activeSymbol;
   const formatted = new Intl.NumberFormat('ru-RU', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount / 100);
   return `${formatted} ${sym}`;
 }

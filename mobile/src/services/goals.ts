@@ -1,34 +1,25 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from './api';
-import type { Goal } from '../types';
-
-export interface GoalWithProgress extends Goal {
-  percentComplete: number;
-  remaining: number;
-}
+import type { Goal, GoalContribution } from '../types';
 
 export const goalsService = {
-  async getAll(): Promise<GoalWithProgress[]> {
-    return apiGet<GoalWithProgress[]>('/goals');
+  async getAll(): Promise<Goal[]> {
+    return apiGet<Goal[]>('/goals');
   },
 
-  async create(data: {
-    name: string;
-    targetAmount: number;
-    deadline?: string;
-  }): Promise<GoalWithProgress> {
-    return apiPost<GoalWithProgress>('/goals', data);
+  async getById(id: string): Promise<Goal> {
+    return apiGet<Goal>(`/goals/${id}`);
   },
 
-  async update(id: string, data: {
-    name?: string;
-    targetAmount?: number;
-    deadline?: string;
-  }): Promise<GoalWithProgress> {
-    return apiPatch<GoalWithProgress>(`/goals/${id}`, data);
+  async create(data: { name: string; targetAmount: number; currency?: string; deadline?: string }): Promise<Goal> {
+    return apiPost<Goal>('/goals', data);
   },
 
-  async addProgress(id: string, amount: number): Promise<GoalWithProgress> {
-    return apiPatch<GoalWithProgress>(`/goals/${id}/progress`, { amount });
+  async update(id: string, data: { name?: string; targetAmount?: number; deadline?: string }): Promise<Goal> {
+    return apiPatch<Goal>(`/goals/${id}`, data);
+  },
+
+  async addContribution(id: string, data: { amount: number; note?: string; date?: string }): Promise<Goal> {
+    return apiPost<Goal>(`/goals/${id}/contribution`, data);
   },
 
   async delete(id: string): Promise<void> {

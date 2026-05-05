@@ -10,7 +10,6 @@ import { UsersModule } from './users/users.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AccountsModule } from './accounts/accounts.module';
-import { BudgetModule } from './budget/budget.module';
 import { GoalsModule } from './goals/goals.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { LifeCostModule } from './life-cost/life-cost.module';
@@ -45,7 +44,6 @@ import { AiModule } from './ai/ai.module';
     TransactionsModule,
     CategoriesModule,
     AccountsModule,
-    BudgetModule,
     GoalsModule,
     WishlistModule,
     LifeCostModule,

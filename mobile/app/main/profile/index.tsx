@@ -92,7 +92,6 @@ export default function ProfileScreen() {
   const menuItems = [
     { icon: 'wallet' as const, label: t('profile.accounts'), path: '/main/accounts', color: '#6366F1' },
     { icon: 'grid' as const, label: t('profile.categories'), path: '/main/categories', color: '#5AC8FA' },
-    { icon: 'pie-chart' as const, label: t('profile.budgets'), path: '/main/budget', color: '#FBBF24' },
     { icon: 'flag' as const, label: t('profile.goals'), path: '/main/goals', color: '#34D399' },
     { icon: 'bar-chart' as const, label: t('profile.analytics'), path: '/main/analytics', color: '#A78BFA' },
     { icon: 'time' as const, label: t('profile.lifeCost'), path: '/main/life-cost', color: '#F472B6' },

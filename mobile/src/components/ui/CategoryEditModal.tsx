@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Modal,
@@ -12,7 +12,10 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Text } from '../../../components/ui/text';
+import { ICON_BANK, serializeIcon, deserializeIcon } from '../../utils/iconBank';
+import type { IconDef } from '../../utils/iconBank';
 import type { Category } from '../../types';
 
 const C = {
@@ -30,13 +33,6 @@ const COLORS = [
   '#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#007AFF',
   '#5856D6', '#AF52DE', '#FF2D55', '#5AC8FA', '#FBBF24',
   '#34D399', '#6366F1', '#EC4899', '#14B8A6', '#F97316',
-];
-
-const ICONS = [
-  'wallet', 'cash', 'card', 'cart', 'food', 'home', 'car',
-  'bus', 'medical', 'fitness', 'game', 'book', 'shirt',
-  'gift', 'cafe', 'flash', 'phone', 'globe', 'laptop',
-  'paw', 'leaf', 'water', 'musical-notes', 'film',
 ];
 
 const S = StyleSheet.create({
@@ -57,6 +53,21 @@ const S = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 16,
   },
+  // Preview
+  preview: { alignItems: 'center', paddingBottom: 8 },
+  previewCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.border,
+    marginBottom: 10,
+  },
+  previewName: { fontSize: 16, fontWeight: '700', color: C.textMain, marginBottom: 2 },
+  previewType: { fontSize: 13, color: C.textSec },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -97,36 +108,11 @@ const S = StyleSheet.create({
     borderColor: C.border,
     paddingHorizontal: 14,
   },
-  limitInput: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: C.textMain,
-  },
-  clearLimit: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  colorRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  colorDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
+  limitInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: C.textMain },
+  clearLimit: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  colorDot: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  iconRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   iconItem: {
     width: 40,
     height: 40,
@@ -137,6 +123,16 @@ const S = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
   },
+  iconItemActive: { borderColor: 'transparent' },
+  groupWrap: { marginBottom: 8 },
+  groupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  groupTitle: { fontSize: 11, fontWeight: '600', color: C.textSec, textTransform: 'uppercase' as const },
+  groupExpand: { fontSize: 12, color: C.indigo },
   toggleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -183,10 +179,18 @@ interface Props {
   onDelete: (categoryId: string) => void;
 }
 
+// Filter icon bank by income type
+function filterIconBank(type: string) {
+  if (type === 'INCOME') {
+    return ICON_BANK.filter((g) => g.label === 'Доходы');
+  }
+  return ICON_BANK.filter((g) => g.label !== 'Доходы');
+}
+
 export function CategoryEditModal({ visible, category, onClose, onSave, onDelete }: Props) {
   const { t } = useTranslation();
   const [name, setName] = useState(category.name);
-  const [icon, setIcon] = useState(category.icon || 'wallet');
+  const [iconRaw, setIconRaw] = useState(category.icon || '');
   const [color, setColor] = useState(category.color || '#6366F1');
   const [excludeFromTotal, setExcludeFromTotal] = useState(category.excludeFromTotal);
   const [monthlyLimitText, setMonthlyLimitText] = useState(
@@ -194,11 +198,24 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
       ? String(Math.round(category.monthlyLimit / 100))
       : '',
   );
+  const [expandedGroup, setExpandedGroup] = useState<number>(-1);
+
+  // Parse current icon
+  const selectedIconDef: IconDef | undefined = useMemo(
+    () => deserializeIcon(iconRaw),
+    [iconRaw],
+  );
+
+  // Filtered icon bank
+  const filteredIconBank = useMemo(
+    () => filterIconBank(category.type),
+    [category.type],
+  );
 
   useEffect(() => {
     if (visible) {
       setName(category.name);
-      setIcon(category.icon || 'wallet');
+      setIconRaw(category.icon || '');
       setColor(category.color || '#6366F1');
       setExcludeFromTotal(category.excludeFromTotal);
       setMonthlyLimitText(
@@ -206,8 +223,13 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
           ? String(Math.round(category.monthlyLimit / 100))
           : '',
       );
+      setExpandedGroup(-1);
     }
   }, [visible, category]);
+
+  const handleSelectIcon = (def: IconDef) => {
+    setIconRaw(serializeIcon(def));
+  };
 
   const handleSave = () => {
     const limitRubles = monthlyLimitText ? parseFloat(monthlyLimitText) : NaN;
@@ -216,7 +238,7 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
       : monthlyLimitText === '' ? 0 : null;
     onSave({
       name: name.trim() || category.name,
-      icon,
+      icon: iconRaw,
       color,
       excludeFromTotal,
       monthlyLimit: monthlyLimit === 0 ? null : monthlyLimit,
@@ -235,6 +257,25 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
 
         <View style={S.sheet}>
           <View style={S.handle} />
+
+          {/* Preview */}
+          <View style={S.preview}>
+            <View style={[S.previewCircle, color ? { backgroundColor: `${color}18`, borderColor: color } : undefined]}>
+              {selectedIconDef ? (
+                <MaterialCommunityIcons
+                  name={selectedIconDef.name as any}
+                  size={30}
+                  color={color || '#8E8E93'}
+                />
+              ) : (
+                <Ionicons name="grid-outline" size={30} color="#8E8E93" />
+              )}
+            </View>
+            <Text style={S.previewName}>{name || category.name}</Text>
+            <Text style={S.previewType}>
+              {category.type === 'INCOME' ? 'Доход' : 'Расход'}
+            </Text>
+          </View>
 
           <View style={S.header}>
             <Text style={S.headerTitle}>{t("categories.edit")}</Text>
@@ -279,22 +320,58 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
               </View>
             </View>
 
+            {/* ──── Иконка (с группами из ICON_BANK) ──── */}
             <View style={S.section}>
-              <Text style={S.sectionTitle}>Иконка</Text>
-              <View style={S.iconRow}>
-                {ICONS.map((ic) => (
-                  <Pressable
-                    key={ic}
-                    onPress={() => setIcon(ic)}
-                    style={[
-                      S.iconItem,
-                      icon === ic && { borderColor: color, backgroundColor: `${color}15` },
-                    ]}
-                  >
-                    <Ionicons name={ic as any} size={18} color={icon === ic ? color : C.textSec} />
-                  </Pressable>
-                ))}
-              </View>
+              <Text style={S.sectionTitle}>
+                Иконка ({filteredIconBank.reduce((sum, g) => sum + g.icons.length, 0)})
+              </Text>
+
+              {filteredIconBank.map((group, groupIndex) => {
+                const isExpanded = expandedGroup === groupIndex;
+                const visibleIcons = isExpanded ? group.icons : group.icons.slice(0, 8);
+
+                return (
+                  <View key={group.label} style={S.groupWrap}>
+                    <View style={S.groupHeader}>
+                      <Text style={S.groupTitle}>{group.label}</Text>
+                      {group.icons.length > 8 && (
+                        <Pressable onPress={() => setExpandedGroup(isExpanded ? -1 : groupIndex)}>
+                          <Text style={S.groupExpand}>
+                            {isExpanded ? 'Свернуть ▲' : `+ ещё ${group.icons.length - 8}`}
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+
+                    <View style={S.iconRow}>
+                      {visibleIcons.map((def) => {
+                        const isSelected =
+                          selectedIconDef?.name === def.name &&
+                          selectedIconDef?.family === def.family;
+                        return (
+                          <Pressable
+                            key={`${def.family}:${def.name}`}
+                            onPress={() => handleSelectIcon(def)}
+                            style={[
+                              S.iconItem,
+                              isSelected && {
+                                borderColor: color,
+                                backgroundColor: `${color}15`,
+                              },
+                            ]}
+                          >
+                            <MaterialCommunityIcons
+                              name={def.name as any}
+                              size={18}
+                              color={isSelected ? color : C.textSec}
+                            />
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })}
             </View>
 
             <View style={S.section}>
@@ -309,10 +386,7 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
                   keyboardType="numeric"
                 />
                 {monthlyLimitText !== '' && (
-                  <Pressable
-                    style={S.clearLimit}
-                    onPress={() => setMonthlyLimitText('')}
-                  >
+                  <Pressable style={S.clearLimit} onPress={() => setMonthlyLimitText('')}>
                     <Ionicons name="close-circle" size={18} color="#52525B" />
                   </Pressable>
                 )}

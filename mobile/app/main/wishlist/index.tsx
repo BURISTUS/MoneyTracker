@@ -669,14 +669,14 @@ export default function WishlistScreen() {
     ({ item }: { item: WishlistItem }) => {
       const hoursCost = formatLifeHours(item.price, hourlyRate);
       const daysLeft = getDaysLeft(item.cooldownEnds);
-      const isReady = item.status === 'READY' || daysLeft === 0;
+      const isReady = item.status === 'READY' || (item.status === 'PENDING' && daysLeft === 0);
       const isPending = item.status === 'PENDING';
       const isRejected = item.status === 'REJECTED';
       const isPurchased = item.status === 'PURCHASED';
       const daysPassed = getDaysPassed(item.createdAt, item.cooldownDays);
 
       const cfg = getStatusConfig(isReady && isPending ? 'READY' : item.status);
-      const isActive = isPending || isReady;
+      const isActive = item.status === 'PENDING' || item.status === 'READY';
 
       return (
         <View
@@ -748,15 +748,6 @@ export default function WishlistScreen() {
               <Text style={S.metaText}>{formatCurrency(item.price)}</Text>
               <Text style={S.metaDot}>·</Text>
               <Text style={S.metaText}>{hoursCost}</Text>
-              {isRejected && (
-                <>
-                  <Text style={S.metaDot}>·</Text>
-                  <View style={S.xpRow}>
-                    <Ionicons name="star" size={10} color="#FFD700" />
-                    <Text style={S.xpText}>+50 XP</Text>
-                  </View>
-                </>
-              )}
             </View>
           )}
         </View>

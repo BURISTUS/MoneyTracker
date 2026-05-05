@@ -24,7 +24,6 @@ export default function MainLayout() {
           <Stack.Screen name="wishlist/index" />
           <Stack.Screen name="profile/index" />
           <Stack.Screen name="accounts/index" />
-          <Stack.Screen name="budget/index" />
           <Stack.Screen name="goals/index" />
           <Stack.Screen name="life-cost/index" />
           <Stack.Screen name="chat/index" />

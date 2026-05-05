@@ -84,6 +84,11 @@ export class TransactionsService {
 
     console.log('✅ Transaction created:', transaction.id);
 
+    const result = await this.prisma.transaction.findUnique({
+      where: { id: transaction.id },
+      include: { account: true, category: true },
+    });
+
     // Update account balance
     const balanceChange = data.type === 'INCOME' ? data.amount : -data.amount;
     await this.prisma.account.update({
@@ -92,14 +97,48 @@ export class TransactionsService {
     });
 
     console.log('✅ Account balance updated');
-    return transaction;
+    return result;
   }
 
-  async update(id: string, userId: string, data: { description?: string; date?: Date }) {
+  async update(id: string, userId: string, data: { description?: string; date?: Date; amount?: bigint; accountId?: string }) {
     const transaction = await this.findById(id, userId);
+
+    const oldAmount = transaction.amount;
+    const oldAccountId = transaction.accountId;
+    const newAmount = data.amount !== undefined ? data.amount : oldAmount;
+    const newAccountId = data.accountId || oldAccountId;
+
+    // Validate new account if changed
+    if (data.accountId && data.accountId !== oldAccountId) {
+      const account = await this.prisma.account.findFirst({
+        where: { id: data.accountId, userId },
+      });
+      if (!account) throw new AppException('errors.accountNotFound', 400);
+    }
+
+    // Revert old balance
+    const oldBalanceChange = transaction.type === 'INCOME' ? -oldAmount : oldAmount;
+    await this.prisma.account.update({
+      where: { id: oldAccountId },
+      data: { balance: { increment: oldBalanceChange } },
+    });
+
+    // Apply new balance
+    const newBalanceChange = transaction.type === 'INCOME' ? newAmount : -newAmount;
+    await this.prisma.account.update({
+      where: { id: newAccountId },
+      data: { balance: { increment: newBalanceChange } },
+    });
+
     return this.prisma.transaction.update({
       where: { id },
-      data,
+      data: {
+        description: data.description,
+        date: data.date,
+        amount: data.amount,
+        accountId: data.accountId,
+      },
+      include: { account: true, category: true },
     });
   }
 

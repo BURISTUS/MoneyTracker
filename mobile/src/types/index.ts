@@ -100,45 +100,32 @@ export interface TransactionSummary {
   byCategory: Array<{ categoryId: string; categoryName: string; amount: number }>;
 }
 
-// Budget Types
-export interface Budget {
-  id: string;
-  userId: string;
-  categoryId: string;
-  amount: number;
-  period: BudgetPeriod;
-  startDate: string;
-  endDate: string;
-  alertThreshold: number;
-  createdAt: string;
-  updatedAt: string;
-  category?: Category;
-  spent?: number;
-  remaining?: number;
-  progress?: number;
-  percentUsed?: number;
-  isOverBudget?: boolean;
-  isNearLimit?: boolean;
-}
-
-export enum BudgetPeriod {
-  WEEKLY = 'WEEKLY',
-  MONTHLY = 'MONTHLY',
-  YEARLY = 'YEARLY',
-}
-
 // Goal Types
+export interface GoalContribution {
+  id: string;
+  goalId: string;
+  amount: number;
+  note?: string | null;
+  date: string;
+  createdAt: string;
+}
+
 export interface Goal {
   id: string;
   userId: string;
   name: string;
   targetAmount: number;
   currentAmount: number;
+  currency: string;
   deadline: string;
   isCompleted: boolean;
   createdAt: string;
   updatedAt: string;
   progress?: number;
+  percentComplete?: number;
+  remaining?: number;
+  contributions?: GoalContribution[];
+  _count?: { contributions: number };
 }
 
 // Life-Cost Types

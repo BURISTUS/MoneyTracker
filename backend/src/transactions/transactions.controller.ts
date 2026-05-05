@@ -92,10 +92,12 @@ export class TransactionsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update transaction' })
-  async update(@Param('id') id: string, @Request() req: any, @Body() body: { description?: string; date?: string }) {
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: { description?: string; date?: string; amount?: number; accountId?: string }) {
     return this.transactionsService.update(id, req.user.id, {
       description: body.description,
       date: body.date ? new Date(body.date) : undefined,
+      amount: body.amount !== undefined ? BigInt(body.amount) : undefined,
+      accountId: body.accountId,
     });
   }
 

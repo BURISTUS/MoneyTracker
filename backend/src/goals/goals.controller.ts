@@ -2,9 +2,6 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request }
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GoalsService } from './goals.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CreateGoalDto } from './dto/create-goal.dto';
-import { UpdateGoalDto } from './dto/update-goal.dto';
-import { UpdateGoalProgressDto } from './dto/update-goal-progress.dto';
 
 @ApiTags('Goals')
 @Controller('goals')
@@ -14,35 +11,54 @@ export class GoalsController {
   constructor(private goalsService: GoalsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all goals with progress' })
+  @ApiOperation({ summary: 'Get all goals with progress and contributions' })
   async findAll(@Request() req: any) {
     return this.goalsService.findAll(req.user.id);
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: 'Get goal by id with contributions' })
+  async findById(@Param('id') id: string, @Request() req: any) {
+    return this.goalsService.findById(id, req.user.id);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create goal' })
-  async create(@Request() req: any, @Body() body: CreateGoalDto) {
+  async create(@Request() req: any, @Body() body: { name: string; targetAmount: number; currency?: string; deadline?: string }) {
     return this.goalsService.create(req.user.id, {
       name: body.name,
       targetAmount: BigInt(body.targetAmount),
-      deadline: body.deadline ? new Date(body.deadline) : undefined,
+      currency: body.currency,
+      deadline: body.deadline,
     });
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update goal (name, target, deadline)' })
-  async update(@Param('id') id: string, @Request() req: any, @Body() body: UpdateGoalDto) {
-    const data: { name?: string; targetAmount?: bigint; deadline?: Date } = {};
-    if (body.name !== undefined) data.name = body.name;
-    if (body.targetAmount !== undefined) data.targetAmount = BigInt(body.targetAmount);
-    if (body.deadline !== undefined) data.deadline = new Date(body.deadline);
-    return this.goalsService.update(id, req.user.id, data);
+  async update(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() body: { name?: string; targetAmount?: number; deadline?: string },
+  ) {
+    return this.goalsService.update(id, req.user.id, {
+      name: body.name,
+      targetAmount: body.targetAmount !== undefined ? BigInt(body.targetAmount) : undefined,
+      deadline: body.deadline,
+    });
   }
 
-  @Patch(':id/progress')
-  @ApiOperation({ summary: 'Add progress to goal' })
-  async updateProgress(@Param('id') id: string, @Request() req: any, @Body() body: UpdateGoalProgressDto) {
-    return this.goalsService.updateProgress(id, req.user.id, BigInt(body.amount));
+  @Post(':id/contribution')
+  @ApiOperation({ summary: 'Add contribution to goal' })
+  async addContribution(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() body: { amount: number; note?: string; date?: string },
+  ) {
+    return this.goalsService.addContribution(id, req.user.id, {
+      amount: BigInt(body.amount),
+      note: body.note,
+      date: body.date ? new Date(body.date) : undefined,
+    });
   }
 
   @Delete(':id')
