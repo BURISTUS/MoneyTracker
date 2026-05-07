@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { CurrencyPicker } from '../../../src/components/ui/CurrencyPicker';
 import { TransferModal } from '../../../src/components/ui/TransferModal';
@@ -13,9 +14,6 @@ import { currencyService } from '../../../src/services/currency';
 import type { AccountType, TransactionType } from '../../../src/types';
 import { AccountType as AccountTypeEnum, TransactionType as TransactionTypeEnum } from '../../../src/types';
 import type { ExchangeRate } from '../../../src/services/currency';
-
-const BORDER = 'rgba(255,255,255,0.08)';
-const CARD_BG = '#141418';
 
 const accountIcons: Record<AccountType, { icon: keyof typeof Ionicons.glyphMap; color: string }> = {
   CASH: { icon: 'wallet-outline', color: '#34D399' },
@@ -27,7 +25,62 @@ const accountIcons: Record<AccountType, { icon: keyof typeof Ionicons.glyphMap; 
 
 export default function AccountsScreen() {
   const { t } = useTranslation();
+  const C = useTheme();
   const router = useRouter();
+  const s = StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+    backBtn: { padding: 4, marginLeft: -4 },
+    headerTitle: { fontSize: 22, fontWeight: '700', color: C.textMain, letterSpacing: -0.3 },
+    content: { paddingHorizontal: 16, paddingBottom: 120, gap: 10 },
+    listContent: { gap: 10 },
+    totalCard: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 18 },
+    card: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 18 },
+    iconWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: C.primaryBg, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+    cardLabel: { fontSize: 13, color: C.textSec, fontWeight: '500', marginBottom: 6 },
+    balanceValue: { fontSize: 26, fontWeight: '700', color: C.textMain, letterSpacing: -0.5 },
+    empty: { alignItems: 'center', paddingVertical: 40 },
+    emptyText: { fontSize: 14, color: C.textSec, marginTop: 8 },
+    acctRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    acctIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    acctInfo: { marginLeft: 12, flex: 1 },
+    acctName: { fontSize: 15, fontWeight: '600', color: C.textMain },
+    acctMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+    acctType: { fontSize: 12, color: C.textSec },
+    acctCurrency: { fontSize: 11, color: C.textMuted, marginLeft: 8 },
+    acctBalance: { fontSize: 20, fontWeight: '700', color: C.textMain, letterSpacing: -0.5 },
+    fab: { position: 'absolute', bottom: 90, right: 20, width: 52, height: 52, borderRadius: 26, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', shadowColor: C.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 6 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+    modalSheet: { backgroundColor: C.sheet, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
+    modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: C.handle, alignSelf: 'center', marginBottom: 16 },
+    modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+    modalTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+    modalFields: { gap: 16 },
+    fieldLabel: { fontSize: 13, color: C.textSec, fontWeight: '500', marginBottom: 6 },
+    input: { backgroundColor: C.inputBg, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.textMain },
+    typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    typeChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: C.inputBg },
+    typeChipActive: { borderColor: C.primaryBorder, backgroundColor: C.primaryBg },
+    typeChipText: { fontSize: 12, fontWeight: '600', color: C.textSec },
+    typeChipTextActive: { color: C.primary },
+    currencyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    currencyValue: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    currencyText: { fontSize: 15, fontWeight: '600', color: C.textMain },
+    createBtn: { backgroundColor: C.primary, paddingVertical: 13, borderRadius: 12, alignItems: 'center', marginTop: 4 },
+    createBtnDisabled: { opacity: 0.4 },
+    createBtnText: { fontSize: 14, fontWeight: '700', color: C.textMain },
+    checkboxRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: C.primary, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primaryBg },
+    checkboxLabel: { fontSize: 14, color: C.textMain, fontWeight: '500' },
+    transactionInfo: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.inputBg, borderRadius: 12, padding: 14, gap: 12 },
+    transactionInfoText: { fontSize: 15, color: C.textMain, fontWeight: '500', flex: 1 },
+    transactionAmount: { fontWeight: '700', color: C.textMain },
+    transactionButtons: { flexDirection: 'row', gap: 12, marginTop: 8 },
+    skipBtn: { flex: 1, backgroundColor: C.inputBg, borderWidth: 1, borderColor: C.border, paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
+    skipBtnText: { fontSize: 14, fontWeight: '600', color: C.textSec },
+    addTransactionBtn: { flex: 1, backgroundColor: C.primary, paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
+    addTransactionBtnText: { fontSize: 14, fontWeight: '700', color: C.textMain },
+  });
   const insets = useSafeAreaInsets();
   const accounts = useDataStore((s) => s.accounts);
   const createAccount = useDataStore((s) => s.createAccount);
@@ -225,10 +278,10 @@ export default function AccountsScreen() {
           <Pressable
             onPress={() => setShowTransfer(true)}
             style={{
-              backgroundColor: CARD_BG,
+              backgroundColor: C.card,
               borderRadius: 16,
               borderWidth: 1,
-              borderColor: 'rgba(99,102,241,0.2)',
+              borderColor: C.primaryBorder,
               padding: 16,
               flexDirection: 'row',
               alignItems: 'center',
@@ -237,14 +290,14 @@ export default function AccountsScreen() {
           >
             <View style={{
               width: 40, height: 40, borderRadius: 12,
-              backgroundColor: 'rgba(99,102,241,0.15)',
+              backgroundColor: C.primaryBg,
               alignItems: 'center', justifyContent: 'center',
             }}>
               <Ionicons name="swap-horizontal" size={20} color="#6366F1" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#E4E4E7' }}>{t("accounts.transferBetweenAccounts")}</Text>
-              <Text style={{ fontSize: 12, color: '#52525B', marginTop: 2 }}>{t("accounts.transferDesc")}</Text>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: C.textMain }}>{t("accounts.transferBetweenAccounts")}</Text>
+              <Text style={{ fontSize: 12, color: C.textSec, marginTop: 2 }}>{t("accounts.transferDesc")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#52525B" />
           </Pressable>
@@ -444,7 +497,7 @@ export default function AccountsScreen() {
                 <Ionicons
                   name={transactionModal.type === TransactionTypeEnum.INCOME ? 'arrow-down-circle' : 'arrow-up-circle'}
                   size={24}
-                  color={transactionModal.type === TransactionTypeEnum.INCOME ? '#34C759' : '#FF3B30'}
+                  color={transactionModal.type === TransactionTypeEnum.INCOME ? C.green : C.red}
                 />
                 <Text style={s.transactionInfoText}>
                   {transactionModal.type === TransactionTypeEnum.INCOME ? 'Доход' : 'Расход'}:{' '}
@@ -500,96 +553,3 @@ export default function AccountsScreen() {
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0F' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
-  backBtn: { padding: 4, marginLeft: -4 },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 },
-  content: { paddingHorizontal: 16, paddingBottom: 120, gap: 10 },
-  listContent: { gap: 10 },
-
-  totalCard: {
-    backgroundColor: CARD_BG,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: BORDER,
-    padding: 18,
-  },
-  card: {
-    backgroundColor: CARD_BG,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: BORDER,
-    padding: 18,
-  },
-  iconWrap: {
-    width: 34, height: 34, borderRadius: 10,
-    backgroundColor: 'rgba(99,102,241,0.12)',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
-  },
-  cardLabel: { fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 },
-  balanceValue: { fontSize: 26, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5 },
-
-  empty: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { fontSize: 14, color: '#3F3F46', marginTop: 8 },
-
-  acctRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  acctIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  acctInfo: { marginLeft: 12, flex: 1 },
-  acctName: { fontSize: 15, fontWeight: '600', color: '#E4E4E7' },
-  acctMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  acctType: { fontSize: 12, color: '#52525B' },
-  acctCurrency: { fontSize: 11, color: '#3F3F46', marginLeft: 8 },
-  acctBalance: { fontSize: 20, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5 },
-
-  fab: {
-    position: 'absolute', bottom: 90, right: 20,
-    width: 52, height: 52, borderRadius: 26,
-    backgroundColor: '#6366F1',
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#6366F1', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35, shadowRadius: 8, elevation: 6,
-  },
-
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modalSheet: { backgroundColor: '#1C1C20', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
-  modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: 16 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  modalFields: { gap: 16 },
-  fieldLabel: { fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 6 },
-  input: {
-    backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: BORDER,
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: '#D4D4D8',
-  },
-  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  typeChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: BORDER, backgroundColor: 'rgba(0,0,0,0.2)' },
-  typeChipActive: { borderColor: 'rgba(99,102,241,0.3)', backgroundColor: 'rgba(99,102,241,0.12)' },
-  typeChipText: { fontSize: 12, fontWeight: '600', color: '#71717A' },
-  typeChipTextActive: { color: '#6366F1' },
-  currencyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  currencyValue: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  currencyText: { fontSize: 15, fontWeight: '600', color: '#D4D4D8' },
-  createBtn: { backgroundColor: '#6366F1', paddingVertical: 13, borderRadius: 12, alignItems: 'center', marginTop: 4 },
-  createBtnDisabled: { opacity: 0.4 },
-  createBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
-
-  checkboxRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  checkbox: {
-    width: 22, height: 22, borderRadius: 6, borderWidth: 1.5,
-    borderColor: '#6366F1', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(99,102,241,0.1)',
-  },
-  checkboxLabel: { fontSize: 14, color: '#E4E4E7', fontWeight: '500' },
-
-  transactionInfo: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 12, padding: 14, gap: 12 },
-  transactionInfoText: { fontSize: 15, color: '#E4E4E7', fontWeight: '500', flex: 1 },
-  transactionAmount: { fontWeight: '700', color: '#FFFFFF' },
-  transactionButtons: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  skipBtn: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: BORDER, paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
-  skipBtnText: { fontSize: 14, fontWeight: '600', color: '#A1A1AA' },
-  addTransactionBtn: { flex: 1, backgroundColor: '#6366F1', paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
-  addTransactionBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
-});

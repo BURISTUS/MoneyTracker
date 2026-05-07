@@ -2,9 +2,11 @@ import { useEffect, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../src/stores/authStore';
+import { useTheme } from '../src/stores/themeStore';
 
 export default function IndexScreen() {
   const router = useRouter();
+  const C = useTheme();
   const checkAuth = useAuthStore((s) => s.checkAuth);
   const hasNavigated = useRef(false);
 
@@ -29,7 +31,7 @@ export default function IndexScreen() {
     <View
       style={{
         flex: 1,
-        backgroundColor: '#0A0A0F',
+        backgroundColor: C.bg,
         alignItems: 'center',
         justifyContent: 'center',
       }}

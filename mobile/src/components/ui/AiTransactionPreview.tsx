@@ -7,9 +7,11 @@ import {
   TextInput,
   TouchableOpacity,
   Platform,
+  StyleSheet,
   Alert,
 } from 'react-native';
 import { useDataStore } from '../../stores/dataStore';
+import { useTheme } from '../../stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from './CategoryIcon';
 import { formatCurrency } from '../../utils/formatters';
@@ -21,12 +23,6 @@ interface AiTransactionPreviewProps {
   onComplete: () => void;
   result: AiTransactionResult | AiReceiptResult | null;
 }
-
-// Цвета по типу транзакции
-const COLORS = {
-  EXPENSE: { primary: '#FF3B30', bg: 'rgba(255,59,48,0.1)' },
-  INCOME: { primary: '#34C759', bg: 'rgba(52,199,89,0.1)' },
-};
 
 // Дефолтные иконки/цвета для новых категорий
 const CATEGORY_PRESETS: Record<string, { icon: string; color: string }> = {
@@ -55,6 +51,7 @@ export function AiTransactionPreview({
   onComplete,
   result,
 }: AiTransactionPreviewProps) {
+  const C = useTheme();
   const addTransaction = useDataStore((s) => s.addTransaction);
   const addCategory = useDataStore((s) => s.addCategory);
   const categories = useDataStore((s) => s.categories);
@@ -90,6 +87,10 @@ export function AiTransactionPreview({
 
   const isNewCategory = !matchedCategory;
 
+  const COLORS = {
+    EXPENSE: { primary: C.red, bg: C.redBg },
+    INCOME: { primary: C.green, bg: C.greenBg },
+  };
   const colors = result ? COLORS[result.type] || COLORS.EXPENSE : COLORS.EXPENSE;
 
   const handleSave = useCallback(async () => {
@@ -132,7 +133,7 @@ export function AiTransactionPreview({
         userId: '',
         accountId: selectedAccount,
         categoryId,
-        amount: Math.round(amountNum * 100), // переводим в копейки
+        amount: Math.round(amountNum * 100),
         type: result.type as any,
         description: description || null,
         date: result.date || new Date().toISOString(),
@@ -150,6 +151,159 @@ export function AiTransactionPreview({
     }
   }, [result, amount, description, selectedAccount, matchedCategory, addTransaction, addCategory, fetchCategories, onClose, onComplete]);
 
+  const S = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: C.sheet,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+      maxHeight: '90%',
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: C.handle,
+      alignSelf: 'center',
+      marginTop: 8,
+      marginBottom: 12,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      marginBottom: 12,
+    },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+    closeText: { fontSize: 14, color: C.textSec },
+    content: { paddingHorizontal: 16, paddingBottom: 20 },
+    // Type card
+    typeCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 16,
+      backgroundColor: C.inputBg,
+      borderRadius: 16,
+      padding: 16,
+    },
+    typeIconWrap: {
+      width: 56,
+      height: 56,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    typeLabel: { fontSize: 16, fontWeight: '700', color: C.textMain },
+    catRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+    catLabel: { fontSize: 14, color: C.textMain },
+    newBadge: {
+      backgroundColor: C.primaryBg,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 100,
+      marginLeft: 4,
+    },
+    newBadgeText: { fontSize: 10, color: C.primary },
+    // Fields
+    fieldLabel: { fontSize: 12, color: C.textSec, marginBottom: 6 },
+    fieldRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: C.inputBg,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginBottom: 12,
+    },
+    fieldInput: { flex: 1, color: C.textMain, fontSize: 20, fontWeight: '700' },
+    fieldSuffix: { fontSize: 14, color: C.textSec, marginLeft: 8 },
+    descInput: {
+      backgroundColor: C.inputBg,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      color: C.textMain,
+      fontSize: 14,
+      marginBottom: 12,
+    },
+    infoBox: {
+      backgroundColor: C.inputBg,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginBottom: 12,
+    },
+    infoLabel: { fontSize: 12, color: C.textSec },
+    infoValue: { fontSize: 14, fontWeight: '700', color: C.textMain, marginTop: 2 },
+    // Receipt items
+    itemsToggle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: C.inputBg,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginBottom: 12,
+    },
+    itemsToggleText: { fontSize: 12, color: C.textSec },
+    itemsToggleArrow: { fontSize: 12, color: C.primary },
+    itemsList: {
+      marginTop: -8,
+      marginBottom: 12,
+      backgroundColor: C.divider,
+      borderRadius: 12,
+      overflow: 'hidden',
+    },
+    itemRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    itemName: { fontSize: 14, color: C.textMain },
+    itemCatName: { fontSize: 12, color: C.textSec },
+    itemAmount: { fontSize: 14, fontWeight: '700', color: C.textMain, marginLeft: 12 },
+    // Account chips
+    accountScroll: { marginBottom: 16 },
+    accountChip: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+    },
+    accountChipText: { fontSize: 14, color: C.textMain },
+    // Bottom buttons
+    bottomRow: {
+      flexDirection: 'row',
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      gap: 8,
+      paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+    },
+    cancelBtn: {
+      paddingHorizontal: 24,
+      paddingVertical: 16,
+      borderRadius: 16,
+      backgroundColor: C.divider,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cancelBtnText: { fontSize: 14, fontWeight: '700', color: C.textSec },
+    saveBtn: {
+      flex: 1,
+      paddingVertical: 16,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    saveBtnText: { fontSize: 14, fontWeight: '700', color: '#FFF' },
+  });
+
   if (!result) return null;
 
   const receiptItems = 'items' in result ? (result as AiReceiptResult).items : undefined;
@@ -157,49 +311,43 @@ export function AiTransactionPreview({
 
   return (
     <RNModal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
-      <View className="flex-1 bg-[rgba(0,0,0,0.7)] justify-end">
-        <Pressable className="flex-1" onPress={onClose} />
+      <View style={S.overlay}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
 
-        <View
-          className="bg-[#13131A] rounded-t-3xl"
-          style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16, maxHeight: '90%' }}
-        >
-          <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-3" />
+        <View style={S.sheet}>
+          <View style={S.handle} />
 
           {/* Заголовок */}
-          <View className="px-4 mb-3 flex-row items-center justify-between">
-            <View className="flex-row items-center gap-2">
-              <Text className="text-xl">🤖</Text>
-              <Text bold className="text-lg text-white">Распознано</Text>
+          <View style={S.header}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={{ fontSize: 20 }}>🤖</Text>
+              <Text style={S.headerTitle}>Распознано</Text>
             </View>
-            <TouchableOpacity onPress={onClose} className="px-3 py-1">
-              <Text className="text-[#8E8E93]">Закрыть</Text>
+            <TouchableOpacity onPress={onClose} style={{ paddingHorizontal: 12, paddingVertical: 4 }}>
+              <Text style={S.closeText}>Закрыть</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}>
+          <ScrollView contentContainerStyle={S.content}>
             {/* Тип и категория */}
-            <View className="flex-row items-center gap-3 mb-4 bg-[rgba(255,255,255,0.05)] rounded-2xl p-4">
-              <View
-                className="w-14 h-14 rounded-2xl items-center justify-center"
-                style={{ backgroundColor: colors.bg }}
-              >
-                <Text className="text-2xl">{result.type === 'INCOME' ? '💰' : '💸'}</Text>
+            <View style={S.typeCard}>
+              <View style={[S.typeIconWrap, { backgroundColor: colors.bg }]}>
+                <Text style={{ fontSize: 24 }}>{result.type === 'INCOME' ? '💰' : '💸'}</Text>
               </View>
-              <View className="flex-1">
-                <Text bold className="text-base text-white">
+              <View style={{ flex: 1 }}>
+                <Text style={S.typeLabel}>
                   {result.type === 'INCOME' ? 'Доход' : 'Расход'}
                 </Text>
-                <View className="flex-row items-center gap-1.5 mt-1">
+                <View style={S.catRow}>
                   <CategoryIcon
                     icon={matchedCategory?.icon || getCategoryPreset(result.categoryName).icon}
                     color={matchedCategory?.color || getCategoryPreset(result.categoryName).color}
                     size={16}
                   />
-                  <Text className="text-sm text-[#EBEBF5]">{result.categoryName}</Text>
+                  <Text style={S.catLabel}>{result.categoryName}</Text>
                   {isNewCategory && (
-                    <View className="bg-[rgba(99,102,241,0.15)] px-2 py-0.5 rounded-full ml-1">
-                      <Text className="text-[10px] text-[#6366F1]">новая</Text>
+                    <View style={S.newBadge}>
+                      <Text style={S.newBadgeText}>новая</Text>
                     </View>
                   )}
                 </View>
@@ -207,45 +355,41 @@ export function AiTransactionPreview({
             </View>
 
             {/* Сумма */}
-            <View className="mb-3">
-              <Text className="text-xs text-[#8E8E93] mb-1.5">Сумма</Text>
-              <View className="flex-row items-center bg-[rgba(255,255,255,0.05)] rounded-xl px-4 py-3">
-                <TextInput
-                  value={amount}
-                  onChangeText={setAmount}
-                  keyboardType="decimal-pad"
-                  className="flex-1 text-white text-xl font-bold"
-                  placeholderTextColor="#8E8E93"
-                />
-                <Text className="text-sm text-[#8E8E93] ml-2">₽</Text>
-              </View>
+            <Text style={S.fieldLabel}>Сумма</Text>
+            <View style={S.fieldRow}>
+              <TextInput
+                value={amount}
+                onChangeText={setAmount}
+                keyboardType="decimal-pad"
+                style={S.fieldInput}
+                placeholderTextColor={C.textSec}
+              />
+              <Text style={S.fieldSuffix}>₽</Text>
             </View>
 
             {/* Описание */}
-            <View className="mb-3">
-              <Text className="text-xs text-[#8E8E93] mb-1.5">Описание</Text>
-              <TextInput
-                value={description}
-                onChangeText={setDescription}
-                className="bg-[rgba(255,255,255,0.05)] rounded-xl px-4 py-3 text-white text-sm"
-                placeholderTextColor="#8E8E93"
-                placeholder="Описание транзакции"
-              />
-            </View>
+            <Text style={S.fieldLabel}>Описание</Text>
+            <TextInput
+              value={description}
+              onChangeText={setDescription}
+              style={S.descInput}
+              placeholderTextColor={C.textSec}
+              placeholder="Описание транзакции"
+            />
 
             {/* Магазин (для чеков) */}
             {storeName && (
-              <View className="mb-3 bg-[rgba(255,255,255,0.05)] rounded-xl px-4 py-3">
-                <Text className="text-xs text-[#8E8E93]">Магазин</Text>
-                <Text bold className="text-sm text-white mt-0.5">{storeName}</Text>
+              <View style={S.infoBox}>
+                <Text style={S.infoLabel}>Магазин</Text>
+                <Text style={S.infoValue}>{storeName}</Text>
               </View>
             )}
 
             {/* Дата */}
             {result.date && (
-              <View className="mb-3 bg-[rgba(255,255,255,0.05)] rounded-xl px-4 py-3">
-                <Text className="text-xs text-[#8E8E93]">Дата</Text>
-                <Text bold className="text-sm text-white mt-0.5">
+              <View style={S.infoBox}>
+                <Text style={S.infoLabel}>Дата</Text>
+                <Text style={S.infoValue}>
                   {new Date(result.date).toLocaleDateString('ru-RU', {
                     day: 'numeric',
                     month: 'long',
@@ -257,33 +401,30 @@ export function AiTransactionPreview({
 
             {/* Позиции чека */}
             {receiptItems && receiptItems.length > 0 && (
-              <View className="mb-3">
-                <TouchableOpacity
-                  onPress={() => setShowItems(!showItems)}
-                  className="flex-row items-center justify-between bg-[rgba(255,255,255,0.05)] rounded-xl px-4 py-3"
-                >
-                  <Text className="text-xs text-[#8E8E93]">Позиции чека ({receiptItems.length})</Text>
-                  <Text className="text-xs text-[#6366F1]">{showItems ? '▲' : '▼'}</Text>
+              <View>
+                <TouchableOpacity onPress={() => setShowItems(!showItems)} style={S.itemsToggle}>
+                  <Text style={S.itemsToggleText}>Позиции чека ({receiptItems.length})</Text>
+                  <Text style={S.itemsToggleArrow}>{showItems ? '▲' : '▼'}</Text>
                 </TouchableOpacity>
 
                 {showItems && (
-                  <View className="mt-2 bg-[rgba(255,255,255,0.03)] rounded-xl overflow-hidden">
+                  <View style={S.itemsList}>
                     {receiptItems.map((item, idx) => (
                       <View
                         key={idx}
-                        className="flex-row justify-between items-center px-4 py-2.5"
-                        style={{
-                          borderBottomWidth: idx < receiptItems.length - 1 ? 1 : 0,
-                          borderBottomColor: 'rgba(255,255,255,0.06)',
-                        }}
+                        style={[
+                          S.itemRow,
+                          {
+                            borderBottomWidth: idx < receiptItems.length - 1 ? 1 : 0,
+                            borderBottomColor: C.border,
+                          },
+                        ]}
                       >
-                        <View className="flex-1">
-                          <Text className="text-sm text-white">{item.name}</Text>
-                          <Text className="text-xs text-[#8E8E93]">{item.categoryName}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={S.itemName}>{item.name}</Text>
+                          <Text style={S.itemCatName}>{item.categoryName}</Text>
                         </View>
-                        <Text bold className="text-sm text-white ml-3">
-                          {item.amount} ₽
-                        </Text>
+                        <Text style={S.itemAmount}>{item.amount} ₽</Text>
                       </View>
                     ))}
                   </View>
@@ -292,55 +433,45 @@ export function AiTransactionPreview({
             )}
 
             {/* Счёт */}
-            <View className="mb-4">
-              <Text className="text-xs text-[#8E8E93] mb-1.5">Счёт</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View className="flex-row gap-2">
-                  {accounts.map((account) => (
-                    <TouchableOpacity
-                      key={account.id}
-                      onPress={() => setSelectedAccount(account.id)}
-                      className="px-4 py-2.5 rounded-xl border"
-                      style={{
-                        backgroundColor:
-                          selectedAccount === account.id
-                            ? colors.bg
-                            : 'rgba(255,255,255,0.05)',
-                        borderColor:
-                          selectedAccount === account.id
-                            ? colors.primary
-                            : 'transparent',
-                      }}
-                    >
-                      <Text className="text-sm text-white">{account.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
+            <Text style={S.fieldLabel}>Счёт</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={S.accountScroll}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {accounts.map((account) => (
+                  <TouchableOpacity
+                    key={account.id}
+                    onPress={() => setSelectedAccount(account.id)}
+                    style={[
+                      S.accountChip,
+                      {
+                        backgroundColor: selectedAccount === account.id ? colors.bg : C.inputBg,
+                        borderColor: selectedAccount === account.id ? colors.primary : 'transparent',
+                      },
+                    ]}
+                  >
+                    <Text style={S.accountChipText}>{account.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
           </ScrollView>
 
           {/* Кнопки */}
-          <View className="flex-row px-4 pt-2 gap-2" style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16 }}>
-            <TouchableOpacity
-              onPress={onClose}
-              className="px-6 py-4 rounded-2xl bg-[rgba(255,255,255,0.08)] items-center justify-center"
-            >
-              <Text bold className="text-sm text-[#8E8E93]">Отмена</Text>
+          <View style={S.bottomRow}>
+            <TouchableOpacity onPress={onClose} style={S.cancelBtn}>
+              <Text style={S.cancelBtnText}>Отмена</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleSave}
               disabled={isSaving || !amount || !selectedAccount}
-              className="flex-1 py-4 rounded-2xl items-center justify-center"
-              style={{
-                backgroundColor:
-                  !amount || !selectedAccount || isSaving
-                    ? 'rgba(255,255,255,0.1)'
-                    : colors.primary,
-                opacity: isSaving ? 0.6 : 1,
-              }}
+              style={[
+                S.saveBtn,
+                {
+                  backgroundColor: !amount || !selectedAccount || isSaving ? C.divider : colors.primary,
+                  opacity: isSaving ? 0.6 : 1,
+                },
+              ]}
             >
-              <Text bold className="text-sm text-white">
+              <Text style={S.saveBtnText}>
                 {isSaving ? 'Сохранение...' : '✓ Сохранить'}
               </Text>
             </TouchableOpacity>

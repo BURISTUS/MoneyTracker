@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
+import { useTheme } from '../../stores/themeStore';
 import { changeLanguage as applyLanguage } from '../../i18n';
 
 interface LanguageItem {
@@ -55,6 +56,7 @@ const LanguageItemRow = React.memo(
     isSelected: boolean;
     onPress: () => void;
   }) => {
+    const C = useTheme();
     return (
       <Pressable
         onPress={onPress}
@@ -63,7 +65,7 @@ const LanguageItemRow = React.memo(
           alignItems: 'center',
           paddingHorizontal: 16,
           paddingVertical: 14,
-          backgroundColor: isSelected ? 'rgba(99,102,241,0.12)' : 'transparent',
+          backgroundColor: isSelected ? C.primaryBg : 'transparent',
           borderRadius: 14,
           marginHorizontal: 12,
           marginVertical: 3,
@@ -77,32 +79,30 @@ const LanguageItemRow = React.memo(
             alignItems: 'center',
             justifyContent: 'center',
             marginRight: 12,
-            backgroundColor: isSelected
-              ? 'rgba(99, 102, 241, 0.2)'
-              : 'rgba(255, 255, 255, 0.06)',
+            backgroundColor: isSelected ? C.primaryBorder : C.divider,
           }}
         >
           <Text
             style={{
               fontSize: 16,
               fontWeight: '700',
-              color: isSelected ? '#818CF8' : '#A1A1AA',
+              color: isSelected ? C.tabActive : C.textSec,
             }}
           >
             {item.code.toUpperCase().slice(0, 2)}
           </Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: '#F5F5F5' }}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: C.textMain }}>
             {item.nativeName}
           </Text>
           {item.nativeName !== item.name && (
-            <Text style={{ fontSize: 12, color: '#8C8C8C', marginTop: 1 }}>
+            <Text style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>
               {item.name}
             </Text>
           )}
         </View>
-        {isSelected && <Ionicons name="checkmark" size={20} color="#818CF8" />}
+        {isSelected && <Ionicons name="checkmark" size={20} color={C.tabActive} />}
       </Pressable>
     );
   },
@@ -112,6 +112,7 @@ LanguageItemRow.displayName = 'LanguageItemRow';
 
 export const LanguagePicker: React.FC<LanguagePickerProps> = React.memo(
   ({ visible, onClose, currentLang }) => {
+    const C = useTheme();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
 
@@ -139,11 +140,11 @@ export const LanguagePicker: React.FC<LanguagePickerProps> = React.memo(
     return (
       <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
         <Pressable
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          style={{ flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' }}
           onPress={onClose}
         >
           <Pressable
-            style={{ backgroundColor: '#111118', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%' }}
+            style={{ backgroundColor: C.sheet, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%' }}
             onPress={(e) => e.stopPropagation()}
           >
             <View
@@ -151,7 +152,7 @@ export const LanguagePicker: React.FC<LanguagePickerProps> = React.memo(
                 width: 36,
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: 'rgba(255,255,255,0.2)',
+                backgroundColor: C.handle,
                 alignSelf: 'center',
                 marginTop: 12,
                 marginBottom: 8,
@@ -167,11 +168,11 @@ export const LanguagePicker: React.FC<LanguagePickerProps> = React.memo(
                 marginBottom: 8,
               }}
             >
-              <Text style={{ fontSize: 19, fontWeight: '700', color: '#F5F5F5' }}>
+              <Text style={{ fontSize: 19, fontWeight: '700', color: C.textMain }}>
                 {t('profile.selectLanguage', 'Select language')}
               </Text>
               <Pressable onPress={onClose} hitSlop={12}>
-                <Ionicons name="close" size={22} color="#A1A1AA" />
+                <Ionicons name="close" size={22} color={C.textSec} />
               </Pressable>
             </View>
 

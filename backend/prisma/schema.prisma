@@ -633,6 +633,35 @@ enum PresetType {
   DYNAMICS
 }
 
+// === ARTICLES ===
+
+model Article {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  tag       String
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations ArticleTranslation[]
+
+  @@map("articles")
+}
+
+model ArticleTranslation {
+  id        String   @id @default(uuid())
+  articleId String
+  language  String
+  title     String
+  content   String
+  readTime  String
+
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, language])
+  @@map("article_translations")
+}
+
 // === TRANSLATIONS CACHE ===
 
 model Translation {

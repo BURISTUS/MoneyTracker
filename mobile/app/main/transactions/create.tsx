@@ -4,23 +4,12 @@ import { View, Pressable, ScrollView, TextInput, TouchableOpacity } from 'react-
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import type { TransactionType } from '../../../src/types';
 import { TransactionType as TransactionTypeEnum } from '../../../src/types';
 import { useToast } from '../../../src/components/ui/Toast';
-
-const EXPENSE_COLORS = {
-  primary: '#FF3B30',
-  background: 'rgba(255, 59, 48, 0.1)',
-  light: 'rgba(255, 59, 48, 0.05)',
-};
-
-const INCOME_COLORS = {
-  primary: '#34C759',
-  background: 'rgba(52, 199, 89, 0.1)',
-  light: 'rgba(52, 199, 89, 0.05)',
-};
 
 const AMOUNT_PRESETS = [100, 500, 1000, 5000, 10000, 50000];
 
@@ -28,9 +17,22 @@ export default function CreateTransactionScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const C = useTheme();
   const addTransaction = useDataStore((s) => s.addTransaction);
   const accounts = useDataStore((s) => s.accounts);
   const categories = useDataStore((s) => s.categories);
+
+  const EXPENSE_COLORS = {
+    primary: C.red,
+    background: C.redBg,
+    light: C.redBg,
+  };
+
+  const INCOME_COLORS = {
+    primary: C.green,
+    background: C.greenBg,
+    light: C.greenBg,
+  };
 
   const [type, setType] = useState<TransactionType>(TransactionTypeEnum.EXPENSE);
   const [amount, setAmount] = useState('');
@@ -160,7 +162,7 @@ export default function CreateTransactionScreen() {
                     <Text className="text-sm text-typography-400 mb-1">
                       {account.name}
                     </Text>
-                    <Text className="text-base font-semibold text-typography-white">
+                    <Text className="text-base font-semibold" style={{ color: C.textMain }}>
                       {(account.balance / 100).toLocaleString('ru-RU')} ₽
                     </Text>
                   </TouchableOpacity>
@@ -185,13 +187,12 @@ export default function CreateTransactionScreen() {
                 >
                   <CategoryIcon
                     icon={category.icon}
-                    color={category.color || '#6366F1'}
+                    color={category.color || C.primary}
                     size={24}
                   />
                   <Text
-                    className={`text-xs font-medium mt-1 text-center ${
-                      selectedCategory === category.id ? 'text-typography-white' : 'text-typography-white'
-                    }`}
+                    className="text-xs font-medium mt-1 text-center"
+                    style={{ color: C.textMain }}
                     numberOfLines={1}
                   >
                     {category.name}
@@ -207,11 +208,11 @@ export default function CreateTransactionScreen() {
               value={note}
               onChangeText={setNote}
               placeholder="Добавить заметку..."
-              placeholderTextColor="#8E8E93"
+              placeholderTextColor={C.textSec}
               multiline
               numberOfLines={3}
-              className="bg-background-0/50 rounded-xl border border-outline-200 px-4 py-3 text-base text-typography-white min-h-[80px]"
-              style={{ textAlignVertical: 'top' }}
+              className="bg-background-0/50 rounded-xl border border-outline-200 px-4 py-3 text-base min-h-[80px]"
+              style={{ textAlignVertical: 'top', color: C.textMain }}
             />
           </View>
         </ScrollView>
@@ -228,7 +229,7 @@ export default function CreateTransactionScreen() {
                   onPress={() => setAmount(String(value))}
                   className="px-4 py-2 bg-background-50/50 rounded-lg border border-outline-200"
                 >
-                  <Text className="text-sm font-semibold text-typography-white">
+                  <Text className="text-sm font-semibold" style={{ color: C.textMain }}>
                     {value} ₽
                   </Text>
                 </TouchableOpacity>
@@ -250,9 +251,8 @@ export default function CreateTransactionScreen() {
               >
                 <View className="w-[60px] h-[60px] rounded-full bg-background-50/30 items-center justify-center">
                   <Text
-                    className={`text-2xl font-semibold leading-8 ${
-                      key === '⌫' ? 'text-error-400' : 'text-typography-white'
-                    }`}
+                    className="text-2xl font-semibold leading-8"
+                    style={{ color: key === '⌫' ? C.red : C.textMain }}
                   >
                     {key}
                   </Text>
@@ -276,7 +276,7 @@ export default function CreateTransactionScreen() {
               opacity: isSubmitting ? 0.6 : 1,
             }}
           >
-            <Text className="text-lg font-bold text-typography-white">
+            <Text className="text-lg font-bold" style={{ color: C.textMain }}>
               {isSubmitting ? 'Сохранение...' : 'Сохранить'}
             </Text>
           </TouchableOpacity>

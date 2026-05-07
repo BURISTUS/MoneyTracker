@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Account, Transaction, Goal, Category, UserGamification, Challenge, WishlistItem, User } from '../types';
+import { safeAsyncStorage } from '../utils/safeAsyncStorage';
+import type { Account, Transaction, Goal, Category, UserGamification, Challenge, WishlistItem, User, Article } from '../types';
 import { AccountType, CategoryType, TransactionType, WishlistStatus } from '../types';
 import { useAuthStore } from './authStore';
 import transactionsService from '../services/transactions';
@@ -12,6 +12,7 @@ import lifeCostService from '../services/lifeCost';
 import currencyService from '../services/currency';
 import wishlistService from '../services/wishlist';
 import goalsService from '../services/goals';
+import articlesService from '../services/articles';
 import type { ExchangeRate } from '../services/currency';
 import { setCurrencyConfig } from '../utils/formatters';
 
@@ -62,14 +63,14 @@ interface DataState {
   categories: Category[];
   setCategories: (categories: Category[]) => void;
   fetchCategories: () => Promise<void>;
-  addCategory: (data: { name: string; type: CategoryType; icon: string; color: string; isBaseNeed?: boolean }) => Promise<void>;
+  addCategory: (data: { name: string; type: CategoryType; icon: string; color: string; isBaseNeed?: boolean; excludeFromTotal?: boolean; monthlyLimit?: number | null }) => Promise<void>;
 
   // Goals
   goals: Goal[];
   isLoadingGoals: boolean;
   setGoals: (goals: Goal[]) => void;
   fetchGoals: () => Promise<void>;
-  createGoal: (data: { name: string; targetAmount: number; deadline?: string }) => Promise<Goal>;
+  createGoal: (data: { name: string; targetAmount: number; currency?: string; deadline?: string }) => Promise<Goal>;
   addGoalContribution: (id: string, amount: number, note?: string) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
 
@@ -95,6 +96,11 @@ interface DataState {
   fetchWishlist: () => Promise<void>;
   addWishlistItem: (item: WishlistItem) => Promise<void>;
   updateWishlistItem: (id: string, data: Partial<WishlistItem>) => void;
+
+  // Articles
+  articles: Article[];
+  isLoadingArticles: boolean;
+  fetchArticles: () => Promise<void>;
 
   // Currency
   userCurrency: string;
@@ -390,6 +396,20 @@ export const useDataStore = create<DataState>()(
         wishlist: state.wishlist.map((w) => w.id === id ? { ...w, ...data } : w)
       })),
 
+      // Articles
+      articles: [],
+      isLoadingArticles: false,
+      fetchArticles: async () => {
+        set({ isLoadingArticles: true });
+        try {
+          const articles = await articlesService.getAll();
+          set({ articles, isLoadingArticles: false });
+        } catch (e) {
+          set({ isLoadingArticles: false });
+          console.error('Failed to fetch articles:', e);
+        }
+      },
+
       userCurrency: 'RUB',
       setUserCurrency: (currency: string) => {
         const symbol = currencyService.getSymbol(currency);
@@ -536,7 +556,7 @@ export const useDataStore = create<DataState>()(
           console.log('🎮 Demo mode — skipping API calls');
           return;
         }
-        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate, fetchCurrencyRates, fetchWishlist, fetchGoals } = get();
+        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate, fetchCurrencyRates, fetchWishlist, fetchGoals, fetchArticles } = get();
         await Promise.all([
           fetchAccounts(),
           fetchCategories(),
@@ -546,12 +566,13 @@ export const useDataStore = create<DataState>()(
           fetchCurrencyRates(),
           fetchWishlist(),
           fetchGoals(),
+          fetchArticles(),
         ]);
       },
     }),
     {
       name: 'data-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         accounts: state.accounts,
         transactions: state.transactions,
@@ -560,9 +581,15 @@ export const useDataStore = create<DataState>()(
         gamification: state.gamification,
         earnedAchievements: state.earnedAchievements,
         wishlist: state.wishlist,
+        articles: state.articles,
         userCurrency: state.userCurrency,
         currencySymbol: state.currencySymbol,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          setCurrencyConfig(state.userCurrency || 'RUB', state.currencySymbol || '₽');
+        }
+      },
     }
   )
 );

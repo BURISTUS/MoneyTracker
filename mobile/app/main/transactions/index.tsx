@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { AddTransactionModal } from '../../../src/components/ui/AddTransactionModal';
 import { TransactionActionModal } from '../../../src/components/ui/TransactionActionModal';
@@ -124,6 +125,7 @@ function getRangeLabel(period: TimePeriod, offset: number, customRange: DateRang
 
 export default function TransactionsDashboardScreen() {
   const { t } = useTranslation();
+  const C = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const transactions = useDataStore((s) => s.transactions);
@@ -292,7 +294,7 @@ export default function TransactionsDashboardScreen() {
             onPress={() => setShowAccountPicker(true)}
             activeOpacity={0.6}
             className="self-start flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
-            style={{ backgroundColor: '#141418', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
+            style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border }}
           >
             <Text className="text-sm font-medium text-[#F5F5F5]">
               {currentAccountId
@@ -313,7 +315,7 @@ export default function TransactionsDashboardScreen() {
           <TouchableOpacity
             onPress={() => animateOffset(-1)}
             className="w-9 h-9 items-center justify-center rounded-full"
-            style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
+            style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: C.border }}
           >
             <Ionicons name="chevron-back" size={22} color="#818CF8" />
           </TouchableOpacity>
@@ -358,7 +360,7 @@ export default function TransactionsDashboardScreen() {
             onPress={() => animateOffset(1)}
             disabled={offset >= 0}
             className="w-9 h-9 items-center justify-center rounded-full"
-            style={{ opacity: offset >= 0 ? 0.2 : 1, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
+            style={{ opacity: offset >= 0 ? 0.2 : 1, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: C.border }}
           >
             <Ionicons name="chevron-forward" size={22} color="#818CF8" />
           </TouchableOpacity>
@@ -387,7 +389,7 @@ export default function TransactionsDashboardScreen() {
                   className="flex-1 rounded-2xl p-4 border"
                   style={{
                     backgroundColor: type === 'EXPENSE' ? 'rgba(255, 59, 48, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                    borderColor: type === 'EXPENSE' ? 'rgba(255, 59, 48, 0.4)' : 'rgba(255,255,255,0.08)',
+                    borderColor: type === 'EXPENSE' ? 'rgba(255, 59, 48, 0.4)' : C.border,
                     borderWidth: 1,
                   }}
                 >
@@ -409,7 +411,7 @@ export default function TransactionsDashboardScreen() {
                   className="flex-1 rounded-2xl p-4 border"
                   style={{
                     backgroundColor: type === 'INCOME' ? 'rgba(52, 199, 89, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                    borderColor: type === 'INCOME' ? 'rgba(52, 199, 89, 0.4)' : 'rgba(255,255,255,0.08)',
+                    borderColor: type === 'INCOME' ? 'rgba(52, 199, 89, 0.4)' : C.border,
                     borderWidth: 1,
                   }}
                 >
@@ -431,9 +433,9 @@ export default function TransactionsDashboardScreen() {
                          onPress={() => handleCategoryPress(item.category.id)}
                          className={`flex-row items-center gap-2 px-3.5 py-2 rounded-full`}
                          style={{
-                           backgroundColor: isSelected ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+                           backgroundColor: isSelected ? C.divider : 'rgba(255,255,255,0.03)',
                            borderWidth: 1,
-                           borderColor: isSelected ? (item.category.color || '#6366F1') : 'rgba(255,255,255,0.08)',
+                           borderColor: isSelected ? (item.category.color || '#6366F1') : C.border,
                          }}
                        >
                         <CategoryIcon
@@ -441,10 +443,10 @@ export default function TransactionsDashboardScreen() {
                           color={item.category.color || '#6366F1'}
                           size={16}
                         />
-                      <Text className={`text-sm ${isSelected ? 'text-typography-white' : 'text-typography-400'}`}>
+                      <Text className="text-sm" style={{ color: isSelected ? C.textMain : C.textSec }}>
                         {item.category.name}
                       </Text>
-                      <Text className="text-sm font-semibold text-typography-white">
+                      <Text className="text-sm font-semibold" style={{ color: C.textMain }}>
                         {Math.round(item.percentage)}%
                       </Text>
                     </Pressable>
@@ -487,9 +489,9 @@ export default function TransactionsDashboardScreen() {
                           onPress={() => setSelectedTransaction(transaction)}
                            className="flex-row items-center rounded-[16px] p-4 gap-4"
                            style={{
-                             backgroundColor: '#141418',
+                             backgroundColor: C.card,
                              borderWidth: 1,
-                             borderColor: 'rgba(255,255,255,0.08)',
+                             borderColor: C.border,
                            }}
                         >
                            <CategoryIcon
@@ -556,7 +558,7 @@ export default function TransactionsDashboardScreen() {
           className="absolute right-5 w-14 h-14 rounded-full bg-primary-500 items-center justify-center"
           style={{ bottom: 90, shadowColor: '#6366F1', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 }}
         >
-          <Ionicons name="add" size={28} color="#FFFFFF" />
+          <Ionicons name="add" size={28} color={C.textMain} />
         </TouchableOpacity>
 
         {accounts.length >= 2 && (
@@ -617,9 +619,9 @@ export default function TransactionsDashboardScreen() {
 
             <View className="px-5">
               <View className="flex-row items-center justify-between mb-4">
-                <Text bold className="text-lg text-white">{t("transactions.selectAccount")}</Text>
+                <Text bold className="text-lg" style={{ color: C.textMain }}>{t("transactions.selectAccount")}</Text>
                 <Pressable onPress={() => setShowAccountPicker(false)} hitSlop={12}>
-                  <Ionicons name="close" size={22} color="#71717A" />
+                  <Ionicons name="close" size={22} color={C.textMuted} />
                 </Pressable>
               </View>
 
@@ -638,7 +640,7 @@ export default function TransactionsDashboardScreen() {
                     <Ionicons name="layers" size={20} color="#818CF8" />
                   </View>
                   <View>
-                    <Text bold className="text-base text-white">{t("transactions.allAccounts")}</Text>
+                    <Text bold className="text-base" style={{ color: C.textMain }}>{t("transactions.allAccounts")}</Text>
                     <Text className="text-sm text-typography-400">{formatCurrency(accounts.reduce((sum, a) => sum + convertToUserCurrency(Number(a.balance), a.currency), 0))}</Text>
                   </View>
                 </View>
@@ -663,7 +665,7 @@ export default function TransactionsDashboardScreen() {
                         <Ionicons name="card" size={20} color="#818CF8" />
                       </View>
                       <View>
-                        <Text bold className="text-base text-white">{account.name}</Text>
+                        <Text bold className="text-base" style={{ color: C.textMain }}>{account.name}</Text>
                         <Text className="text-sm text-typography-400">{formatCurrency(account.balance, account.currency)}</Text>
                       </View>
                     </View>

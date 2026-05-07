@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useRef, useEff
 import { View, Animated, TouchableOpacity, StyleSheet, Platform, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
+import { useTheme } from '../../stores/themeStore';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -55,61 +56,55 @@ export function showGlobalSuccess(message: string) {
   }
 }
 
-const TOAST_CONFIG: Record<ToastType, { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string; border: string }> = {
-  success: {
-    icon: 'checkmark-circle',
-    color: '#489768',
-    bg: 'rgba(72,151,104,0.12)',
-    border: 'rgba(72,151,104,0.25)',
-  },
-  error: {
-    icon: 'alert-circle',
-    color: '#EF4444',
-    bg: 'rgba(239,68,68,0.12)',
-    border: 'rgba(239,68,68,0.25)',
-  },
-  info: {
-    icon: 'information-circle',
-    color: '#6366F1',
-    bg: 'rgba(99,102,241,0.12)',
-    border: 'rgba(99,102,241,0.25)',
-  },
-};
-
 const AUTO_DISMISS_MS = 3000;
 
-const S = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: 50,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    ...Platform.select({ android: { elevation: 100 } }),
-  },
-  toast: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
-  message: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#F5F5F5',
-  },
-  dismissBtn: {
-    padding: 2,
-  },
-});
-
 function ToastItem({ toast, onDismiss }: { toast: ToastData; onDismiss: (id: number) => void }) {
+  const C = useTheme();
+
+  const TOAST_CONFIG: Record<ToastType, { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string; border: string }> = {
+    success: {
+      icon: 'checkmark-circle',
+      color: C.green,
+      bg: C.greenBg,
+      border: C.greenBorder,
+    },
+    error: {
+      icon: 'alert-circle',
+      color: C.red,
+      bg: C.redBg,
+      border: C.redBorder,
+    },
+    info: {
+      icon: 'information-circle',
+      color: C.primary,
+      bg: C.primaryBg,
+      border: C.primaryBorder,
+    },
+  };
+
+  const S = StyleSheet.create({
+    toast: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      marginHorizontal: 16,
+      paddingHorizontal: 16,
+      paddingVertical: 13,
+      borderRadius: 14,
+      borderWidth: 1,
+      marginBottom: 8,
+    },
+    message: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: '600',
+      color: C.textMain,
+    },
+    dismissBtn: {
+      padding: 2,
+    },
+  });
+
   const cfg = TOAST_CONFIG[toast.type];
 
   const handleDismiss = useCallback(() => {
@@ -136,7 +131,7 @@ function ToastItem({ toast, onDismiss }: { toast: ToastData; onDismiss: (id: num
         {toast.message}
       </Text>
       <TouchableOpacity onPress={handleDismiss} style={S.dismissBtn}>
-        <Ionicons name="close" size={16} color="#8C8C8C" />
+        <Ionicons name="close" size={16} color={C.textSec} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -188,6 +183,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 export function ToastContainer() {
   const { toasts, dismiss } = useContext(ToastContext);
+  const C = useTheme();
+
+  const S = StyleSheet.create({
+    container: {
+      position: 'absolute',
+      top: 50,
+      left: 0,
+      right: 0,
+      zIndex: 100,
+      ...Platform.select({ android: { elevation: 100 } }),
+    },
+  });
 
   return (
     <Modal transparent visible={toasts.length > 0} animationType="none" statusBarTranslucent>

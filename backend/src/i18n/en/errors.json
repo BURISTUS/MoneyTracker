@@ -14,5 +14,7 @@
   "goalNotFound": "Goal not found",
   "wishlistNotFound": "Wishlist item not found",
   "invalidCredentials": "Invalid email or password",
-  "emailExists": "User with this email already exists"
+  "emailExists": "User with this email already exists",
+  "articleNotFound": "Article not found",
+  "articleSlugExists": "Article with this slug already exists"
 }

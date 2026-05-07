@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useDataStore } from '../../stores/dataStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useTheme } from '../../stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
@@ -24,25 +25,6 @@ import { TransactionType as TransactionTypeEnum } from '../../types';
 import { ReceiptScannerButton } from './ReceiptScanner';
 import { AiTransactionPreview } from './AiTransactionPreview';
 import type { AiTransactionResult, AiReceiptResult } from '../../services/ai';
-
-// ============================================================
-// Color & Design Tokens — as CategoryEditModal
-// ============================================================
-
-const C = {
-  bg: '#0A0A0F',
-  card: '#141418',
-  border: 'rgba(255,255,255,0.08)',
-  textMain: '#F5F5F5',
-  textSec: '#8C8C8C',
-  indigo: '#6366F1',
-  red: '#FF3B30',
-  green: '#34C759',
-  inputBg: 'rgba(255,255,255,0.05)',
-};
-
-const EXPENSE_COLORS = { primary: '#FF3B30', background: 'rgba(255,59,48,0.1)' };
-const INCOME_COLORS = { primary: '#34C759', background: 'rgba(52,199,89,0.1)' };
 
 type MathOp = '+' | '−' | '×' | '÷' | null;
 
@@ -72,311 +54,6 @@ const formatDateFull = (d: Date) => `${d.getDate()} ${MONTHS_GEN[d.getMonth()]} 
 const NUMPAD_KEYS = ['7','8','9','÷','4','5','6','×','1','2','3','−','.','0','⌫','+'];
 
 // ============================================================
-// Styles — matching CategoryEditModal
-// ============================================================
-
-const S = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: '#13131A',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 12,
-    paddingBottom: 34,
-    maxHeight: '95%',
-  },
-  handle: {
-    width: 36,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 8,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: C.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  section: { paddingHorizontal: 20, marginBottom: 16 },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: C.textSec,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-
-  // Type toggle
-  typeRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  typeBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.card,
-  },
-  typeBtnActive: { borderColor: 'transparent' },
-  typeLabel: { fontSize: 15, fontWeight: '600', color: C.textSec },
-  typeLabelActive: {},
-
-  // Amount display
-  amountWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  amountText: { fontSize: 32, fontWeight: '800', letterSpacing: -1, lineHeight: 40 },
-  lifeCostBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 6,
-    backgroundColor: C.inputBg,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  lifeCostText: { fontSize: 16, color: '#FBBF24', fontWeight: '700' },
-
-  // Date row
-  dateBtn: {
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    backgroundColor: C.inputBg,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  dateText: { fontSize: 13, fontWeight: '600', color: C.textMain },
-  dateChevron: { fontSize: 12, color: C.textSec },
-
-  // Quick actions row
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
-  },
-  actionBtn: { alignItems: 'center', gap: 4 },
-  actionIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: C.card,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  actionIconWrapActive: {},
-  actionLabel: { fontSize: 11, color: C.textSec },
-
-  // Budget bar
-  budgetBar: {
-    backgroundColor: C.inputBg,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  budgetRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  budgetLabel: { fontSize: 12, color: C.textSec },
-  budgetValue: { fontSize: 12, fontWeight: '600' },
-  budgetTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
-  },
-  budgetFill: { height: 4, borderRadius: 2 },
-
-  // Note input
-  noteInput: {
-    backgroundColor: C.inputBg,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: C.textMain,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-
-  // Account picker
-  accountRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  accountBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: C.inputBg,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  accountBtnActive: { borderColor: 'transparent' },
-  accountLabel: { fontSize: 14, color: C.textMain },
-  accountLabelActive: {},
-
-  // Numpad
-  numpadGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 12,
-  },
-  numpadKey: {
-    width: '25%',
-    aspectRatio: 1.3,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  numpadInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: C.card,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  numpadOp: { backgroundColor: 'rgba(99,102,241,0.1)' },
-  numpadOpActive: { backgroundColor: 'rgba(99,102,241,0.25)' },
-  numpadDel: { backgroundColor: 'rgba(255,59,48,0.1)' },
-  numpadKeyText: { fontSize: 20, fontWeight: '600', color: C.textMain },
-  numpadOpText: { color: C.indigo },
-  numpadDelText: { color: C.red },
-
-  // Bottom row (equals + save)
-  bottomRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingTop: 4,
-    gap: 10,
-  },
-  equalsBtn: {
-    width: 60,
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(99,102,241,0.12)',
-  },
-  equalsText: { fontSize: 32, fontWeight: '700', color: C.indigo },
-  saveBtn: {
-    flex: 1,
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.indigo,
-  },
-  saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-});
-
-// Styles for the embedded category picker modal
-const SC = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: '#13131A',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 12,
-    paddingBottom: 34,
-    maxHeight: '80%',
-  },
-  handle: {
-    width: 36,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: C.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingHorizontal: 20 },
-  catItem: {
-    width: '30%',
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderRadius: 14,
-    backgroundColor: C.card,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  catItemActive: { borderColor: 'transparent' },
-  catName: { fontSize: 12, fontWeight: '600', color: C.textMain, textAlign: 'center', marginTop: 6 },
-  emptyWrap: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { fontSize: 15, color: C.textSec, marginBottom: 16 },
-  emptyBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  emptyBtnText: { fontSize: 15, fontWeight: '600', color: '#FFF' },
-  newCatBtn: {
-    marginHorizontal: 20,
-    marginTop: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed' as const,
-    borderColor: C.border,
-    alignItems: 'center',
-  },
-  newCatText: { fontSize: 15, color: C.textSec },
-});
-
-// ============================================================
 // Component
 // ============================================================
 
@@ -393,6 +70,8 @@ export function AddTransactionModal({
 }) {
   const { t } = useTranslation();
   const router = useRouter();
+  const C = useTheme();
+
   const addTransaction = useDataStore((s) => s.addTransaction);
   const accounts = useDataStore((s) => s.accounts);
   const categories = useDataStore((s) => s.categories);
@@ -434,6 +113,8 @@ export function AddTransactionModal({
     };
   }, [visible, initialType]);
 
+  const EXPENSE_COLORS = { primary: C.red, background: C.redBg };
+  const INCOME_COLORS = { primary: C.green, background: C.greenBg };
   const colors = type === 'EXPENSE' ? EXPENSE_COLORS : INCOME_COLORS;
   const displayCategories = categories.filter((c) => c.type === (type as string));
 
@@ -545,7 +226,7 @@ export function AddTransactionModal({
   const selectedCateData = displayCategories.find((c) => c.id === selectedCategory);
   const selectedAccData = accounts.find((a) => a.id === selectedAccount);
 
-  // Category limit bar (replaces old budget system)
+  // Category limit bar
   const limitInfo = useMemo(() => {
     if (type !== 'EXPENSE' || !selectedCategory) return null;
     const cat = categories.find((c) => c.id === selectedCategory);
@@ -561,10 +242,311 @@ export function AddTransactionModal({
     const percent = limit > 0 ? (spent / limit) * 100 : 0;
     const remaining = limit - spent;
     const threshold = 80;
-    const barColor = percent > 100 ? '#F87171' : percent >= threshold ? '#FBBF24' : '#34D399';
+    const barColor = percent > 100 ? C.expenseBar.over : percent >= threshold ? C.expenseBar.warn : C.expenseBar.ok;
 
     return { percent, remaining, barColor, limit, spent };
   }, [type, selectedCategory, categories, transactions]);
+
+  const S = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: C.sheet,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: 12,
+      paddingBottom: 34,
+      maxHeight: '95%',
+    },
+    handle: {
+      width: 36,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: C.handle,
+      alignSelf: 'center',
+      marginBottom: 12,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      marginBottom: 8,
+    },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: C.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+    section: { paddingHorizontal: 20, marginBottom: 16 },
+    sectionTitle: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: C.textSec,
+      marginBottom: 8,
+      textTransform: 'uppercase',
+    },
+
+    // Type toggle
+    typeRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    typeBtn: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: C.border,
+      backgroundColor: C.card,
+    },
+    typeBtnActive: { borderColor: 'transparent' },
+    typeLabel: { fontSize: 15, fontWeight: '600', color: C.textSec },
+    typeLabelActive: {},
+
+    // Amount display
+    amountWrap: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    amountText: { fontSize: 32, fontWeight: '800', letterSpacing: -1, lineHeight: 40 },
+    lifeCostBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 6,
+      backgroundColor: C.inputBg,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+    lifeCostText: { fontSize: 16, color: C.yellow, fontWeight: '700' },
+
+    // Date row
+    dateBtn: {
+      alignSelf: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 16,
+      paddingVertical: 6,
+      backgroundColor: C.inputBg,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+    dateText: { fontSize: 13, fontWeight: '600', color: C.textMain },
+    dateChevron: { fontSize: 12, color: C.textSec },
+
+    // Quick actions row
+    actionsRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 20,
+    },
+    actionBtn: { alignItems: 'center', gap: 4 },
+    actionIconWrap: {
+      width: 48,
+      height: 48,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: C.card,
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+    actionIconWrapActive: {},
+    actionLabel: { fontSize: 11, color: C.textSec },
+
+    // Budget bar
+    budgetBar: {
+      backgroundColor: C.inputBg,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+    budgetRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    budgetLabel: { fontSize: 12, color: C.textSec },
+    budgetValue: { fontSize: 12, fontWeight: '600' },
+    budgetTrack: {
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: C.expenseBar.track,
+      overflow: 'hidden',
+    },
+    budgetFill: { height: 4, borderRadius: 2 },
+
+    // Note input
+    noteInput: {
+      backgroundColor: C.inputBg,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: 15,
+      color: C.textMain,
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+
+    // Account picker
+    accountRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    accountBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 10,
+      backgroundColor: C.inputBg,
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+    accountBtnActive: { borderColor: 'transparent' },
+    accountLabel: { fontSize: 14, color: C.textMain },
+    accountLabelActive: {},
+
+    // Numpad
+    numpadGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      paddingHorizontal: 12,
+    },
+    numpadKey: {
+      width: '25%',
+      aspectRatio: 1.3,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    numpadInner: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: C.card,
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+    numpadOp: { backgroundColor: C.primaryBg },
+    numpadOpActive: { backgroundColor: C.primaryBorder },
+    numpadDel: { backgroundColor: C.redBg },
+    numpadKeyText: { fontSize: 20, fontWeight: '600', color: C.textMain },
+    numpadOpText: { color: C.primary },
+    numpadDelText: { color: C.red },
+
+    // Bottom row (equals + save)
+    bottomRow: {
+      flexDirection: 'row',
+      paddingHorizontal: 20,
+      paddingTop: 4,
+      gap: 10,
+    },
+    equalsBtn: {
+      width: 60,
+      height: 52,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: C.primaryBg,
+    },
+    equalsText: { fontSize: 32, fontWeight: '700', color: C.primary },
+    saveBtn: {
+      flex: 1,
+      height: 52,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: C.border,
+      backgroundColor: C.primary,
+    },
+    saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  });
+
+  // Styles for the embedded category picker modal
+  const SC = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: C.sheet,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: 12,
+      paddingBottom: 34,
+      maxHeight: '80%',
+    },
+    handle: {
+      width: 36,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: C.handle,
+      alignSelf: 'center',
+      marginBottom: 12,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      marginBottom: 12,
+    },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: C.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingHorizontal: 20 },
+    catItem: {
+      width: '30%',
+      paddingVertical: 14,
+      alignItems: 'center',
+      borderRadius: 14,
+      backgroundColor: C.card,
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+    catItemActive: { borderColor: 'transparent' },
+    catName: { fontSize: 12, fontWeight: '600', color: C.textMain, textAlign: 'center', marginTop: 6 },
+    emptyWrap: { alignItems: 'center', paddingVertical: 40 },
+    emptyText: { fontSize: 15, color: C.textSec, marginBottom: 16 },
+    emptyBtn: {
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 12,
+    },
+    emptyBtnText: { fontSize: 15, fontWeight: '600', color: '#FFF' },
+    newCatBtn: {
+      marginHorizontal: 20,
+      marginTop: 16,
+      paddingVertical: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderStyle: 'dashed' as const,
+      borderColor: C.border,
+      alignItems: 'center',
+    },
+    newCatText: { fontSize: 15, color: C.textSec },
+  });
 
   // ---- Render ----
 
@@ -626,7 +608,7 @@ export function AddTransactionModal({
                 </Text>
                 {lifeHours && type === 'EXPENSE' && (
                   <View style={S.lifeCostBadge}>
-                    <Ionicons name="time-outline" size={16} color="#FBBF24" />
+                    <Ionicons name="time-outline" size={16} color={C.yellow} />
                     <Text style={S.lifeCostText}>{lifeHours} работы</Text>
                   </View>
                 )}
@@ -691,8 +673,8 @@ export function AddTransactionModal({
 
                 {/* Голос */}
                 <TouchableOpacity onPress={() => setShowVoiceModal(true)} style={S.actionBtn}>
-                  <View style={[S.actionIconWrap, { backgroundColor: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)' }]}>
-                    <Ionicons name="mic-outline" size={20} color="#6366F1" />
+                  <View style={[S.actionIconWrap, { backgroundColor: C.primaryBg, borderColor: C.primaryBorder }]}>
+                    <Ionicons name="mic-outline" size={20} color={C.primary} />
                   </View>
                   <Text style={S.actionLabel}>Голос</Text>
                 </TouchableOpacity>
@@ -712,7 +694,7 @@ export function AddTransactionModal({
                   value={note}
                   onChangeText={setNote}
                   placeholder="Добавить заметку..."
-                  placeholderTextColor="#52525B"
+                  placeholderTextColor={C.textMuted}
                   autoFocus
                 />
               </View>
@@ -834,7 +816,7 @@ export function AddTransactionModal({
                     {
                       backgroundColor:
                         !numericAmount || !selectedCategory || !selectedAccount
-                          ? 'rgba(255,255,255,0.08)'
+                          ? C.divider
                           : colors.primary,
                       opacity: isSubmitting ? 0.6 : 1,
                     },

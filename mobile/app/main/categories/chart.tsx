@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import { formatCurrency } from '../../../src/utils/formatters';
@@ -12,6 +13,7 @@ type ViewMode = 'EXPENSE' | 'INCOME';
 export default function CategoriesChartScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const C = useTheme();
   const transactions = useDataStore((s) => s.transactions);
   const categories = useDataStore((s) => s.categories);
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
@@ -61,41 +63,44 @@ export default function CategoriesChartScreen() {
     return `${(hours / 24).toFixed(1)} дн`;
   };
 
+  const tabColors = mode === 'EXPENSE' ? { color: C.red, bg: C.redBg } : { color: C.green, bg: C.greenBg };
+
   return (
     <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
       <View className="px-4 pt-4 pb-3">
-        <Text className="text-xl font-bold text-typography-white mb-3">{t("categories.expenseStructure")}</Text>
+        <Text className="text-xl font-bold mb-3" style={{ color: C.textMain }}>{t("categories.expenseStructure")}</Text>
 
         <View className="flex-row gap-2">
           {[
-            { key: 'EXPENSE' as const, label: 'Расходы', color: '#FF3B30' },
-            { key: 'INCOME' as const, label: t("categories.income"), color: '#34C759' },
-          ].map((tab) => (
-            <TouchableOpacity
-              key={tab.key}
-              onPress={() => setMode(tab.key)}
-              className={`flex-1 py-2.5 items-center rounded-[10px] border ${
-                mode === tab.key ? 'border-primary-400' : 'border-outline-200'
-              }`}
-              style={mode === tab.key ? { backgroundColor: tab.color + '20', borderColor: tab.color } : undefined}
-            >
-              <Text
-                className={`text-sm font-semibold ${
-                  mode === tab.key
-                    ? tab.key === 'EXPENSE' ? 'text-error-400' : 'text-success-400'
-                    : 'text-typography-400'
+            { key: 'EXPENSE' as const, label: 'Расходы' },
+            { key: 'INCOME' as const, label: t("categories.income") },
+          ].map((tab) => {
+            const isActive = mode === tab.key;
+            const activeColor = tab.key === 'EXPENSE' ? C.red : C.green;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                onPress={() => setMode(tab.key)}
+                className={`flex-1 py-2.5 items-center rounded-[10px] border ${
+                  isActive ? 'border-primary-400' : 'border-outline-200'
                 }`}
+                style={isActive ? { backgroundColor: activeColor + '20', borderColor: activeColor } : undefined}
               >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  className="text-sm font-semibold"
+                  style={{ color: isActive ? activeColor : C.textSec }}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
       {totalAmount > 0 && (
         <View className="px-4 pb-4 items-center">
-          <Text className="text-2xl font-bold text-typography-white">
+          <Text className="text-2xl font-bold" style={{ color: C.textMain }}>
             {formatCurrency(totalAmount)}
           </Text>
           {totalLifeHours && (
@@ -118,6 +123,7 @@ export default function CategoriesChartScreen() {
         ) : (
           categoryTotals.map((item) => {
             const percentage = totalAmount > 0 ? (item.amount / totalAmount) * 100 : 0;
+            const catColor = item.category!.color || (mode === 'EXPENSE' ? C.red : C.green);
 
             return (
               <View
@@ -127,12 +133,12 @@ export default function CategoriesChartScreen() {
                 <View className="flex-row items-center gap-3 mb-2.5">
                   <CategoryIcon
                     icon={item.category!.icon}
-                    color={item.category!.color || (mode === 'EXPENSE' ? '#FF3B30' : '#34C759')}
+                    color={catColor}
                     size={22}
                   />
 
                   <View className="flex-1">
-                    <Text className="text-base font-medium text-typography-white">
+                    <Text className="text-base font-medium" style={{ color: C.textMain }}>
                       {item.category!.name}
                     </Text>
                     {mode === 'EXPENSE' && formatItemLifeHours(item.amount) && (
@@ -143,7 +149,7 @@ export default function CategoriesChartScreen() {
                   </View>
 
                   <View className="items-end">
-                    <Text className="text-base font-bold text-typography-white">
+                    <Text className="text-base font-bold" style={{ color: C.textMain }}>
                       {formatCurrency(item.amount)}
                     </Text>
                     <Text className="text-xs text-typography-400">
@@ -157,7 +163,7 @@ export default function CategoriesChartScreen() {
                     className="h-full rounded-full"
                     style={{
                       width: `${Math.max(percentage, 1)}%`,
-                      backgroundColor: item.category!.color || (mode === 'EXPENSE' ? '#FF3B30' : '#34C759'),
+                      backgroundColor: catColor,
                     }}
                   />
                 </View>

@@ -11,107 +11,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../stores/dataStore';
+import { useTheme } from '../../stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { ConfirmModal } from './ConfirmModal';
 import type { Transaction } from '../../types';
-
-const C = {
-  bg: '#0A0A0F',
-  card: '#141418',
-  border: 'rgba(255,255,255,0.08)',
-  textMain: '#F5F5F5',
-  textSec: '#8C8C8C',
-  indigo: '#6366F1',
-  red: '#FF3B30',
-  green: '#34C759',
-  inputBg: 'rgba(255,255,255,0.05)',
-};
-
-const S = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: '#13131A',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 12,
-    paddingBottom: 34,
-    maxHeight: '90%',
-  },
-  handle: {
-    width: 36, height: 5, borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignSelf: 'center', marginBottom: 16,
-  },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, marginBottom: 16,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
-  closeBtn: {
-    width: 32, height: 32, borderRadius: 10,
-    backgroundColor: C.card, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: C.border,
-  },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, marginBottom: 16 },
-  amountText: { fontSize: 22, fontWeight: '800' },
-  metaSection: { paddingHorizontal: 20, marginBottom: 12 },
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
-  metaLabel: { fontSize: 13, color: C.textSec },
-  metaValue: { fontSize: 13, color: C.textMain, fontWeight: '500' },
-  descBox: {
-    backgroundColor: C.inputBg, borderRadius: 12, padding: 14,
-    marginHorizontal: 20, marginBottom: 16,
-    borderWidth: 1, borderColor: C.border,
-  },
-  descLabel: { fontSize: 11, color: C.textSec, marginBottom: 4, textTransform: 'uppercase' },
-  descText: { fontSize: 14, color: C.textMain, lineHeight: 20 },
-  section: { paddingHorizontal: 20, marginBottom: 14 },
-  sectionTitle: { fontSize: 11, fontWeight: '600', color: C.textSec, marginBottom: 6, textTransform: 'uppercase' },
-  input: {
-    backgroundColor: C.inputBg, borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, color: C.textMain,
-    borderWidth: 1, borderColor: C.border, marginBottom: 8,
-  },
-  btnRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 20 },
-  editBtn: {
-    flex: 1, paddingVertical: 14, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(99,102,241,0.12)',
-    borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)',
-    flexDirection: 'row', gap: 6,
-  },
-  editBtnText: { fontSize: 14, fontWeight: '700', color: C.indigo },
-  deleteBtn: {
-    flex: 1, paddingVertical: 14, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,59,48,0.08)',
-    borderWidth: 1, borderColor: 'rgba(255,59,48,0.15)',
-    flexDirection: 'row', gap: 6,
-  },
-  deleteBtnText: { fontSize: 14, fontWeight: '600', color: C.red },
-  saveBtn: {
-    paddingVertical: 14, borderRadius: 14, alignItems: 'center',
-    backgroundColor: C.indigo, marginTop: 4,
-  },
-  saveBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
-  cancelBtn: {
-    paddingVertical: 12, borderRadius: 14, alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)', marginTop: 8,
-    borderWidth: 1, borderColor: C.border,
-  },
-  cancelBtnText: { fontSize: 14, color: C.textSec },
-  lifeCost: {
-    alignItems: 'center', backgroundColor: 'rgba(255,149,0,0.12)',
-    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10,
-    borderWidth: 1, borderColor: 'rgba(255,149,0,0.2)',
-  },
-  lifeCostValue: { fontSize: 20, fontWeight: '800', color: '#FF9500' },
-  lifeCostLabel: { fontSize: 11, color: '#FF9500', opacity: 0.7 },
-});
 
 interface Props {
   visible: boolean;
@@ -120,6 +26,7 @@ interface Props {
 }
 
 export function TransactionActionModal({ visible, transaction, onClose }: Props) {
+  const C = useTheme();
   const transactions = useDataStore((s) => s.transactions);
   const categories = useDataStore((s) => s.categories);
   const accounts = useDataStore((s) => s.accounts);
@@ -212,6 +119,89 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
   const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
   const fmtDate = (d: Date) => `${d.getDate()} ${MONTHS_GEN[d.getMonth()]} ${d.getFullYear()}`;
 
+  const S = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: C.sheet,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: 12,
+      paddingBottom: 34,
+      maxHeight: '90%',
+    },
+    handle: {
+      width: 36, height: 5, borderRadius: 3,
+      backgroundColor: C.handle,
+      alignSelf: 'center', marginBottom: 16,
+    },
+    header: {
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      paddingHorizontal: 20, marginBottom: 16,
+    },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+    closeBtn: {
+      width: 32, height: 32, borderRadius: 10,
+      backgroundColor: C.card, alignItems: 'center', justifyContent: 'center',
+      borderWidth: 1, borderColor: C.border,
+    },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, marginBottom: 16 },
+    amountText: { fontSize: 22, fontWeight: '800' },
+    metaSection: { paddingHorizontal: 20, marginBottom: 12 },
+    metaRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+    metaLabel: { fontSize: 13, color: C.textSec },
+    metaValue: { fontSize: 13, color: C.textMain, fontWeight: '500' },
+    descBox: {
+      backgroundColor: C.inputBg, borderRadius: 12, padding: 14,
+      marginHorizontal: 20, marginBottom: 16,
+      borderWidth: 1, borderColor: C.border,
+    },
+    descLabel: { fontSize: 11, color: C.textSec, marginBottom: 4, textTransform: 'uppercase' },
+    descText: { fontSize: 14, color: C.textMain, lineHeight: 20 },
+    section: { paddingHorizontal: 20, marginBottom: 14 },
+    sectionTitle: { fontSize: 11, fontWeight: '600', color: C.textSec, marginBottom: 6, textTransform: 'uppercase' },
+    input: {
+      backgroundColor: C.inputBg, borderRadius: 12,
+      paddingHorizontal: 14, paddingVertical: 12,
+      fontSize: 14, color: C.textMain,
+      borderWidth: 1, borderColor: C.border, marginBottom: 8,
+    },
+    btnRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 20 },
+    editBtn: {
+      flex: 1, paddingVertical: 14, borderRadius: 14,
+      alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.primaryBg,
+      borderWidth: 1, borderColor: C.primaryBorder,
+      flexDirection: 'row', gap: 6,
+    },
+    editBtnText: { fontSize: 14, fontWeight: '700', color: C.primary },
+    deleteBtn: {
+      flex: 1, paddingVertical: 14, borderRadius: 14,
+      alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.redBg,
+      borderWidth: 1, borderColor: C.redBorder,
+      flexDirection: 'row', gap: 6,
+    },
+    deleteBtnText: { fontSize: 14, fontWeight: '600', color: C.red },
+    saveBtn: {
+      paddingVertical: 14, borderRadius: 14, alignItems: 'center',
+      backgroundColor: C.primary, marginTop: 4,
+    },
+    saveBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+    cancelBtn: {
+      paddingVertical: 12, borderRadius: 14, alignItems: 'center',
+      backgroundColor: C.inputBg, marginTop: 8,
+      borderWidth: 1, borderColor: C.border,
+    },
+    cancelBtnText: { fontSize: 14, color: C.textSec },
+    lifeCost: {
+      alignItems: 'center', backgroundColor: C.orangeBg,
+      borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10,
+      borderWidth: 1, borderColor: C.orangeBorder,
+    },
+    lifeCostValue: { fontSize: 20, fontWeight: '800', color: C.amber },
+    lifeCostLabel: { fontSize: 11, color: C.amber, opacity: 0.7 },
+  });
+
   if (!localTx) return null;
 
   const isExpense = localTx.type === 'EXPENSE';
@@ -271,7 +261,7 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
                     value={editAmount}
                     onChangeText={setEditAmount}
                     keyboardType="decimal-pad"
-                    placeholderTextColor="#52525B"
+                    placeholderTextColor={C.textMuted}
                   />
                 </View>
 
@@ -323,7 +313,7 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
                     value={editDescription}
                     onChangeText={setEditDescription}
                     placeholder="Добавить заметку..."
-                    placeholderTextColor="#52525B"
+                    placeholderTextColor={C.textMuted}
                     multiline
                   />
                 </View>
@@ -364,7 +354,7 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
                 {/* View: Buttons */}
                 <View style={S.btnRow}>
                   <TouchableOpacity style={S.editBtn} onPress={handleEdit}>
-                    <Ionicons name="create-outline" size={16} color={C.indigo} />
+                    <Ionicons name="create-outline" size={16} color={C.primary} />
                     <Text style={S.editBtnText}>Изменить</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={S.deleteBtn} onPress={() => setShowDeleteConfirm(true)}>

@@ -4,17 +4,17 @@ import {
   Pressable,
   TouchableOpacity,
   ScrollView,
-  StyleSheet,
   RefreshControl,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useDataStore } from '../../src/stores/dataStore';
+import { useTheme } from '../../src/stores/themeStore';
 import { Text } from '../../components/ui/text';
-// import { VoiceInputModal } from '../../src/components/ui/VoiceInputButton';
 import { ReceiptScannerButton } from '../../src/components/ui/ReceiptScanner';
 import { AiTransactionPreview } from '../../src/components/ui/AiTransactionPreview';
 import type { AiTransactionResult, AiReceiptResult } from '../../src/services/ai';
@@ -29,175 +29,66 @@ function formatHours(hours: number): string {
   return `${Math.round(hours)} ч`;
 }
 
-const C = {
-  bg: '#0A0A0F',
-  card: '#141418',
-  border: 'rgba(255,255,255,0.08)',
-  textMain: '#F5F5F5',
-  textSec: '#8C8C8C',
-  indigo: '#6366F1',
-  orange: '#FF9500',
-  green: '#34D399',
-  red: '#FF3B30',
-  blue: '#4F6EF7',
-};
-
-const S = StyleSheet.create({
-  flex: { flex: 1 },
-  screen: { backgroundColor: C.bg },
-  scroll: { paddingHorizontal: 16, paddingBottom: 120 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 10,
-    gap: 4,
-  },
-  tabPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  tabText: { fontSize: 14, fontWeight: '600' },
-
-  heroCard: {
-    backgroundColor: C.card,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  heroLabel: { fontSize: 13, color: C.textSec, fontWeight: '500', marginBottom: 6 },
-  heroValue: { fontSize: 48, fontWeight: '800', color: C.textMain, letterSpacing: -1.5 },
-  heroSub: { fontSize: 13, color: C.textSec, marginTop: 4 },
-  heroRate: { fontSize: 12, color: C.indigo, marginTop: 8, fontWeight: '600' },
-
-  alertCard: {
-    backgroundColor: 'rgba(255,149,0,0.08)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,149,0,0.2)',
-    padding: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  alertCount: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: C.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alertCountText: { fontSize: 18, fontWeight: '800', color: '#FFF' },
-  alertTitle: { fontSize: 15, fontWeight: '700', color: C.textMain },
-  alertSub: { fontSize: 13, color: C.textSec, marginTop: 2 },
-
-  statsRow: { flexDirection: 'row', gap: 10 },
-  statCard: {
-    flex: 1,
-    backgroundColor: C.card,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: 16,
-    alignItems: 'center',
-  },
-  statIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  statValue: { fontSize: 18, fontWeight: '800', color: C.textMain },
-  statLabel: { fontSize: 11, color: C.textSec, marginTop: 4, fontWeight: '500' },
-
-  pulseCard: {
-    backgroundColor: C.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: 18,
-  },
-  pulseRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-  },
-  pulseLast: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  pulseLabel: { fontSize: 13, color: C.textSec },
-  pulseValue: { fontSize: 14, fontWeight: '700', color: C.textMain },
-
-  actionsRow: { flexDirection: 'row', gap: 10, marginTop: 2 },
-  actionBtn: {
-    flex: 1,
-    borderRadius: 18,
-    paddingVertical: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  actionText: { fontSize: 12, fontWeight: '600', marginTop: 6 },
-
-  articleCard: {
-    backgroundColor: C.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: 18,
-    marginBottom: 10,
-  },
-  articleTag: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(99,102,241,0.12)',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginBottom: 10,
-  },
-  articleTagText: { fontSize: 11, fontWeight: '700', color: C.indigo },
-  articleTitle: { fontSize: 16, fontWeight: '700', color: C.textMain, lineHeight: 22 },
-  articleSub: { fontSize: 13, color: C.textSec, marginTop: 6, lineHeight: 18 },
-  articleTime: { fontSize: 11, color: C.textSec, marginTop: 12 },
-});
-
-const ARTICLES = [
-  {
-    id: '1',
-    tag: 'Life-Cost',
-    titleKey: 'home.article1Title',
-    subKey: 'home.article1Desc',
-    timeKey: 'home.article1Time',
-  },
-  {
-    id: '2',
-    tag: 'Психология',
-    titleKey: 'home.article2Title',
-    subKey: 'home.article2Desc',
-    timeKey: 'home.article2Time',
-  },
-  {
-    id: '3',
-    tag: 'Практика',
-    titleKey: 'home.article3Title',
-    subKey: 'home.article3Desc',
-    timeKey: 'home.article3Time',
-  },
-];
-
 export default function HomeScreen() {
+  const C = useTheme();
+  const S = {
+    flex: { flex: 1 },
+    screen: { backgroundColor: C.bg },
+    scroll: { paddingHorizontal: 16, paddingBottom: 120 },
+    header: { flexDirection: 'row' as const, justifyContent: 'center' as const, alignItems: 'center' as const, paddingVertical: 10, gap: 4 },
+    tabPill: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20 },
+    tabText: { fontSize: 14, fontWeight: '600' as const },
+    heroCard: { backgroundColor: C.card, borderRadius: 24, borderWidth: 1, borderColor: C.border, padding: 24, alignItems: 'center' as const, marginTop: 4 },
+    heroLabel: { fontSize: 13, color: C.textSec, fontWeight: '500' as const, marginBottom: 6 },
+    heroValue: { fontSize: 48, fontWeight: '800' as const, color: C.textMain, letterSpacing: -1.5 },
+    heroSub: { fontSize: 13, color: C.textSec, marginTop: 4 },
+    heroRate: { fontSize: 12, color: C.primary, marginTop: 8, fontWeight: '600' as const },
+    alertCard: { backgroundColor: C.orangeBg, borderRadius: 20, borderWidth: 1, borderColor: C.orangeBorder, padding: 18, flexDirection: 'row' as const, alignItems: 'center' as const, gap: 14 },
+    alertCount: { width: 44, height: 44, borderRadius: 14, backgroundColor: C.orange, alignItems: 'center' as const, justifyContent: 'center' as const },
+    alertCountText: { fontSize: 18, fontWeight: '800' as const, color: '#FFF' },
+    alertTitle: { fontSize: 15, fontWeight: '700' as const, color: C.textMain },
+    alertSub: { fontSize: 13, color: C.textSec, marginTop: 2 },
+    statsRow: { flexDirection: 'row' as const, gap: 10 },
+    statCard: { flex: 1, backgroundColor: C.card, borderRadius: 18, borderWidth: 1, borderColor: C.border, padding: 16, alignItems: 'center' as const },
+    statIconWrap: { width: 36, height: 36, borderRadius: 12, alignItems: 'center' as const, justifyContent: 'center' as const, marginBottom: 8 },
+    statValue: { fontSize: 18, fontWeight: '800' as const, color: C.textMain },
+    statLabel: { fontSize: 11, color: C.textSec, marginTop: 4, fontWeight: '500' as const },
+    pulseCard: { backgroundColor: C.card, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 18 },
+    pulseRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
+    pulseLast: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const, paddingVertical: 10 },
+    pulseLabel: { fontSize: 13, color: C.textSec },
+    pulseValue: { fontSize: 14, fontWeight: '700' as const, color: C.textMain },
+    actionsRow: { flexDirection: 'row' as const, gap: 10, marginTop: 2 },
+    actionBtn: { flex: 1, borderRadius: 18, paddingVertical: 16, alignItems: 'center' as const, borderWidth: 1 },
+    actionText: { fontSize: 12, fontWeight: '600' as const, marginTop: 6 },
+
+    // Month summary
+    monthCard: { backgroundColor: C.card, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 18 },
+    monthTitle: { fontSize: 15, fontWeight: '700' as const, color: C.textMain, marginBottom: 12 },
+    monthRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const, marginBottom: 8 },
+    monthLabel: { fontSize: 13, color: C.textSec },
+    monthValue: { fontSize: 14, fontWeight: '700' as const, color: C.textMain },
+    barTrack: { height: 6, borderRadius: 3, backgroundColor: C.divider, marginBottom: 4 },
+    barFill: { height: 6, borderRadius: 3 },
+
+    // Articles
+    articleCard: { backgroundColor: C.card, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 18, marginBottom: 10 },
+    articleTag: { alignSelf: 'flex-start' as const, backgroundColor: C.primaryBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 10 },
+    articleTagText: { fontSize: 11, fontWeight: '700' as const, color: C.primary },
+    articleTitle: { fontSize: 16, fontWeight: '700' as const, color: C.textMain, lineHeight: 22 },
+    articleSub: { fontSize: 13, color: C.textSec, marginTop: 6, lineHeight: 18 },
+    articleFooter: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const, marginTop: 12 },
+    articleTime: { fontSize: 11, color: C.textSec },
+    articleViews: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 },
+    articleViewsText: { fontSize: 11, color: C.textSec },
+
+    // Empty state
+    emptyState: { alignItems: 'center' as const, paddingVertical: 40 },
+    emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.inputBg, alignItems: 'center' as const, justifyContent: 'center' as const, marginBottom: 16 },
+    emptyTitle: { fontSize: 15, fontWeight: '600' as const, color: C.textSec },
+    emptySub: { fontSize: 13, color: C.textMuted, marginTop: 4 },
+  };
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -208,6 +99,9 @@ export default function HomeScreen() {
   const currencySymbol = useDataStore((s) => s.currencySymbol);
   const convertToUserCurrency = useDataStore((s) => s.convertToUserCurrency);
   const isLoading = useDataStore((s) => s.isLoadingTransactions);
+  const articles = useDataStore((s) => s.articles);
+  const isLoadingArticles = useDataStore((s) => s.isLoadingArticles);
+  const fetchArticles = useDataStore((s) => s.fetchArticles);
 
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<'overview' | 'read'>('overview');
@@ -226,6 +120,10 @@ export default function HomeScreen() {
     await initializeData();
     setRefreshing(false);
   }, []);
+
+  const onArticlePress = useCallback(async (id: string) => {
+    router.push(`/main/articles/${id}` as never);
+  }, [router]);
 
   const hourlyRate = useMemo(() => getHourlyRate(), [getHourlyRate]);
 
@@ -246,7 +144,7 @@ export default function HomeScreen() {
         const accCur = (t as any).account?.currency || 'RUB';
         return sum + convertToUserCurrency(Number(t.amount), accCur);
       }, 0),
-    [transactions, excludedIds],
+    [transactions, excludedIds, convertToUserCurrency],
   );
 
   const todayHours = useMemo(() => {
@@ -296,6 +194,21 @@ export default function HomeScreen() {
     return categories.find((c) => c.id === topCategoryToday.id)?.name || null;
   }, [topCategoryToday, categories]);
 
+  // Month summary
+  const monthSummary = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthTx = transactions.filter((t) => new Date(t.date) >= startOfMonth && !excludedIds.has(t.categoryId));
+    const income = monthTx
+      .filter((t) => t.type === 'INCOME')
+      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), (t as any).account?.currency || 'RUB'), 0);
+    const expense = monthTx
+      .filter((t) => t.type === 'EXPENSE')
+      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), (t as any).account?.currency || 'RUB'), 0);
+    const balance = income - expense;
+    return { income, expense, balance };
+  }, [transactions, excludedIds, convertToUserCurrency]);
+
   return (
     <View style={[S.flex, S.screen, { paddingTop: insets.top }]}>
       <ScrollView
@@ -303,25 +216,24 @@ export default function HomeScreen() {
         contentContainerStyle={[S.scroll, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.indigo} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
         }
       >
         {/* Header Switcher */}
         <View style={S.header}>
           <Pressable
             onPress={() => setTab('overview')}
-            style={[S.tabPill, { backgroundColor: tab === 'overview' ? C.indigo : 'transparent' }]}
+            style={[S.tabPill, { backgroundColor: tab === 'overview' ? C.primary : 'transparent' }]}
           >
             <Text style={[S.tabText, { color: tab === 'overview' ? '#FFF' : C.textSec }]}>{t('home.tabOverview')}</Text>
           </Pressable>
           <Pressable
             onPress={() => setTab('read')}
-            style={[S.tabPill, { backgroundColor: tab === 'read' ? C.indigo : 'transparent' }]}
+            style={[S.tabPill, { backgroundColor: tab === 'read' ? C.primary : 'transparent' }]}
           >
             <Text style={[S.tabText, { color: tab === 'read' ? '#FFF' : C.textSec }]}>{t('home.tabRead')}</Text>
           </Pressable>
         </View>
-
 
         {tab === 'overview' ? (
           <View style={{ gap: 12 }}>
@@ -376,11 +288,42 @@ export default function HomeScreen() {
               </View>
             </View>
 
+            {/* Month Summary */}
+            <View style={S.monthCard}>
+              <Text style={S.monthTitle}>{t('home.monthSummary')}</Text>
+              <View style={S.monthRow}>
+                <Text style={S.monthLabel}>{t('home.incomeLabel')}</Text>
+                <Text style={[S.monthValue, { color: C.green }]}>
+                  {monthSummary.income > 0 ? formatCurrency(monthSummary.income) : '—'}
+                </Text>
+              </View>
+              <View style={S.monthRow}>
+                <Text style={S.monthLabel}>{t('home.expenseLabel')}</Text>
+                <Text style={[S.monthValue, { color: C.red }]}>
+                  {monthSummary.expense > 0 ? formatCurrency(monthSummary.expense) : '—'}
+                </Text>
+              </View>
+              {monthSummary.income > 0 && monthSummary.expense > 0 && (
+                <>
+                  <View style={S.barTrack}>
+                    <View style={[S.barFill, {
+                      width: `${Math.min((monthSummary.expense / monthSummary.income) * 100, 100)}%`,
+                      backgroundColor: monthSummary.balance >= 0 ? C.green : C.red,
+                    }]} />
+                  </View>
+                  <View style={S.monthRow}>
+                    <Text style={S.monthLabel}>{t('accounts.balance')}</Text>
+                    <Text style={[S.monthValue, { color: monthSummary.balance >= 0 ? C.green : C.red }]}>
+                      {formatCurrency(monthSummary.balance)}
+                    </Text>
+                  </View>
+                </>
+              )}
+            </View>
+
             {/* Daily Pulse */}
             <View style={S.pulseCard}>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: C.textMain, marginBottom: 4 }}>
-                {t('home.todayTitle')}
-              </Text>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: C.textMain, marginBottom: 4 }}>{t('home.todayTitle')}</Text>
               <View style={S.pulseRow}>
                 <Text style={S.pulseLabel}>{t("home.biggestExpense")}</Text>
                 <Text style={S.pulseValue}>
@@ -414,6 +357,13 @@ export default function HomeScreen() {
               >
                 <Ionicons name="mic" size={22} color="#6366F1" />
                 <Text style={[S.actionText, { color: '#6366F1' }]}>{t("home.voiceInput")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/main/wishlist/' as never)}
+                style={[S.actionBtn, { backgroundColor: 'rgba(251,149,84,0.1)', borderColor: 'rgba(251,149,84,0.2)' }]}
+              >
+                <Ionicons name="snow" size={22} color={C.orange} />
+                <Text style={[S.actionText, { color: C.orange }]}>{t("home.incubateWish")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={async () => {
@@ -460,18 +410,46 @@ export default function HomeScreen() {
             </View>
           </View>
         ) : (
-          /* Read Tab */
+          /* Read Tab — Dynamic Articles */
           <View style={{ gap: 10, paddingTop: 4 }}>
-            {ARTICLES.map((article) => (
-              <TouchableOpacity key={article.id} style={S.articleCard}>
-                <View style={S.articleTag}>
-                  <Text style={S.articleTagText}>{article.tag}</Text>
+            {isLoadingArticles ? (
+              <View style={S.emptyState}>
+                <ActivityIndicator size="large" color={C.primary} />
+                <Text style={[S.emptyTitle, { marginTop: 16 }]}>{t('home.articlesLoading')}</Text>
+              </View>
+            ) : articles.length === 0 ? (
+              <View style={S.emptyState}>
+                <View style={S.emptyIcon}>
+                  <Ionicons name="book-outline" size={28} color={C.textSec} />
                 </View>
-                <Text style={S.articleTitle}>{t(article.titleKey as any)}</Text>
-                <Text style={S.articleSub}>{t(article.subKey as any)}</Text>
-                <Text style={S.articleTime}>{t(article.timeKey as any)}</Text>
-              </TouchableOpacity>
-            ))}
+                <Text style={S.emptyTitle}>{t('home.noArticles')}</Text>
+                <Text style={S.emptySub}>{t('home.articlesLoading')}</Text>
+              </View>
+            ) : (
+              articles.map((article) => (
+                <TouchableOpacity
+                  key={article.id}
+                  style={S.articleCard}
+                  onPress={() => onArticlePress(article.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={S.articleTag}>
+                    <Text style={S.articleTagText}>{article.tag}</Text>
+                  </View>
+                  <Text style={S.articleTitle}>{article.title}</Text>
+                  <Text style={S.articleSub} numberOfLines={2}>{article.content}</Text>
+                  <View style={S.articleFooter}>
+                    <Text style={S.articleTime}>{article.readTime}</Text>
+                    <View style={S.articleViews}>
+                      <Ionicons name="eye-outline" size={12} color={C.textSec} />
+                      <Text style={S.articleViewsText}>
+                        {t('home.views', { count: article.viewCount })}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
           </View>
         )}
       </ScrollView>
@@ -482,16 +460,6 @@ export default function HomeScreen() {
         onComplete={() => setShowAddModal(false)}
         initialType={addType}
       />
-
-      {/* <VoiceInputModal
-        visible={showVoiceModal}
-        onClose={() => setShowVoiceModal(false)}
-        onResult={(result) => {
-          setAiResult(result);
-          setShowVoiceModal(false);
-          setShowAiPreview(true);
-        }}
-      /> */}
 
       <AiTransactionPreview
         visible={showAiPreview}

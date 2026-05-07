@@ -9,22 +9,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
 import { SpendingChart } from '../../../src/components/ui/SpendingChart';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useTheme } from '../../../src/stores/themeStore';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { formatCurrency } from '../../../src/utils/formatters';
 import transactionsService from '../../../src/services/transactions';
-
-const C = {
-  bg: '#0A0A0F',
-  card: '#141418',
-  border: 'rgba(255,255,255,0.08)',
-  text: '#F5F5F5',
-  dim: '#8C8C8C',
-  mute: '#52525B',
-  indigo: '#6366F1',
-  green: '#34D399',
-  red: '#FF3B30',
-  orange: '#FF9500',
-};
 
 const MONTHS = [
   'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
@@ -48,6 +36,27 @@ function getYearBounds(date: Date) {
 }
 
 export default function AnalyticsScreen() {
+  const C = useTheme();
+  const s = StyleSheet.create({
+    screen: { flex: 1, backgroundColor: C.bg },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingBottom: 8 },
+    backBtn: { padding: 4 },
+    headerTitle: { fontSize: 22, fontWeight: '700', color: C.textMain, letterSpacing: -0.3 },
+    periodRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 10, gap: 6 },
+    periodBtn: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    periodText: { fontSize: 15, fontWeight: '600', color: C.textMain, minWidth: 120, textAlign: 'center' },
+    kpiRow: { flexDirection: 'row', gap: 8 },
+    kpiCard: { flex: 1, backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 12, alignItems: 'center' },
+    kpiIcon: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+    kpiValue: { fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
+    kpiLabel: { fontSize: 11, color: C.textSec, marginTop: 2, fontWeight: '500' },
+    kpiChange: { fontSize: 10, fontWeight: '600', marginTop: 4 },
+    section: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 16 },
+    sectionTitle: { fontSize: 13, fontWeight: '600', color: C.textSec, textTransform: 'uppercase', marginBottom: 12, letterSpacing: 0.3 },
+    barTrack: { height: 4, borderRadius: 2, backgroundColor: C.inputBg, overflow: 'hidden' },
+    barFill: { height: 4, borderRadius: 2 },
+    center: { alignItems: 'center', paddingVertical: 60 },
+  });
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -102,7 +111,7 @@ export default function AnalyticsScreen() {
   }, [data]);
 
   const chg = (v: number) => {
-    if (v === 0) return { text: '0%', color: C.dim };
+    if (v === 0) return { text: '0%', color: C.textSec };
     const sign = v > 0 ? '+' : '';
     const color = v > 0 ? C.red : C.green; // expenses up = red, income up = green... 
     return { text: `${sign}${v.toFixed(1)}%`, color };
@@ -111,7 +120,7 @@ export default function AnalyticsScreen() {
   const expChg = chg(data?.comparison?.expenseChange ?? 0);
   // For expenses, up=bad=red. For income, up=good=green.
   const expChgFixed = useMemo(() => {
-    if (!data?.comparison) return { text: '', color: C.dim };
+    if (!data?.comparison) return { text: '', color: C.textSec };
     const v = data.comparison.expenseChange;
     const sign = v > 0 ? '+' : '';
     const color = v > 0 ? C.red : C.green;
@@ -141,7 +150,7 @@ export default function AnalyticsScreen() {
       {/* Header */}
       <View style={s.header}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={s.backBtn}>
-          <Ionicons name="chevron-back" size={28} color={C.dim} />
+          <Ionicons name="chevron-back" size={28} color={C.textSec} />
         </Pressable>
         <Text style={s.headerTitle}>{t("analytics.title")}</Text>
         <View style={{ width: 36 }} />
@@ -155,24 +164,24 @@ export default function AnalyticsScreen() {
         {/* Period selector */}
         <View style={s.periodRow}>
           <Pressable onPress={() => navigate(-1)} style={s.periodBtn}>
-            <Ionicons name="chevron-back" size={18} color={C.dim} />
+            <Ionicons name="chevron-back" size={18} color={C.textSec} />
           </Pressable>
           <Text style={s.periodText}>{periodLabel}</Text>
           <Pressable onPress={() => navigate(1)} style={s.periodBtn}>
-            <Ionicons name="chevron-forward" size={18} color={C.dim} />
+            <Ionicons name="chevron-forward" size={18} color={C.textSec} />
           </Pressable>
           <Pressable
             onPress={() => { setMode(mode === 'MONTH' ? 'YEAR' : 'MONTH'); setCurrentDate(new Date()); }}
-            style={[s.periodBtn, { backgroundColor: 'rgba(99,102,241,0.1)' }]}
+            style={[s.periodBtn, { backgroundColor: C.primaryBg }]}
           >
-            <Text style={{ fontSize: 10, fontWeight: '800', color: C.indigo }}>
+            <Text style={{ fontSize: 10, fontWeight: '800', color: C.primary }}>
               {mode === 'MONTH' ? 'ГОД' : 'МЕС'}
             </Text>
           </Pressable>
         </View>
 
         {loading ? (
-          <View style={s.center}><ActivityIndicator color={C.indigo} size="large" /></View>
+          <View style={s.center}><ActivityIndicator color={C.primary} size="large" /></View>
         ) : error ? (
           <View style={s.center}>
             <Ionicons name="warning-outline" size={40} color={C.red} />
@@ -181,7 +190,7 @@ export default function AnalyticsScreen() {
         ) : !data ? (
           <View style={s.center}>
             <Ionicons name="bar-chart-outline" size={48} color="#3F3F46" />
-            <Text style={{ color: C.dim, marginTop: 12 }}>
+            <Text style={{ color: C.textSec, marginTop: 12 }}>
               {isDemo ? 'Недоступно в демо-режиме' : 'Нет данных за период'}
             </Text>
           </View>
@@ -191,7 +200,7 @@ export default function AnalyticsScreen() {
             <View style={s.kpiRow}>
               {/* Расходы */}
               <View style={s.kpiCard}>
-                <View style={[s.kpiIcon, { backgroundColor: 'rgba(255,59,48,0.1)' }]}>
+                <View style={[s.kpiIcon, { backgroundColor: C.redBg }]}>
                   <Ionicons name="arrow-down" size={14} color={C.red} />
                 </View>
                 <Text style={[s.kpiValue, { color: C.red }]} numberOfLines={1} adjustsFontSizeToFit>
@@ -223,8 +232,8 @@ export default function AnalyticsScreen() {
 
               {/* Баланс */}
               <View style={s.kpiCard}>
-                <View style={[s.kpiIcon, { backgroundColor: 'rgba(99,102,241,0.1)' }]}>
-                  <Ionicons name="wallet-outline" size={14} color={C.indigo} />
+                <View style={[s.kpiIcon, { backgroundColor: C.primaryBg }]}>
+                  <Ionicons name="wallet-outline" size={14} color={C.primary} />
                 </View>
                 <Text
                   style={[s.kpiValue, { color: data.totals.balance >= 0 ? C.green : C.red }]}
@@ -235,7 +244,7 @@ export default function AnalyticsScreen() {
                 </Text>
                 <Text style={s.kpiLabel}>{t("analytics.balance")}</Text>
                 {data.comparison && (
-                  <Text style={[s.kpiChange, { color: C.dim }]}>
+                  <Text style={[s.kpiChange, { color: C.textSec }]}>
                     {chg(data.comparison.balanceChange).text}
                   </Text>
                 )}
@@ -272,16 +281,16 @@ export default function AnalyticsScreen() {
                         <View
                           style={{
                             width: 8, height: 8, borderRadius: 4,
-                            backgroundColor: cat.category.color || C.indigo,
+                            backgroundColor: cat.category.color || C.primary,
                           }}
                         />
                         {/* Name + bar */}
                         <View style={{ flex: 1, gap: 4 }}>
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <Text style={{ fontSize: 13, fontWeight: '500', color: C.text }}>
+                            <Text style={{ fontSize: 13, fontWeight: '500', color: C.textMain }}>
                               {cat.category.name}
                             </Text>
-                            <Text style={{ fontSize: 13, fontWeight: '600', color: C.dim }}>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSec }}>
                               {cat.percentage.toFixed(1)}%
                             </Text>
                           </View>
@@ -289,10 +298,10 @@ export default function AnalyticsScreen() {
                           <View style={s.barTrack}>
                             <View style={[s.barFill, {
                               width: `${Math.max(barW, 2)}%`,
-                              backgroundColor: cat.category.color || C.indigo,
+                              backgroundColor: cat.category.color || C.primary,
                             }]} />
                           </View>
-                          <Text style={{ fontSize: 11, color: C.mute }}>
+                          <Text style={{ fontSize: 11, color: C.textMuted }}>
                             {formatCurrency(cat.amount)} · {cat.count} {cat.count === 1 ? 'операция' : cat.count < 5 ? 'операции' : 'операций'}
                           </Text>
                         </View>
@@ -305,7 +314,7 @@ export default function AnalyticsScreen() {
 
             {topExpenseCat.length === 0 && data?.totals?.expense > 0 && (
               <View style={[s.center, { paddingVertical: 24 }]}>
-                <Text style={{ color: C.dim, fontSize: 13 }}>{t("analytics.noBreakdown")}</Text>
+                <Text style={{ color: C.textSec, fontSize: 13 }}>{t("analytics.noBreakdown")}</Text>
               </View>
             )}
           </View>
@@ -314,54 +323,3 @@ export default function AnalyticsScreen() {
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12, paddingBottom: 8,
-  },
-  backBtn: { padding: 4 },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: C.text, letterSpacing: -0.3 },
-  
-  periodRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border,
-    paddingVertical: 10, paddingHorizontal: 12, marginBottom: 10, gap: 6,
-  },
-  periodBtn: {
-    width: 32, height: 32, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  periodText: { fontSize: 15, fontWeight: '600', color: C.text, minWidth: 120, textAlign: 'center' },
-
-  kpiRow: { flexDirection: 'row', gap: 8 },
-  kpiCard: {
-    flex: 1, backgroundColor: C.card, borderRadius: 16,
-    borderWidth: 1, borderColor: C.border, padding: 12, alignItems: 'center',
-  },
-  kpiIcon: {
-    width: 28, height: 28, borderRadius: 8,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 6,
-  },
-  kpiValue: { fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
-  kpiLabel: { fontSize: 11, color: C.dim, marginTop: 2, fontWeight: '500' },
-  kpiChange: { fontSize: 10, fontWeight: '600', marginTop: 4 },
-
-  section: {
-    backgroundColor: C.card, borderRadius: 16,
-    borderWidth: 1, borderColor: C.border, padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 13, fontWeight: '600', color: C.dim,
-    textTransform: 'uppercase', marginBottom: 12, letterSpacing: 0.3,
-  },
-  barTrack: {
-    height: 4, borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden',
-  },
-  barFill: { height: 4, borderRadius: 2 },
-
-  center: { alignItems: 'center', paddingVertical: 60 },
-});

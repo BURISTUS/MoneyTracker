@@ -17,6 +17,7 @@ import { CurrencyModule } from './currency/currency.module';
 import { I18nApiModule } from './i18n-controller/i18n-api.module';
 import { ChatModule } from './chat/chat.module';
 import { AiModule } from './ai/ai.module';
+import { ArticlesModule } from './articles/articles.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { AiModule } from './ai/ai.module';
     I18nApiModule,
     ChatModule,
     AiModule,
+    ArticlesModule,
   ],
 })
 export class AppModule {}

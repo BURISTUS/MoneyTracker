@@ -5,6 +5,8 @@ export interface User {
   name: string;
   hourlyRate: number | null;
   monthlyHours: number;
+  currency?: string;
+  language?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -374,4 +376,18 @@ export interface ChatMessage {
   content: string;
   presetType: PresetType | null;
   createdAt: string;
+}
+
+// Article Types
+export interface Article {
+  id: string;
+  slug: string;
+  tag: string;
+  viewCount: number;
+  title: string;
+  content: string;
+  readTime: string;
+  language: string;
+  createdAt: string;
+  updatedAt: string;
 }

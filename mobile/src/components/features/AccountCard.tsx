@@ -3,6 +3,7 @@ import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../utils/formatters';
+import { useTheme } from '../../stores/themeStore';
 import type { Account, AccountType } from '../../types';
 
 interface AccountCardProps {
@@ -10,15 +11,15 @@ interface AccountCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-const accountIcons: Record<AccountType, { icon: keyof typeof Ionicons.glyphMap; color: string }> = {
-  CASH: { icon: 'wallet-outline', color: '#34D399' },
-  BANK: { icon: 'card-outline', color: '#6366F1' },
-  CREDIT: { icon: 'card-outline', color: '#F87171' },
-  INVESTMENT: { icon: 'trending-up-outline', color: '#FBBF24' },
-  DEBT: { icon: 'alert-circle-outline', color: '#FB923C' },
-};
-
 export const AccountCard: React.FC<AccountCardProps> = React.memo(({ account, style }) => {
+  const C = useTheme();
+  const accountIcons: Record<AccountType, { icon: keyof typeof Ionicons.glyphMap; color: string }> = {
+    CASH: { icon: 'wallet-outline', color: C.green },
+    BANK: { icon: 'card-outline', color: C.primary },
+    CREDIT: { icon: 'card-outline', color: C.red },
+    INVESTMENT: { icon: 'trending-up-outline', color: C.yellow },
+    DEBT: { icon: 'alert-circle-outline', color: C.orange },
+  };
   const config = accountIcons[account.type] || accountIcons.CASH;
 
   return (

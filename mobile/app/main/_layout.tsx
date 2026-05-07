@@ -2,16 +2,19 @@ import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { TabBar } from '../../src/components/layout/TabBar';
 import { ToastProvider, ToastContainer } from '../../src/components/ui/Toast';
+import { useTheme } from '../../src/stores/themeStore';
 
 export default function MainLayout() {
+  const C = useTheme();
+
   return (
     <ToastProvider>
-      <View style={{ flex: 1, backgroundColor: '#0A0A0F' }}>
+      <View style={{ flex: 1, backgroundColor: C.bg }}>
         <Stack
           screenOptions={{
             headerShown: false,
             contentStyle: {
-              backgroundColor: '#0A0A0F',
+              backgroundColor: C.bg,
             },
           }}
         >
@@ -28,6 +31,7 @@ export default function MainLayout() {
           <Stack.Screen name="life-cost/index" />
           <Stack.Screen name="chat/index" />
           <Stack.Screen name="analytics/index" />
+          <Stack.Screen name="articles/[id]" />
         </Stack>
         <ToastContainer />
         <TabBar />

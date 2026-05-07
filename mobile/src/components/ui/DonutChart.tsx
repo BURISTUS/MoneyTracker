@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { View, Pressable, Dimensions } from 'react-native';
+import { useTheme } from '../../stores/themeStore';
 import Svg, { G, Circle } from 'react-native-svg';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from './CategoryIcon';
@@ -28,6 +29,7 @@ export function DonutChart({
   type,
 }: DonutChartProps) {
   const { t } = useTranslation();
+  const C = useTheme();
   if (categories.length === 0) {
     return (
       <View style={{ height: CHART_SIZE, alignItems: 'center', justifyContent: 'center' }}>
@@ -107,7 +109,7 @@ export function DonutChart({
           >
             {totalFormatted}
           </Text>
-          <Text style={{ fontSize: 13, color: '#8C8C8C', marginTop: 2 }}>₽</Text>
+          <Text style={{ fontSize: 13, color: C.textSec, marginTop: 2 }}>₽</Text>
         </View>
 
         {/* Category icons around the donut */}
@@ -126,7 +128,7 @@ export function DonutChart({
                 width: 36,
                 height: 36,
                 borderRadius: 12,
-                backgroundColor: 'rgba(255,255,255,0.06)',
+                backgroundColor: C.divider,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
@@ -157,7 +159,7 @@ export function DonutChart({
             <Text style={{ flex: 1, fontSize: 13, color: '#D4D4D8', fontWeight: '500' }}>
               {item.category.name}
             </Text>
-            <Text style={{ fontSize: 13, color: '#8C8C8C', fontWeight: '600' }}>
+            <Text style={{ fontSize: 13, color: C.textSec, fontWeight: '600' }}>
               {item.percentage.toFixed(1)}%
             </Text>
           </View>

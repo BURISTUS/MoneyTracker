@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { useAuthStore } from '../../../src/stores/authStore';
+import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../../src/utils/formatters';
 import { useToast } from '../../../src/components/ui/Toast';
@@ -22,6 +23,7 @@ import { ConfirmModal } from '../../../src/components/ui/ConfirmModal';
 import { WishlistStatus as WishlistStatusEnum } from '../../../src/types';
 import wishlistService from '../../../src/services/wishlist';
 import type { WishlistItem } from '../../../src/types';
+import type { ThemeColors } from '../../../src/stores/themeStore';
 
 /* ─── Helpers ─── */
 
@@ -52,216 +54,63 @@ function getDaysPassed(createdAt: string, cooldownDays: number): number {
   return Math.max(0, Math.min(cooldownDays, Math.floor(passedDays)));
 }
 
-/* ─── Colors ─── */
+/* ─── Status Config (takes theme colors) ─── */
 
-const C = {
-  bg: '#0A0A0F',
-  card: '#141418',
-  cardBorder: 'rgba(255,255,255,0.08)',
-  indigo: '#6366F1',
-  orange: '#FB9554',
-  green: '#489768',
-  red: '#EF4444',
-  yellow: '#FBBF24',
-  textMain: '#F5F5F5',
-  textSec: '#8C8C8C',
-  textDark: '#52525B',
-  pendingCardBg: '#141418',
-  pendingBorder: 'rgba(79,110,247,0.18)',
-  readyCardBg: '#1A1510',
-  readyBorder: 'rgba(251,149,84,0.25)',
-};
-
-/* ─── Status Config ─── */
-
-const STATUS_CONFIG = {
-  PENDING: {
-    label: 'В процессе',
-    icon: 'snow' as const,
-    color: C.indigo,
-    bg: 'rgba(99,102,241,0.12)',
-    cardBg: C.pendingCardBg,
-    border: C.pendingBorder,
-  },
-  READY: {
-    label: 'Готово',
-    icon: 'flame' as const,
-    color: C.orange,
-    bg: 'rgba(251,149,84,0.12)',
-    cardBg: C.readyCardBg,
-    border: C.readyBorder,
-  },
-  REJECTED: {
-    label: 'Отказ',
-    icon: 'trending-up' as const,
-    color: C.green,
-    bg: 'rgba(72,151,104,0.12)',
-    cardBg: C.card,
-    border: 'rgba(72,151,104,0.25)',
-  },
-  PURCHASED: {
-    label: 'Куплено',
-    icon: 'cart' as const,
-    color: C.red,
-    bg: 'rgba(239,68,68,0.12)',
-    cardBg: C.card,
-    border: 'rgba(239,68,68,0.25)',
-  },
-  EXPIRED: {
-    label: 'Просрочено',
-    icon: 'time' as const,
-    color: C.textSec,
-    bg: 'rgba(255,255,255,0.06)',
-    cardBg: C.card,
-    border: C.cardBorder,
-  },
-};
-
-function getStatusConfig(status: string) {
-  return STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.EXPIRED;
+function getStatusConfig(status: string, C: ThemeColors) {
+  const map = {
+    PENDING: {
+      label: 'В процессе',
+      icon: 'snow' as const,
+      color: C.primary,
+      bg: C.primaryBg,
+      cardBg: C.card,
+      border: C.primaryBorder,
+    },
+    READY: {
+      label: 'Готово',
+      icon: 'flame' as const,
+      color: C.orange,
+      bg: C.orangeBg,
+      cardBg: C.card,
+      border: C.orangeBorder,
+    },
+    REJECTED: {
+      label: 'Отказ',
+      icon: 'trending-up' as const,
+      color: C.green,
+      bg: C.greenBg,
+      cardBg: C.card,
+      border: C.greenBorder,
+    },
+    PURCHASED: {
+      label: 'Куплено',
+      icon: 'cart' as const,
+      color: C.red,
+      bg: C.redBg,
+      cardBg: C.card,
+      border: C.redBorder,
+    },
+    EXPIRED: {
+      label: 'Просрочено',
+      icon: 'time' as const,
+      color: C.textSec,
+      bg: C.divider,
+      cardBg: C.card,
+      border: C.border,
+    },
+  };
+  return map[status as keyof typeof map] ?? map.EXPIRED;
 }
 
 type FilterTab = 'all' | 'PENDING' | 'READY' | 'REJECTED' | 'PURCHASED';
 
-/* ─── Styles ─── */
+/* ─── Sub-components ─── */
 
-const S = StyleSheet.create({
-  flex: { flex: 1 },
-  screen: { backgroundColor: C.bg },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: C.textMain },
-  headerSub: { fontSize: 13, color: C.textSec, marginTop: 0 },
-  addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: C.indigo,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterScroll: { paddingHorizontal: 16, gap: 4, paddingVertical: 0 },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 8,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: C.card,
-    borderWidth: 1,
-    borderColor: C.cardBorder,
-  },
-  filterChipActive: {},
-  filterLabel: { fontSize: 11, fontWeight: '600', color: C.textMain, lineHeight: 13 },
-  filterCount: {
-    minWidth: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 2,
-  },
-  filterCountText: { fontSize: 9, fontWeight: '700', color: C.textSec, lineHeight: 11 },
-  listContent: { paddingTop: 0, paddingBottom: 120 },
-  card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 18,
-    marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 14,
-  },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  statusIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardTitle: { fontSize: 17, fontWeight: '700', color: C.textMain },
-  cardDesc: { fontSize: 14, color: '#C4C4C4', marginTop: 4, fontStyle: 'italic', lineHeight: 20 },
-  heroBlock: {
-    backgroundColor: 'rgba(251,149,84,0.08)',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 12,
-  },
-  heroLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  heroLabel: { fontSize: 13, color: C.textSec },
-  heroValue: { fontSize: 28, fontWeight: '800', color: C.orange, letterSpacing: -0.5 },
-  heroPrice: { fontSize: 14, color: C.textSec, marginTop: 4 },
-  timeline: { flexDirection: 'row', alignItems: 'center', marginTop: 14, gap: 4 },
-  timelineSegment: { flex: 1, height: 6, borderRadius: 3 },
-  statusRow: { marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  statusText: { fontSize: 12, fontWeight: '600' },
-  btnRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
-  btnReject: {
-    flex: 1.25,
-    backgroundColor: C.green,
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-  },
-  btnRejectRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  btnRejectText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  btnRejectSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
-  btnBuy: {
-    flex: 1,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  btnBuyText: { fontSize: 15, fontWeight: '600' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
-  metaText: { fontSize: 12, color: C.textSec },
-  metaDot: { fontSize: 12, color: C.textDark },
-  xpRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  xpText: { fontSize: 12, color: '#FFD700', fontWeight: '700' },
-  emptyWrap: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 32 },
-  emptyIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(99,102,241,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(99,102,241,0.15)',
-  },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: C.textMain, marginBottom: 8, textAlign: 'center' },
-  emptySub: { fontSize: 14, color: C.textSec, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
-  emptyCta: {
-    backgroundColor: C.indigo,
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  emptyCtaText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-});
-
-/* ─── Components ─── */
-
-function StatusIcon({ status, size = 22 }: { status: keyof typeof STATUS_CONFIG; size?: number }) {
-  const cfg = STATUS_CONFIG[status];
+function StatusIcon({ status, size = 22 }: { status: string; size?: number }) {
+  const C = useTheme();
+  const cfg = getStatusConfig(status, C);
   return (
-    <View style={[S.statusIconWrap, { backgroundColor: cfg.bg }]}>
+    <View style={{ width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: cfg.bg }}>
       <Ionicons name={cfg.icon as any} size={size} color={cfg.color} />
     </View>
   );
@@ -269,34 +118,36 @@ function StatusIcon({ status, size = 22 }: { status: keyof typeof STATUS_CONFIG;
 
 function HeroLifeCost({ hoursCost, price }: { hoursCost: string | null; price: number }) {
   const { t } = useTranslation();
+  const C = useTheme();
   return (
-    <View style={S.heroBlock}>
-      <View style={S.heroLabelRow}>
+    <View style={{ backgroundColor: C.orangeBg, borderRadius: 16, padding: 16, marginTop: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
         <Ionicons name="time-outline" size={14} color={C.orange} />
-        <Text style={S.heroLabel}>{t("wishlist.hoursOfWork")}</Text>
+        <Text style={{ fontSize: 13, color: C.textSec }}>{t("wishlist.hoursOfWork")}</Text>
       </View>
-      <Text style={S.heroValue}>{hoursCost ?? '—'}</Text>
-      <Text style={S.heroPrice}>{formatCurrency(price)}</Text>
+      <Text style={{ fontSize: 28, fontWeight: '800', color: C.orange, letterSpacing: -0.5 }}>{hoursCost ?? '—'}</Text>
+      <Text style={{ fontSize: 14, color: C.textSec, marginTop: 4 }}>{formatCurrency(price)}</Text>
     </View>
   );
 }
 
 function Timeline({ daysPassed, totalDays }: { daysPassed: number; totalDays: number }) {
+  const C = useTheme();
   return (
-    <View style={S.timeline}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 14, gap: 4 }}>
       {Array.from({ length: totalDays }).map((_, i) => {
         const filled = i < daysPassed;
         const isLast = i === totalDays - 1;
         return (
           <View
             key={i}
-            style={[
-              S.timelineSegment,
-              {
-                backgroundColor: filled ? (isLast ? C.orange : C.indigo) : 'rgba(255,255,255,0.06)',
-                opacity: filled ? 1 : 0.5,
-              },
-            ]}
+            style={{
+              flex: 1,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: filled ? (isLast ? C.orange : C.primary) : C.divider,
+              opacity: filled ? 1 : 0.5,
+            }}
           />
         );
       })}
@@ -313,16 +164,17 @@ function FilterChips({
   active: FilterTab;
   onChange: (f: FilterTab) => void;
 }) {
+  const C = useTheme();
   const tabs: { key: FilterTab; label: string; icon: string; color: string }[] = [
     { key: 'all', label: 'Все', icon: 'grid-outline', color: C.textSec },
-    { key: 'PENDING', label: 'В процессе', icon: 'snow', color: C.indigo },
+    { key: 'PENDING', label: 'В процессе', icon: 'snow', color: C.primary },
     { key: 'READY', label: 'Готово', icon: 'flame', color: C.orange },
     { key: 'REJECTED', label: 'Отказы', icon: 'trending-up', color: C.green },
     { key: 'PURCHASED', label: 'Куплено', icon: 'cart', color: C.red },
   ];
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterScroll}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 4, paddingVertical: 0 }}>
       {tabs.map((tab) => {
         const isActive = active === tab.key;
         const count = counts[tab.key];
@@ -332,15 +184,26 @@ function FilterChips({
           <TouchableOpacity
             key={tab.key}
             onPress={() => onChange(tab.key)}
-            style={[
-              S.filterChip,
-              isActive && { backgroundColor: tab.color, borderColor: tab.color },
-            ]}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 3,
+              paddingHorizontal: 8,
+              height: 28,
+              borderRadius: 8,
+              backgroundColor: isActive ? tab.color : C.card,
+              borderWidth: 1,
+              borderColor: isActive ? tab.color : C.border,
+            }}
           >
             <Ionicons name={tab.icon as any} size={12} color={isActive ? '#FFF' : tab.color} />
-            <Text style={[S.filterLabel, { color: isActive ? '#FFF' : C.textMain }]}>{tab.label}</Text>
-            <View style={[S.filterCount, { backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)' }]}>
-              <Text style={[S.filterCountText, { color: isActive ? '#FFF' : C.textSec }]}>{count}</Text>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: isActive ? '#FFF' : C.textMain, lineHeight: 13 }}>{tab.label}</Text>
+            <View style={{
+              minWidth: 14, height: 14, borderRadius: 7,
+              backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : C.divider,
+              alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2,
+            }}>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: isActive ? '#FFF' : C.textSec, lineHeight: 11 }}>{count}</Text>
             </View>
           </TouchableOpacity>
         );
@@ -359,65 +222,9 @@ type AddWishlistModalProps = {
   insetsTop: number;
 };
 
-const MS = StyleSheet.create({
-  modalOverlay: { flex: 1, backgroundColor: C.bg },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  modalClose: { padding: 4 },
-  modalTitle: { fontSize: 17, fontWeight: '700', color: C.textMain },
-  form: { padding: 16, paddingBottom: 320 },
-  field: { marginBottom: 18 },
-  fieldLabel: { fontSize: 13, color: C.textSec, marginBottom: 8, fontWeight: '500' },
-  input: {
-    backgroundColor: C.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.cardBorder,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    color: C.textMain,
-    fontSize: 17,
-  },
-  inputMultiline: {
-    backgroundColor: C.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.cardBorder,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: C.textMain,
-    fontSize: 15,
-    minHeight: 100,
-    textAlignVertical: 'top' as any,
-  },
-  previewBox: {
-    backgroundColor: 'rgba(251,149,84,0.08)',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  previewText: { fontSize: 13, color: C.orange },
-  charCount: { fontSize: 12 },
-  submitBtn: {
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  submitText: { fontSize: 17, fontWeight: '800' },
-  lockRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 10 },
-  lockText: { fontSize: 12, color: C.textSec },
-});
-
 function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: AddWishlistModalProps) {
   const { t } = useTranslation();
+  const C = useTheme();
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
@@ -473,6 +280,63 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
     onClose();
   }, [canSubmit, name, price, description, userId, onClose]);
 
+  const MS = StyleSheet.create({
+    modalOverlay: { flex: 1, backgroundColor: C.bg },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    modalClose: { padding: 4 },
+    modalTitle: { fontSize: 17, fontWeight: '700', color: C.textMain },
+    form: { padding: 16, paddingBottom: 320 },
+    field: { marginBottom: 18 },
+    fieldLabel: { fontSize: 13, color: C.textSec, marginBottom: 8, fontWeight: '500' },
+    input: {
+      backgroundColor: C.card,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: C.border,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      color: C.textMain,
+      fontSize: 17,
+    },
+    inputMultiline: {
+      backgroundColor: C.card,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: C.border,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      color: C.textMain,
+      fontSize: 15,
+      minHeight: 100,
+      textAlignVertical: 'top' as any,
+    },
+    previewBox: {
+      backgroundColor: C.orangeBg,
+      borderRadius: 12,
+      padding: 12,
+      marginTop: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    previewText: { fontSize: 13, color: C.orange },
+    charCount: { fontSize: 12 },
+    submitBtn: {
+      borderRadius: 16,
+      paddingVertical: 18,
+      alignItems: 'center',
+    },
+    submitText: { fontSize: 17, fontWeight: '800' },
+    lockRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 10 },
+    lockText: { fontSize: 12, color: C.textSec },
+  });
+
   if (!visible) return null;
 
   return (
@@ -494,7 +358,7 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
               value={name}
               onChangeText={setName}
               placeholder="Например: AirPods Pro"
-              placeholderTextColor="#3F3F46"
+              placeholderTextColor={C.textMuted}
               returnKeyType="next"
               style={MS.input}
             />
@@ -506,7 +370,7 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
               value={price}
               onChangeText={(t) => setPrice(t.replace(/[^0-9]/g, ''))}
               placeholder="25000"
-              placeholderTextColor="#3F3F46"
+              placeholderTextColor={C.textMuted}
               keyboardType="decimal-pad"
               returnKeyType="next"
               style={MS.input}
@@ -530,7 +394,7 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
               value={description}
               onChangeText={setDescription}
               placeholder="Объясни, почему эта покупка важна. Через 7 дней ты перечитаешь это..."
-              placeholderTextColor="#3F3F46"
+              placeholderTextColor={C.textMuted}
               multiline
               numberOfLines={4}
               maxLength={200}
@@ -542,9 +406,9 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
             onPress={handleSubmit}
             disabled={!canSubmit}
             activeOpacity={0.8}
-            style={[MS.submitBtn, { backgroundColor: canSubmit ? C.indigo : 'rgba(99,102,241,0.2)' }]}
+            style={[MS.submitBtn, { backgroundColor: canSubmit ? C.primary : C.primaryBg }]}
           >
-            <Text style={[MS.submitText, { color: canSubmit ? '#FFF' : 'rgba(255,255,255,0.3)' }]}>{t("wishlist.freezeFor7Days")}</Text>
+            <Text style={[MS.submitText, { color: canSubmit ? '#FFF' : C.textMuted }]}>{t("wishlist.freezeFor7Days")}</Text>
           </TouchableOpacity>
           <View style={MS.lockRow}>
             <Ionicons name="lock-closed" size={12} color={C.textSec} />
@@ -561,6 +425,7 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
 export default function WishlistScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const C = useTheme();
   const wishlist = useDataStore((s) => s.wishlist);
   const updateWishlistItem = useDataStore((s) => s.updateWishlistItem);
   const user = useAuthStore((s) => s.user);
@@ -663,6 +528,96 @@ export default function WishlistScreen() {
     [updateWishlistItem, runRewardAnimation, showError],
   );
 
+  /* ─── Styles ─── */
+
+  const S = StyleSheet.create({
+    flex: { flex: 1 },
+    screen: { backgroundColor: C.bg },
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    headerTitle: { fontSize: 22, fontWeight: '800', color: C.textMain },
+    headerSub: { fontSize: 13, color: C.textSec, marginTop: 0 },
+    addBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: C.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    listContent: { paddingTop: 0, paddingBottom: 120 },
+    card: {
+      borderRadius: 20,
+      borderWidth: 1,
+      padding: 18,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 14,
+    },
+    cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    cardTitle: { fontSize: 17, fontWeight: '700', color: C.textMain },
+    cardDesc: { fontSize: 14, color: '#C4C4C4', marginTop: 4, fontStyle: 'italic', lineHeight: 20 },
+    statusRow: { marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
+    statusText: { fontSize: 12, fontWeight: '600' },
+    btnRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
+    btnReject: {
+      flex: 1.25,
+      backgroundColor: C.green,
+      borderRadius: 14,
+      paddingVertical: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 3,
+    },
+    btnRejectRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    btnRejectText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+    btnRejectSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
+    btnBuy: {
+      flex: 1,
+      borderRadius: 14,
+      paddingVertical: 14,
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    btnBuyText: { fontSize: 15, fontWeight: '600' },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+    metaText: { fontSize: 12, color: C.textSec },
+    metaDot: { fontSize: 12, color: C.textMuted },
+    xpRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+    xpText: { fontSize: 12, color: '#FFD700', fontWeight: '700' },
+    emptyWrap: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 32 },
+    emptyIconWrap: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: C.primaryBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: C.primaryBorder,
+    },
+    emptyTitle: { fontSize: 20, fontWeight: '700', color: C.textMain, marginBottom: 8, textAlign: 'center' },
+    emptySub: { fontSize: 14, color: C.textSec, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+    emptyCta: {
+      backgroundColor: C.primary,
+      borderRadius: 16,
+      paddingVertical: 14,
+      paddingHorizontal: 28,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    emptyCtaText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  });
+
   /* ─── Renderers ─── */
 
   const renderItem = useCallback(
@@ -675,7 +630,7 @@ export default function WishlistScreen() {
       const isPurchased = item.status === 'PURCHASED';
       const daysPassed = getDaysPassed(item.createdAt, item.cooldownDays);
 
-      const cfg = getStatusConfig(isReady && isPending ? 'READY' : item.status);
+      const cfg = getStatusConfig(isReady && isPending ? 'READY' : item.status, C);
       const isActive = item.status === 'PENDING' || item.status === 'READY';
 
       return (
@@ -690,7 +645,7 @@ export default function WishlistScreen() {
           ]}
         >
           <View style={S.cardHeader}>
-            <StatusIcon status={(isReady && isPending ? 'READY' : item.status) as keyof typeof STATUS_CONFIG} size={20} />
+            <StatusIcon status={(isReady && isPending ? 'READY' : item.status)} size={20} />
             <View style={S.flex}>
               <Text style={S.cardTitle} numberOfLines={1}>{item.name}</Text>
               {item.description ? (
@@ -730,9 +685,9 @@ export default function WishlistScreen() {
                 style={[
                   S.btnBuy,
                   {
-                    backgroundColor: isReady ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.04)',
+                    backgroundColor: isReady ? C.redBg : C.inputBg,
                     borderWidth: isReady ? 1 : 0,
-                    borderColor: isReady ? 'rgba(239,68,68,0.3)' : 'transparent',
+                    borderColor: isReady ? C.redBorder : 'transparent',
                     opacity: isReady ? 1 : 0.35,
                   },
                 ]}
@@ -753,7 +708,7 @@ export default function WishlistScreen() {
         </View>
       );
     },
-    [handleReject, hourlyRate],
+    [handleReject, hourlyRate, C],
   );
 
   /* ─── Decision Modal ─── */
@@ -768,7 +723,7 @@ export default function WishlistScreen() {
       paddingTop: 16,
       maxHeight: '92%',
     },
-    drag: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: 16 },
+    drag: { width: 36, height: 4, borderRadius: 2, backgroundColor: C.handle, alignSelf: 'center', marginBottom: 16 },
     badge: {
       alignSelf: 'center',
       flexDirection: 'row',
@@ -784,7 +739,7 @@ export default function WishlistScreen() {
     title: { fontSize: 24, fontWeight: '800', color: C.textMain, textAlign: 'center', marginBottom: 8 },
     desc: { fontSize: 16, color: C.textSec, textAlign: 'center', fontStyle: 'italic', marginBottom: 20, lineHeight: 22 },
     hero: {
-      backgroundColor: 'rgba(251,149,84,0.08)',
+      backgroundColor: C.orangeBg,
       borderRadius: 20,
       padding: 24,
       marginBottom: 24,
@@ -811,7 +766,7 @@ export default function WishlistScreen() {
       paddingVertical: 14,
       alignItems: 'center',
       borderWidth: 1,
-      borderColor: 'rgba(239,68,68,0.35)',
+      borderColor: C.redBorder,
       marginBottom: 4,
       flexDirection: 'row',
       justifyContent: 'center',
@@ -884,14 +839,14 @@ export default function WishlistScreen() {
         </View>
       </Modal>
     );
-  }, [decisionItem, hourlyRate, insets.bottom, handleReject, handleBuy]);
+  }, [decisionItem, hourlyRate, insets.bottom, handleReject, handleBuy, C]);
 
   /* ─── Reward Modal ─── */
 
   const RS = StyleSheet.create({
     overlay: {
       flex: 1,
-      backgroundColor: 'rgba(10,10,15,0.95)',
+      backgroundColor: C.overlay,
       justifyContent: 'center',
       alignItems: 'center',
       padding: 24,
@@ -900,12 +855,12 @@ export default function WishlistScreen() {
       width: 90,
       height: 90,
       borderRadius: 45,
-      backgroundColor: 'rgba(72,151,104,0.15)',
+      backgroundColor: C.greenBg,
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 20,
       borderWidth: 2,
-      borderColor: 'rgba(72,151,104,0.3)',
+      borderColor: C.greenBorder,
     },
     title: { fontSize: 24, fontWeight: '800', color: C.green, marginBottom: 6 },
     sub: { fontSize: 15, color: C.textSec, textAlign: 'center', marginBottom: 24 },
@@ -917,13 +872,13 @@ export default function WishlistScreen() {
       alignItems: 'center',
       minWidth: 130,
       borderWidth: 1,
-      borderColor: C.cardBorder,
+      borderColor: C.border,
     },
     cardLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
     cardLabelText: { fontSize: 11, color: C.textSec },
     cardValue: { fontSize: 18, fontWeight: '800' },
     xpBox: {
-      backgroundColor: 'rgba(255,215,0,0.08)',
+      backgroundColor: C.orangeBg,
       borderRadius: 14,
       paddingVertical: 10,
       paddingHorizontal: 24,
@@ -932,18 +887,18 @@ export default function WishlistScreen() {
       alignItems: 'center',
       gap: 6,
     },
-    xpText: { fontSize: 18, fontWeight: '800', color: '#FFD700' },
+    xpText: { fontSize: 18, fontWeight: '800', color: C.yellow },
     investBox: {
       backgroundColor: C.card,
       borderRadius: 16,
       padding: 18,
       marginTop: 6,
       borderWidth: 1,
-      borderColor: C.cardBorder,
+      borderColor: C.border,
       alignItems: 'center',
     },
     closeBtn: {
-      backgroundColor: C.indigo,
+      backgroundColor: C.primary,
       borderRadius: 16,
       paddingVertical: 16,
       paddingHorizontal: 40,
@@ -990,7 +945,7 @@ export default function WishlistScreen() {
             </View>
 
             <View style={RS.xpBox}>
-              <Ionicons name="star" size={16} color="#FFD700" />
+              <Ionicons name="star" size={16} color={C.yellow} />
               <Text style={RS.xpText}>+50 XP</Text>
             </View>
 
@@ -1001,7 +956,7 @@ export default function WishlistScreen() {
         </Animated.View>
       </Modal>
     );
-  }, [rewardItem, rewardFade, rewardSlide, rewardScale, hourlyRate]);
+  }, [rewardItem, rewardFade, rewardSlide, rewardScale, hourlyRate, C]);
 
   /* ─── Empty state ─── */
 
@@ -1009,7 +964,7 @@ export default function WishlistScreen() {
     () => (
       <View style={S.emptyWrap}>
         <View style={S.emptyIconWrap}>
-          <Ionicons name="snow" size={36} color={C.indigo} />
+          <Ionicons name="snow" size={36} color={C.primary} />
         </View>
         <Text style={S.emptyTitle}>{t("wishlist.emptyIncubator")}</Text>
         <Text style={S.emptySub}>{t("wishlist.freezeDescription")}</Text>
@@ -1019,7 +974,7 @@ export default function WishlistScreen() {
         </TouchableOpacity>
       </View>
     ),
-    [],
+    [C],
   );
 
   /* ─── Main render ─── */

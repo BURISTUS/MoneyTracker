@@ -12,19 +12,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../utils/formatters';
+import { useTheme } from '../../stores/themeStore';
 import transactionsService from '../../services/transactions';
 import type { Account } from '../../types';
-
-const C = {
-  bg: '#0A0A0F',
-  card: '#141418',
-  border: 'rgba(255,255,255,0.08)',
-  textMain: '#F5F5F5',
-  textSec: '#8C8C8C',
-  indigo: '#6366F1',
-  green: '#34D399',
-  red: '#FF3B30',
-};
 
 interface Props {
   visible: boolean;
@@ -44,6 +34,8 @@ const accountIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
 
 export function TransferModal({ visible, accounts, hourlyRate, onClose, onComplete }: Props) {
   const { t } = useTranslation();
+  const C = useTheme();
+
   const [fromId, setFromId] = useState<string | null>(null);
   const [toId, setToId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
@@ -102,6 +94,75 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
     onClose();
   };
 
+  const S = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: C.sheet,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: 12,
+      paddingBottom: 34,
+      maxHeight: '90%',
+    },
+    handle: {
+      width: 36, height: 5, borderRadius: 3,
+      backgroundColor: C.handle,
+      alignSelf: 'center', marginBottom: 16,
+    },
+    header: {
+      flexDirection: 'row', justifyContent: 'space-between',
+      alignItems: 'center', paddingHorizontal: 20, marginBottom: 16,
+    },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+    closeBtn: {
+      width: 32, height: 32, borderRadius: 10,
+      backgroundColor: C.card, alignItems: 'center', justifyContent: 'center',
+      borderWidth: 1, borderColor: C.border,
+    },
+    section: { paddingHorizontal: 20, marginBottom: 16 },
+    label: { fontSize: 12, fontWeight: '600', color: C.textSec, marginBottom: 8, textTransform: 'uppercase' },
+    chipRow: { gap: 8 },
+    accountChip: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      paddingHorizontal: 14, paddingVertical: 12,
+      borderRadius: 12, borderWidth: 1, borderColor: C.border,
+      backgroundColor: C.card, marginBottom: 6,
+    },
+    accountChipActive: {
+      borderColor: C.primaryBorder,
+      backgroundColor: C.primaryBg,
+    },
+    accountChipText: { fontSize: 14, fontWeight: '500', color: C.textMain, flex: 1 },
+    accountChipTextActive: { color: C.primary },
+    accountChipBalance: { fontSize: 12, color: C.textSec },
+    arrowWrap: { alignItems: 'center', marginBottom: 4 },
+    arrowCircle: {
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: C.primaryBg,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    input: {
+      backgroundColor: C.inputBg,
+      borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14,
+      fontSize: 18, fontWeight: '600', color: C.textMain,
+      borderWidth: 1, borderColor: C.border,
+    },
+    hoursHint: { fontSize: 13, color: C.primary, marginTop: 8, fontWeight: '500' },
+    errorBox: {
+      marginHorizontal: 20, marginBottom: 12,
+      backgroundColor: C.redBg,
+      borderRadius: 10, padding: 12,
+    },
+    errorText: { fontSize: 13, color: C.red },
+    submitBtn: {
+      marginHorizontal: 20, paddingVertical: 14,
+      backgroundColor: C.primary, borderRadius: 14,
+      alignItems: 'center', marginTop: 8,
+    },
+    submitBtnDisabled: { opacity: 0.4 },
+    submitText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+  });
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={reset}>
       <Pressable style={S.overlay} onPress={reset}>
@@ -132,12 +193,12 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
                       <Ionicons
                         name={accountIcons[a.type] || 'wallet-outline'}
                         size={16}
-                        color={active ? C.indigo : C.textSec}
+                        color={active ? C.primary : C.textSec}
                       />
                       <Text style={[S.accountChipText, active && S.accountChipTextActive]}>
                         {a.name}
                       </Text>
-                      <Text style={[S.accountChipBalance, active && { color: C.indigo }]}>
+                      <Text style={[S.accountChipBalance, active && { color: C.primary }]}>
                         {formatCurrency(a.balance, a.currency)}
                       </Text>
                     </Pressable>
@@ -148,7 +209,7 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
 
             <View style={S.arrowWrap}>
               <View style={S.arrowCircle}>
-                <Ionicons name="arrow-down" size={20} color={C.indigo} />
+                <Ionicons name="arrow-down" size={20} color={C.primary} />
               </View>
             </View>
 
@@ -166,12 +227,12 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
                       <Ionicons
                         name={accountIcons[a.type] || 'wallet-outline'}
                         size={16}
-                        color={active ? C.indigo : C.textSec}
+                        color={active ? C.primary : C.textSec}
                       />
                       <Text style={[S.accountChipText, active && S.accountChipTextActive]}>
                         {a.name}
                       </Text>
-                      <Text style={[S.accountChipBalance, active && { color: C.indigo }]}>
+                      <Text style={[S.accountChipBalance, active && { color: C.primary }]}>
                         {formatCurrency(a.balance, a.currency)}
                       </Text>
                     </Pressable>
@@ -187,7 +248,7 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
                 value={amount}
                 onChangeText={setAmount}
                 placeholder="0"
-                placeholderTextColor="#52525B"
+                placeholderTextColor={C.textMuted}
                 keyboardType="decimal-pad"
               />
               {lifeHours && (
@@ -202,7 +263,7 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
                 value={note}
                 onChangeText={setNote}
                 placeholder="Например: перевод на карту"
-                placeholderTextColor="#52525B"
+                placeholderTextColor={C.textMuted}
               />
             </View>
 
@@ -231,72 +292,3 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
     </Modal>
   );
 }
-
-const S = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: '#13131A',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 12,
-    paddingBottom: 34,
-    maxHeight: '90%',
-  },
-  handle: {
-    width: 36, height: 5, borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignSelf: 'center', marginBottom: 16,
-  },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', paddingHorizontal: 20, marginBottom: 16,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
-  closeBtn: {
-    width: 32, height: 32, borderRadius: 10,
-    backgroundColor: C.card, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: C.border,
-  },
-  section: { paddingHorizontal: 20, marginBottom: 16 },
-  label: { fontSize: 12, fontWeight: '600', color: C.textSec, marginBottom: 8, textTransform: 'uppercase' },
-  chipRow: { gap: 8 },
-  accountChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 14, paddingVertical: 12,
-    borderRadius: 12, borderWidth: 1, borderColor: C.border,
-    backgroundColor: C.card, marginBottom: 6,
-  },
-  accountChipActive: {
-    borderColor: 'rgba(99,102,241,0.4)',
-    backgroundColor: 'rgba(99,102,241,0.08)',
-  },
-  accountChipText: { fontSize: 14, fontWeight: '500', color: C.textMain, flex: 1 },
-  accountChipTextActive: { color: C.indigo },
-  accountChipBalance: { fontSize: 12, color: C.textSec },
-  arrowWrap: { alignItems: 'center', marginBottom: 4 },
-  arrowCircle: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(99,102,241,0.1)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14,
-    fontSize: 18, fontWeight: '600', color: C.textMain,
-    borderWidth: 1, borderColor: C.border,
-  },
-  hoursHint: { fontSize: 13, color: C.indigo, marginTop: 8, fontWeight: '500' },
-  errorBox: {
-    marginHorizontal: 20, marginBottom: 12,
-    backgroundColor: 'rgba(255,59,48,0.08)',
-    borderRadius: 10, padding: 12,
-  },
-  errorText: { fontSize: 13, color: C.red },
-  submitBtn: {
-    marginHorizontal: 20, paddingVertical: 14,
-    backgroundColor: C.indigo, borderRadius: 14,
-    alignItems: 'center', marginTop: 8,
-  },
-  submitBtnDisabled: { opacity: 0.4 },
-  submitText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
-});

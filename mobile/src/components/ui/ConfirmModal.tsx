@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { View, Modal, Pressable, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
+import { useTheme } from '../../stores/themeStore';
 
 type ConfirmVariant = 'destructive' | 'confirm';
 
@@ -16,91 +17,6 @@ interface ConfirmModalProps {
   onCancel: () => void;
 }
 
-const VARIANT_CONFIG = {
-  destructive: {
-    icon: 'trash-outline' as const,
-    iconColor: '#EF4444',
-    iconBg: 'rgba(239,68,68,0.12)',
-    confirmBg: '#EF4444',
-    confirmText: '#FFFFFF',
-  },
-  confirm: {
-    icon: 'help-circle-outline' as const,
-    iconColor: '#6366F1',
-    iconBg: 'rgba(99,102,241,0.12)',
-    confirmBg: '#6366F1',
-    confirmText: '#FFFFFF',
-  },
-};
-
-const S = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  card: {
-    backgroundColor: '#141418',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    padding: 24,
-    width: '100%',
-    maxWidth: 340,
-  },
-  iconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#F5F5F5',
-    marginBottom: 6,
-  },
-  message: {
-    fontSize: 14,
-    color: '#8C8C8C',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  btnRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: 12,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  cancelText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#8C8C8C',
-  },
-  confirmBtn: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  confirmText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-});
-
 export function ConfirmModal({
   visible,
   title,
@@ -111,8 +27,95 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const C = useTheme();
+
+  const VARIANT_CONFIG = {
+    destructive: {
+      icon: 'trash-outline' as const,
+      iconColor: C.red,
+      iconBg: C.redBg,
+      confirmBg: C.red,
+      confirmText: '#FFFFFF',
+    },
+    confirm: {
+      icon: 'help-circle-outline' as const,
+      iconColor: C.primary,
+      iconBg: C.primaryBg,
+      confirmBg: C.primary,
+      confirmText: '#FFFFFF',
+    },
+  };
+
   const cfg = VARIANT_CONFIG[variant];
   const actionText = confirmText ?? (variant === 'destructive' ? 'Удалить' : 'Подтвердить');
+
+  const S = StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: C.overlay,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    card: {
+      backgroundColor: C.card,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: C.border,
+      padding: 24,
+      width: '100%',
+      maxWidth: 340,
+    },
+    iconWrap: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: C.textMain,
+      marginBottom: 6,
+    },
+    message: {
+      fontSize: 14,
+      color: C.textSec,
+      lineHeight: 20,
+      marginBottom: 24,
+    },
+    btnRow: {
+      flexDirection: 'row',
+      gap: 10,
+    },
+    cancelBtn: {
+      flex: 1,
+      paddingVertical: 13,
+      borderRadius: 12,
+      alignItems: 'center',
+      backgroundColor: C.divider,
+    },
+    cancelText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: C.textSec,
+    },
+    confirmBtn: {
+      flex: 1,
+      paddingVertical: 13,
+      borderRadius: 12,
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    confirmText: {
+      fontSize: 14,
+      fontWeight: '700',
+    },
+  });
 
   const handleConfirm = useCallback(() => {
     onConfirm();

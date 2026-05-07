@@ -4,6 +4,7 @@ import { View, ScrollView, Pressable, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import type { CategoryType } from '../../../src/types';
 import { CategoryType as CategoryTypeEnum } from '../../../src/types';
@@ -36,6 +37,7 @@ interface CreateCategoryModalProps {
 export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCategoryModalProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  const C = useTheme();
   const addCategory = useDataStore((s) => s.addCategory);
   const { showError } = useToast();
 
@@ -92,50 +94,50 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-[#0A0A0F]">
-        <View style={{ position: 'relative' }}>
-        </View>
+      <View style={{ flex: 1, backgroundColor: C.bg }}>
         <ScrollView contentContainerStyle={{ gap: 24, paddingBottom: 40 }}>
-        <View className="flex-row justify-between items-center">
-          <Text bold className="text-xl text-white">{t("categories.newCategory")}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text bold className="text-xl" style={{ color: C.textMain }}>{t("categories.newCategory")}</Text>
           <Pressable onPress={onClose}>
-            <Text className="text-xl text-typography-400">✕</Text>
+            <Text style={{ fontSize: 20, color: C.textSec }}>✕</Text>
           </Pressable>
         </View>
 
-        <View className="gap-4">
+        <View style={{ gap: 16 }}>
           <View>
             <Text className="text-base text-typography-400 mb-2">{t("common.name")}</Text>
-            <Text className="text-white p-4 bg-[rgba(255,255,255,0.05)] rounded-xl mt-2">
+            <Text style={{ color: C.textMain, padding: 16, backgroundColor: C.inputBg, borderRadius: 12, marginTop: 8 }}>
               {name}
             </Text>
           </View>
 
           <View>
             <Text className="text-base text-typography-400 mb-2">{t("common.type")}</Text>
-            <View className="flex-row gap-3">
+            <View style={{ flexDirection: 'row', gap: 12 }}>
               <Pressable
                 onPress={() => setType(CategoryTypeEnum.EXPENSE)}
-                className={`flex-1 rounded-xl py-4 items-center border-2 ${
-                  type === CategoryTypeEnum.EXPENSE ? 'border-error-400' : 'border-transparent'
-                }`}
                 style={{
-                  backgroundColor: type === CategoryTypeEnum.EXPENSE
-                    ? 'rgba(248, 113, 113, 0.2)'
-                    : 'rgba(255, 255, 255, 0.05)',
+                  flex: 1,
+                  borderRadius: 12,
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  borderWidth: 2,
+                  borderColor: type === CategoryTypeEnum.EXPENSE ? C.red : 'transparent',
+                  backgroundColor: type === CategoryTypeEnum.EXPENSE ? C.redBg : C.inputBg,
                 }}
               >
                 <Text bold={type === CategoryTypeEnum.EXPENSE} className={`text-base ${type === CategoryTypeEnum.EXPENSE ? 'text-error-400' : 'text-typography-400'}`}>{t("transactions.expenseTypeLabel")}</Text>
               </Pressable>
               <Pressable
                 onPress={() => setType(CategoryTypeEnum.INCOME)}
-                className={`flex-1 rounded-xl py-4 items-center border-2 ${
-                  type === CategoryTypeEnum.INCOME ? 'border-success-400' : 'border-transparent'
-                }`}
                 style={{
-                  backgroundColor: type === CategoryTypeEnum.INCOME
-                    ? 'rgba(52, 211, 153, 0.2)'
-                    : 'rgba(255, 255, 255, 0.05)',
+                  flex: 1,
+                  borderRadius: 12,
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  borderWidth: 2,
+                  borderColor: type === CategoryTypeEnum.INCOME ? C.green : 'transparent',
+                  backgroundColor: type === CategoryTypeEnum.INCOME ? C.greenBg : C.inputBg,
                 }}
               >
                 <Text bold={type === CategoryTypeEnum.INCOME} className={`text-base ${type === CategoryTypeEnum.INCOME ? 'text-success-400' : 'text-typography-400'}`}>{t("transactions.incomeTypeLabel")}</Text>
@@ -145,13 +147,17 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
 
           <View>
             <Text className="text-base text-typography-400 mb-2">{t("categories.colorLabel")}</Text>
-            <View className="flex-row flex-wrap gap-3">
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               {colors.map((color) => (
                 <Pressable
                   key={color}
                   onPress={() => setSelectedColor(color)}
-                  className="w-12 h-12 rounded-xl items-center justify-center"
                   style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     backgroundColor: color,
                     borderWidth: selectedColor === color ? 3 : 1,
                     borderColor: selectedColor === color ? '#FFFFFF' : 'transparent',
@@ -167,22 +173,25 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
 
           <View>
             <Text className="text-base text-typography-400 mb-2">{t("categories.iconLabel")}</Text>
-            <View className="flex-row flex-wrap gap-3">
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               {icons.map((icon) => (
                 <Pressable
                   key={icon}
                   onPress={() => setSelectedIcon(icon)}
-                  className="w-16 h-16 rounded-2xl items-center justify-center border-2"
                   style={{
-                    backgroundColor: selectedIcon === icon
-                      ? 'rgba(255, 255, 255, 0.08)'
-                      : 'rgba(255, 255, 255, 0.03)',
-                    borderColor: selectedIcon === icon ? '#6366F1' : 'rgba(255, 255, 255, 0.1)',
+                    width: 64,
+                    height: 64,
+                    borderRadius: 16,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 2,
+                    backgroundColor: selectedIcon === icon ? C.card : C.inputBg,
+                    borderColor: selectedIcon === icon ? C.primary : C.border,
                   }}
                 >
                   <Text className="text-3xl">{icon}</Text>
                   {selectedIcon === icon && (
-                    <Text className="text-xl text-primary-400 absolute right-2 top-1">✓</Text>
+                    <Text style={{ fontSize: 20, color: C.primary, position: 'absolute', right: 8, top: 4 }}>✓</Text>
                   )}
                 </Pressable>
               ))}
@@ -191,7 +200,7 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
 
           <View>
             <Text className="text-base text-typography-400 mb-2">{t("common.createdAt")}</Text>
-            <View className="flex-row gap-2">
+            <View style={{ flexDirection: 'row', gap: 8 }}>
               {(['today', 'yesterday', 'day_before_yesterday'] as DateRangeType[]).map((dr) => {
                 const labels: Record<string, string> = { today: 'Сегодня', yesterday: 'Вчера', day_before_yesterday: 'Позавчера' };
                 const handlers: Record<string, () => void> = {
@@ -203,11 +212,16 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
                   <Pressable
                     key={dr}
                     onPress={handlers[dr]}
-                    className={`flex-1 rounded-full px-4 py-3 items-center ${
-                      dateRange === dr ? 'bg-[rgba(99,102,241,0.2)]' : 'bg-[rgba(255,255,255,0.05)]'
-                    }`}
+                    style={{
+                      flex: 1,
+                      borderRadius: 100,
+                      paddingHorizontal: 16,
+                      paddingVertical: 12,
+                      alignItems: 'center',
+                      backgroundColor: dateRange === dr ? C.primaryBg : C.inputBg,
+                    }}
                   >
-                    <Text bold={dateRange === dr} className={`text-base ${dateRange === dr ? 'text-white' : 'text-typography-400'}`}>
+                    <Text bold={dateRange === dr} style={{ fontSize: 16, color: dateRange === dr ? C.textMain : C.textSec }}>
                       {labels[dr]}
                     </Text>
                   </Pressable>
@@ -215,20 +229,27 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
               })}
               <Pressable
                 onPress={() => setShowDatePicker(true)}
-                className={`flex-1 rounded-full px-4 py-3 flex-row items-center gap-2 ${
-                  dateRange === 'custom' ? 'bg-[rgba(99,102,241,0.2)]' : 'bg-[rgba(255,255,255,0.05)]'
-                }`}
+                style={{
+                  flex: 1,
+                  borderRadius: 100,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                  backgroundColor: dateRange === 'custom' ? C.primaryBg : C.inputBg,
+                }}
               >
-                <Text bold={dateRange === 'custom'} className={`text-base ${dateRange === 'custom' ? 'text-white' : 'text-typography-400'}`}>
+                <Text bold={dateRange === 'custom'} style={{ fontSize: 16, color: dateRange === 'custom' ? C.textMain : C.textSec }}>
                   {customDate.toLocaleDateString('ru-RU')}
                 </Text>
-                <Ionicons name="calendar-outline" size={16} color="#6366F1" />
+                <Ionicons name="calendar-outline" size={16} color={C.primary} />
               </Pressable>
             </View>
           </View>
 
           {showDatePicker && (
-            <View className="bg-[rgba(0,0,0,0.8)] p-6 rounded-2xl">
+            <View style={{ backgroundColor: C.overlay, padding: 24, borderRadius: 16 }}>
               <DateTimePicker
                 value={customDate}
                 mode="date"
@@ -241,8 +262,8 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
                 }}
                 maximumDate={new Date()}
                 minimumDate={new Date(2020, 0, 1)}
-                textColor="#FFFFFF"
-                accentColor="#6366F1"
+                textColor={C.textMain}
+                accentColor={C.primary}
               />
             </View>
           )}
@@ -250,19 +271,20 @@ export function CreateCategoryModal({ visible, onClose, onCreate }: CreateCatego
           <Pressable
             onPress={handleCreate}
             disabled={!name || !selectedColor || !selectedIcon}
-            className={`py-4 rounded-xl items-center ${
-              !name || !selectedColor || !selectedIcon
-                ? 'bg-[rgba(255,255,255,0.1)]'
-                : 'bg-primary-500'
-            }`}
+            style={{
+              paddingVertical: 16,
+              borderRadius: 12,
+              alignItems: 'center',
+              backgroundColor: !name || !selectedColor || !selectedIcon ? C.divider : C.primary,
+            }}
           >
-            <Text bold className="text-lg text-white">{t("categories.create")}</Text>
+            <Text bold className="text-lg" style={{ color: C.textMain }}>{t("categories.create")}</Text>
           </Pressable>
 
-          <View className="mt-4">
+          <View style={{ marginTop: 16 }}>
             <Pressable
               onPress={handleReset}
-              className="py-3 rounded-xl items-center bg-[rgba(255,255,255,0.04)]"
+              style={{ paddingVertical: 12, borderRadius: 12, alignItems: 'center', backgroundColor: C.inputBg }}
             >
               <Text className="text-base text-typography-400">{t("common.reset")}</Text>
             </Pressable>

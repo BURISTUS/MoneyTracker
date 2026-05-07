@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { View, Pressable, type StyleProp, type ViewStyle } from 'react-native';
+import { useTheme } from '../../stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { formatCurrency, getDaysRemaining } from '../../utils/formatters';
 import type { WishlistItem, WishlistStatus } from '../../types';
@@ -23,6 +24,7 @@ const statusConfig: Record<string, { label: string; bgClass: string; textClass: 
 export const WishlistCard: React.FC<WishlistCardProps> = React.memo(
   ({ item, onPurchase, onReject, style }) => {
     const { t } = useTranslation();
+  const C = useTheme();
     const sc = statusConfig[item.status] || statusConfig.PENDING;
     const daysLeft = item.status === 'PENDING' ? getDaysRemaining(item.cooldownEnds) : 0;
 

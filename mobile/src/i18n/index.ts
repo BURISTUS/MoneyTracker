@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { getLocales } from 'expo-localization';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safeAsyncStorage } from '../utils/safeAsyncStorage';
 import en from './locales/en.json';
 import ru from './locales/ru.json';
 
@@ -81,11 +81,20 @@ function detectLanguage(): string {
   return SUPPORTED_LANGUAGES.includes(code) ? code : 'en';
 }
 
+async function getPersistedLanguage(): Promise<string> {
+  try {
+    const saved = await safeAsyncStorage.getItem(LANGUAGE_KEY);
+    if (saved && SUPPORTED_LANGUAGES.includes(saved)) return saved;
+  } catch {}
+  return detectLanguage();
+}
+
+// Synchronous init with device language for fast first render
 i18n.use(initReactI18next).init({
   resources: Object.fromEntries(
-    SUPPORTED_LANGUAGES.map((lang) => [
-      lang,
-      { translation: LOCALE_RESOURCES[lang] || FALLBACK_TRANSLATIONS[lang] || FALLBACK_TRANSLATIONS.en },
+    SUPPORTED_LANGUAGES.map((l) => [
+      l,
+      { translation: LOCALE_RESOURCES[l] || FALLBACK_TRANSLATIONS[l] || FALLBACK_TRANSLATIONS.en },
     ]),
   ),
   lng: detectLanguage(),
@@ -94,9 +103,10 @@ i18n.use(initReactI18next).init({
   compatibilityJSON: 'v4',
 });
 
+// After sync init, switch to persisted language
 if (Platform.OS !== 'web') {
-  AsyncStorage.getItem(LANGUAGE_KEY).then((saved) => {
-    if (saved && SUPPORTED_LANGUAGES.includes(saved)) {
+  getPersistedLanguage().then((saved) => {
+    if (saved && saved !== i18n.language) {
       i18n.changeLanguage(saved);
     }
   }).catch(() => {});
@@ -109,8 +119,6 @@ export async function loadTranslationsFromServer(
     const lang = i18n.language || 'en';
     const data = await apiGet(`/i18n/translations/${lang}`);
     if (data && typeof data === 'object') {
-      // Server returns { common: { home: {...}, auth: {...}, ... }, errors: {...} }
-      // Flatten to { home: {...}, auth: {...}, ... } so t('home.tabOverview') works
       const flat: Record<string, any> = {};
       for (const group of Object.values(data)) {
         if (group && typeof group === 'object') {
@@ -138,10 +146,10 @@ export async function changeLanguage(lang: string) {
   }
   try {
     if (Platform.OS !== 'web') {
-      await AsyncStorage.setItem(LANGUAGE_KEY, lang);
+      await safeAsyncStorage.setItem(LANGUAGE_KEY, lang);
     }
   } catch {
-    // AsyncStorage may not be available (e.g. Expo Go without native build)
+    // AsyncStorage may not be available
   }
 }
 

@@ -6,11 +6,13 @@ import {
   Modal as RNModal,
   TouchableOpacity,
   TextInput,
+  StyleSheet,
   Platform,
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
 } from 'react-native';
 import { Text } from '../../../components/ui/text';
+import { useTheme } from '../../stores/themeStore';
 
 interface DatePickerModalProps {
   visible: boolean;
@@ -49,6 +51,7 @@ export function DatePickerModal({
   onClose,
 }: DatePickerModalProps) {
   const { t } = useTranslation();
+  const C = useTheme();
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
   const [customDay, setCustomDay] = useState(pad(now.getDate()));
@@ -111,59 +114,131 @@ export function DatePickerModal({
     [customMonth],
   );
 
+  const S = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: C.sheet,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: C.handle,
+      alignSelf: 'center',
+      marginTop: 12,
+      marginBottom: 16,
+    },
+    section: { paddingHorizontal: 20 },
+    title: { fontSize: 18, fontWeight: '700', color: C.textMain, marginBottom: 4 },
+    subtitle: { fontSize: 14, color: C.textSec, marginBottom: 20 },
+    presetGap: { gap: 8, marginBottom: 20 },
+    presetBtn: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+    },
+    presetLabel: { fontSize: 16 },
+    presetDate: { fontSize: 14, color: C.textSec },
+    customLabel: { fontSize: 12, fontWeight: '600', color: C.textSec, marginBottom: 8, textTransform: 'uppercase' },
+    customFieldsRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
+    customHintRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    customHint: { flex: 1, fontSize: 10, color: C.textMuted, textAlign: 'center', textTransform: 'uppercase' },
+    customHintWide: { flex: 1.3, fontSize: 10, color: C.textMuted, textAlign: 'center', textTransform: 'uppercase' },
+    customInput: {
+      flex: 1,
+      backgroundColor: C.divider,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      color: C.textMain,
+      fontSize: 16,
+      textAlign: 'center',
+    },
+    customInputWide: {
+      flex: 1.3,
+      backgroundColor: C.divider,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      color: C.textMain,
+      fontSize: 16,
+      textAlign: 'center',
+    },
+    okBtn: {
+      backgroundColor: C.primary,
+      borderRadius: 10,
+      paddingHorizontal: 20,
+      justifyContent: 'center',
+    },
+    okText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+    cancelBtn: {
+      paddingVertical: 14,
+      alignItems: 'center',
+      borderRadius: 12,
+      backgroundColor: C.inputBg,
+    },
+    cancelText: { fontSize: 16, color: C.textSec },
+  });
+
   return (
     <RNModal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
-      <View className="flex-1 bg-[rgba(0,0,0,0.7)] justify-end">
-        <Pressable className="flex-1" onPress={onClose} />
-        <View
-          className="bg-[#13131A] rounded-t-3xl"
-          style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16 }}
-        >
-          <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-4" />
+      <View style={S.overlay}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
+        <View style={S.sheet}>
+          <View style={S.handle} />
 
-          <View className="px-5">
-            <Text bold className="text-lg text-white mb-1">{t("transactions.transactionDate")}</Text>
-            <Text className="text-sm text-[#8E8E93] mb-5">{formatDayMonth(currentDate)}</Text>
+          <View style={S.section}>
+            <Text style={S.title}>{t("transactions.transactionDate")}</Text>
+            <Text style={S.subtitle}>{formatDayMonth(currentDate)}</Text>
 
-            <View className="gap-2 mb-5">
+            <View style={S.presetGap}>
               {presets.map((preset) => {
                 const isSelected = currentDate.toDateString() === preset.date.toDateString();
                 return (
                   <TouchableOpacity
                     key={preset.label}
                     onPress={() => handlePreset(preset.date)}
-                    className="flex-row justify-between items-center py-3.5 px-4 rounded-xl border"
-                    style={{
-                      backgroundColor: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.04)',
-                      borderColor: isSelected ? '#6366F1' : 'transparent',
-                    }}
+                    style={[
+                      S.presetBtn,
+                      {
+                        backgroundColor: isSelected ? C.primaryBg : C.inputBg,
+                        borderColor: isSelected ? C.primary : 'transparent',
+                      },
+                    ]}
                   >
-                    <Text bold={isSelected} className={`text-base ${isSelected ? 'text-white' : 'text-[#EBEBF5]'}`}>
+                    <Text style={[S.presetLabel, { color: isSelected ? C.textMain : C.textMain, fontWeight: isSelected ? '700' : '400' }]}>
                       {preset.label}
                     </Text>
-                    <Text className="text-sm text-[#8E8E93]">{formatDayMonth(preset.date)}</Text>
+                    <Text style={S.presetDate}>{formatDayMonth(preset.date)}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            <Text bold className="text-xs text-[#8E8E93] mb-2 uppercase">{t("common.selectDate")}</Text>
-            <View className="flex-row gap-2 mb-1">
-              <Text className="flex-1 text-[10px] text-[#52525B] text-center uppercase">{t('common.day')}</Text>
-              <Text className="flex-1 text-[10px] text-[#52525B] text-center uppercase">{t('common.month')}</Text>
-              <Text className="flex-[1.3] text-[10px] text-[#52525B] text-center uppercase">{t('common.year')}</Text>
+            <Text style={S.customLabel}>{t("common.selectDate")}</Text>
+            <View style={S.customHintRow}>
+              <Text style={S.customHint}>{t('common.day')}</Text>
+              <Text style={S.customHint}>{t('common.month')}</Text>
+              <Text style={S.customHintWide}>{t('common.year')}</Text>
             </View>
-            <View className="flex-row gap-2 mb-4">
+            <View style={S.customFieldsRow}>
               <TextInput
                 ref={dayRef}
                 value={customDay}
                 onChangeText={handleDayChange}
                 onBlur={handleDayBlur}
                 placeholder="ДД"
-                placeholderTextColor="#8E8E93"
+                placeholderTextColor={C.textSec}
                 keyboardType="number-pad"
                 maxLength={2}
-                className="flex-1 bg-[rgba(255,255,255,0.06)] rounded-[10px] px-3 py-3 text-white text-base text-center"
+                style={S.customInput}
               />
               <TextInput
                 ref={monthRef}
@@ -172,33 +247,27 @@ export function DatePickerModal({
                 onBlur={handleMonthBlur}
                 onKeyPress={handleMonthKeyPress}
                 placeholder="ММ"
-                placeholderTextColor="#8E8E93"
+                placeholderTextColor={C.textSec}
                 keyboardType="number-pad"
                 maxLength={2}
-                className="flex-1 bg-[rgba(255,255,255,0.06)] rounded-[10px] px-3 py-3 text-white text-base text-center"
+                style={S.customInput}
               />
               <TextInput
                 value={customYear}
-                onChangeText={(t) => setCustomYear(t.replace(/[^0-9]/g, '').slice(0, 4))}
+                onChangeText={(txt) => setCustomYear(txt.replace(/[^0-9]/g, '').slice(0, 4))}
                 placeholder="ГГГГ"
-                placeholderTextColor="#8E8E93"
+                placeholderTextColor={C.textSec}
                 keyboardType="number-pad"
                 maxLength={4}
-                className="flex-[1.3] bg-[rgba(255,255,255,0.06)] rounded-[10px] px-3 py-3 text-white text-base text-center"
+                style={S.customInputWide}
               />
-              <TouchableOpacity
-                onPress={handleCustomApply}
-                className="bg-primary-500 rounded-[10px] px-5 justify-center"
-              >
-                <Text bold className="text-base text-white">OK</Text>
+              <TouchableOpacity onPress={handleCustomApply} style={S.okBtn}>
+                <Text style={S.okText}>OK</Text>
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              onPress={onClose}
-              className="py-3.5 items-center rounded-xl bg-[rgba(255,255,255,0.04)]"
-            >
-              <Text className="text-base text-[#8E8E93]">Отмена</Text>
+            <TouchableOpacity onPress={onClose} style={S.cancelBtn}>
+              <Text style={S.cancelText}>Отмена</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { useToast } from '../../../src/components/ui/Toast';
 
@@ -39,6 +40,41 @@ function formatNumber(n: number): string {
 }
 
 export default function LifeCostScreen() {
+  const C = useTheme();
+  const s = StyleSheet.create({
+    flex: { flex: 1 },
+    container: { backgroundColor: C.bg, paddingHorizontal: 16, paddingBottom: 32 },
+    header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20, paddingTop: 8 },
+    backBtn: { padding: 4, marginLeft: -4 },
+    headerTitle: { fontSize: 22, fontWeight: '700', color: C.textMain, letterSpacing: -0.3 },
+    card: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 20, marginBottom: 12 },
+    cardIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: C.primaryBg, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    cardLabel: { fontSize: 13, color: C.textSec, fontWeight: '500', marginBottom: 8 },
+    rateRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 4 },
+    rateValue: { fontSize: 48, fontWeight: '700', color: C.textMain, letterSpacing: -1.5, lineHeight: 52 },
+    rateCurrency: { fontSize: 24, fontWeight: '600', color: C.primary },
+    ratePlaceholder: { fontSize: 48, fontWeight: '700', color: C.textMuted, marginBottom: 4 },
+    rateSubtext: { fontSize: 14, color: C.textMuted, fontWeight: '500' },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
+    sectionTitle: { fontSize: 15, fontWeight: '600', color: C.textSec },
+    tabsOuter: { backgroundColor: C.inputBg, borderRadius: 10, padding: 2, marginBottom: 16, borderWidth: 1, borderColor: C.border },
+    tabsRow: { flexDirection: 'row', position: 'relative' },
+    tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8, zIndex: 2 },
+    tabActive: {},
+    tabText: { fontSize: 12, fontWeight: '500', color: C.textMuted },
+    tabTextActive: { color: C.textMain, fontWeight: '600' },
+    tabIndicator: { position: 'absolute', top: 0, bottom: 0, left: 0, backgroundColor: C.primaryBg, borderRadius: 8, borderWidth: 1, borderColor: C.primaryBorder, zIndex: 1 },
+    inputWrap: { marginBottom: 4 },
+    input: { width: '100%' as any, backgroundColor: C.inputBg, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 17, fontWeight: '500', color: C.textMain },
+    saveArea: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.border },
+    saveRow: { alignItems: 'center', marginBottom: 14 },
+    saveLabel: { fontSize: 13, color: C.textSec, marginBottom: 4 },
+    saveRateRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+    saveRateValue: { fontSize: 32, fontWeight: '700', color: C.primary, letterSpacing: -1, lineHeight: 36 },
+    saveRateUnit: { fontSize: 16, fontWeight: '500', color: C.textSec },
+    saveBtn: { backgroundColor: C.primary, paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
+    saveBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
+  });
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -202,85 +238,3 @@ export default function LifeCostScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const BORDER = 'rgba(255,255,255,0.08)';
-const CARD_BG = '#141418';
-
-const s = StyleSheet.create({
-  flex: { flex: 1 },
-  container: { backgroundColor: '#0A0A0F', paddingHorizontal: 16, paddingBottom: 32 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20, paddingTop: 8 },
-  backBtn: { padding: 4, marginLeft: -4 },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 },
-
-  card: {
-    backgroundColor: CARD_BG,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: BORDER,
-    padding: 20,
-    marginBottom: 12,
-  },
-  cardIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(99,102,241,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  cardLabel: { fontSize: 13, color: '#71717A', fontWeight: '500', marginBottom: 8 },
-
-  rateRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 4 },
-  rateValue: { fontSize: 48, fontWeight: '700', color: '#FFFFFF', letterSpacing: -1.5, lineHeight: 52 },
-  rateCurrency: { fontSize: 24, fontWeight: '600', color: '#6366F1' },
-  ratePlaceholder: { fontSize: 48, fontWeight: '700', color: '#3F3F46', marginBottom: 4 },
-  rateSubtext: { fontSize: 14, color: '#52525B', fontWeight: '500' },
-
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-  sectionTitle: { fontSize: 15, fontWeight: '600', color: '#A1A1AA' },
-
-  tabsOuter: { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, padding: 2, marginBottom: 16, borderWidth: 1, borderColor: BORDER },
-  tabsRow: { flexDirection: 'row', position: 'relative' },
-  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8, zIndex: 2 },
-  tabActive: {},
-  tabText: { fontSize: 12, fontWeight: '500', color: '#52525B' },
-  tabTextActive: { color: '#FFFFFF', fontWeight: '600' },
-  tabIndicator: {
-    position: 'absolute', top: 0, bottom: 0, left: 0,
-    backgroundColor: 'rgba(99,102,241,0.15)',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(99,102,241,0.25)',
-    zIndex: 1,
-  },
-
-  inputWrap: { marginBottom: 4 },
-  input: {
-    width: '100%',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 17,
-    fontWeight: '500',
-    color: '#D4D4D8',
-  },
-
-  saveArea: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: BORDER },
-  saveRow: { alignItems: 'center', marginBottom: 14 },
-  saveLabel: { fontSize: 13, color: '#71717A', marginBottom: 4 },
-  saveRateRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  saveRateValue: { fontSize: 32, fontWeight: '700', color: '#6366F1', letterSpacing: -1, lineHeight: 36 },
-  saveRateUnit: { fontSize: 16, fontWeight: '500', color: '#71717A' },
-  saveBtn: {
-    backgroundColor: '#6366F1',
-    paddingVertical: 13,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  saveBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
-});

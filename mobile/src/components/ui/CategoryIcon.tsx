@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { deserializeIcon, type IconDef } from '../../utils/iconBank';
+import { useTheme } from '../../stores/themeStore';
 
 interface CategoryIconProps {
   icon: string | null;
@@ -25,11 +26,13 @@ function renderIcon(def: IconDef, size: number, color: string) {
 
 export const CategoryIcon = React.memo(function CategoryIcon({
   icon,
-  color = '#6366F1',
+  color,
   size = 24,
   backgroundColor,
   showBackground = true,
 }: CategoryIconProps) {
+  const C = useTheme();
+  const iconColor = color ?? C.primary;
   const def = deserializeIcon(icon || '');
 
   if (!def) {
@@ -39,7 +42,7 @@ export const CategoryIcon = React.memo(function CategoryIcon({
           width: size + 20,
           height: size + 20,
           borderRadius: (size + 20) / 2,
-          backgroundColor: backgroundColor || color,
+          backgroundColor: backgroundColor || iconColor,
           alignItems: 'center',
           justifyContent: 'center',
         }}>
@@ -47,11 +50,11 @@ export const CategoryIcon = React.memo(function CategoryIcon({
         </View>
       );
     }
-    return <MaterialCommunityIcons name="shape" size={size} color={color} />;
+    return <MaterialCommunityIcons name="shape" size={size} color={iconColor} />;
   }
 
   if (!showBackground) {
-    return renderIcon(def, size, color);
+    return renderIcon(def, size, iconColor);
   }
 
   return (
@@ -59,7 +62,7 @@ export const CategoryIcon = React.memo(function CategoryIcon({
       width: size + 20,
       height: size + 20,
       borderRadius: (size + 20) / 2,
-      backgroundColor: backgroundColor || color,
+      backgroundColor: backgroundColor || iconColor,
       alignItems: 'center',
       justifyContent: 'center',
     }}>

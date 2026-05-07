@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
 import { useRouter, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../../stores/themeStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -29,6 +30,7 @@ export const TabBar: React.FC = React.memo(() => {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useTranslation();
+  const C = useTheme();
 
   const isActive = (tab: TabItem) => {
     if (tab.key === 'home') return pathname === '/main';
@@ -37,8 +39,8 @@ export const TabBar: React.FC = React.memo(() => {
 
   return (
     <View
-      className="absolute bottom-0 left-0 right-0 bg-[rgba(17,17,24,0.92)] border-t border-[rgba(255,255,255,0.06)]"
-      style={{ paddingBottom: Math.max(insets.bottom, 8), paddingTop: 8 }}
+      className="absolute bottom-0 left-0 right-0"
+      style={{ paddingBottom: Math.max(insets.bottom, 8), paddingTop: 8, backgroundColor: C.tabBar, borderTopWidth: 1, borderTopColor: C.tabBarBorder }}
     >
       <View className="flex-row justify-around items-center px-1">
         {tabs.map((tab) => {
@@ -54,13 +56,13 @@ export const TabBar: React.FC = React.memo(() => {
               <Ionicons
                 name={(active ? tab.iconActive : tab.icon) as React.ComponentProps<typeof Ionicons>['name']}
                 size={22}
-                color={active ? '#818CF8' : '#71717A'}
+                color={active ? C.tabActive : C.tabInactive}
               />
               <Text bold={active} className={`text-[10px] ${active ? 'text-primary-300' : 'text-typography-400'}`}>
                 {t(tab.label)}
               </Text>
               {active && (
-                <View className="w-1 h-1 rounded-full bg-primary-400 mt-0.5" />
+                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: C.tabActive, marginTop: 2 }} />
               )}
             </Pressable>
           );

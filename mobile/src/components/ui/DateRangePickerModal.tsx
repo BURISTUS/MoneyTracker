@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
+import { useTheme } from '../../stores/themeStore';
 
 interface DateRange {
   startDate: Date;
@@ -76,6 +77,7 @@ export function DateRangePickerModal({
   onSelect,
   onClose,
 }: DateRangePickerModalProps) {
+  const C = useTheme();
   const now = new Date();
   const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -198,19 +200,18 @@ export function DateRangePickerModal({
 
   return (
     <RNModal visible={visible} animationType="slide" onRequestClose={handleClose} transparent>
-      <View className="flex-1 bg-[rgba(0,0,0,0.5)] justify-end">
-        <Pressable className="flex-1" onPress={handleClose} />
+      <View style={{ flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' }}>
+        <Pressable style={{ flex: 1 }} onPress={handleClose} />
         <View
-          className="bg-[#1C1C1E] rounded-t-3xl max-h-[85%]"
-          style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16 }}
+          style={{ backgroundColor: C.sheet, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%', paddingBottom: Platform.OS === 'ios' ? 34 : 16 }}
         >
-          <View className="w-9 h-1 bg-[#3A3A3C] rounded-full self-center mt-2 mb-3" />
+          <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: C.handle, alignSelf: 'center', marginTop: 8, marginBottom: 12 }} />
 
           <View className="px-5">
             <View className="flex-row items-center justify-between mb-3">
-              <Text bold className="text-lg text-white">Выбрать период</Text>
+              <Text bold className="text-lg" style={{ color: C.textMain }}>Выбрать период</Text>
               <Pressable onPress={handleClose} hitSlop={12}>
-                <Ionicons name="close" size={22} color="#71717A" />
+                <Ionicons name="close" size={22} color={C.textSec} />
               </Pressable>
             </View>
 
@@ -220,9 +221,9 @@ export function DateRangePickerModal({
                   <TouchableOpacity
                     key={p.label}
                     onPress={() => handlePreset(p.start, p.end)}
-                    className="px-3 py-1.5 rounded-lg bg-[rgba(255,255,255,0.06)]"
+                    style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: C.divider }}
                   >
-                    <Text className="text-xs text-[#EBEBF5]">{p.label}</Text>
+                    <Text className="text-xs" style={{ color: C.textMain }}>{p.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -238,9 +239,9 @@ export function DateRangePickerModal({
 
             <View className="flex-row items-center justify-between mb-2">
               <TouchableOpacity onPress={() => switchMonth(-1)} className="w-9 h-9 items-center justify-center">
-                <Ionicons name="chevron-back" size={20} color="#EBEBF5" />
+                <Ionicons name="chevron-back" size={20} color={C.textMain} />
               </TouchableOpacity>
-              <Text bold className="text-base text-white">
+              <Text bold className="text-base" style={{ color: C.textMain }}>
                 {MONTH_NAMES[viewMonth]} {viewYear}
               </Text>
               <TouchableOpacity
@@ -248,7 +249,7 @@ export function DateRangePickerModal({
                 className="w-9 h-9 items-center justify-center"
                 style={{ opacity: isFutureMonth ? 0.2 : 1 }}
               >
-                <Ionicons name="chevron-forward" size={20} color="#EBEBF5" />
+                <Ionicons name="chevron-forward" size={20} color={C.textMain} />
               </TouchableOpacity>
             </View>
 
@@ -256,7 +257,7 @@ export function DateRangePickerModal({
               <View className="flex-row mb-1">
                 {WEEKDAYS.map((d) => (
                   <View key={d} className="flex-1 items-center py-1.5">
-                    <Text className="text-[10px] text-[#8E8E93]">{d}</Text>
+                    <Text className="text-[10px]" style={{ color: C.textSec }}>{d}</Text>
                   </View>
                 ))}
               </View>
@@ -282,26 +283,24 @@ export function DateRangePickerModal({
                         className="w-9 h-9 items-center justify-center rounded-full"
                         style={
                           isStart || isEnd
-                            ? { backgroundColor: '#818CF8' }
+                            ? { backgroundColor: C.tabActive }
                             : inRange
-                              ? { backgroundColor: 'rgba(129, 140, 248, 0.15)' }
+                              ? { backgroundColor: C.primaryBg }
                               : isToday
-                                ? { borderWidth: 1.5, borderColor: '#818CF8' }
+                                ? { borderWidth: 1.5, borderColor: C.tabActive }
                                 : undefined
                         }
                       >
                         <Text
-                          className={`text-xs ${
-                            isFuture
-                              ? 'text-[#3A3A3C]'
-                              : isStart || isEnd
-                                ? 'text-white font-bold'
-                                : isToday
-                                  ? 'text-primary-300 font-semibold'
-                                  : inRange
-                                    ? 'text-primary-300'
-                                    : 'text-[#EBEBF5]'
-                          }`}
+                          className="text-xs"
+                          style={{
+                            color: isFuture ? C.textMuted
+                              : isStart || isEnd ? '#FFF'
+                              : isToday ? C.primary
+                              : inRange ? C.primary
+                              : C.textMain,
+                            fontWeight: isStart || isEnd ? '700' : isToday ? '600' : '400',
+                          }}
                         >
                           {day}
                         </Text>
@@ -313,20 +312,20 @@ export function DateRangePickerModal({
               </View>
             </Animated.View>
 
-            <View className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.06)]">
+            <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border }}>
               {start && end ? (
                 <TouchableOpacity
                   onPress={handleApply}
                   className="rounded-xl py-3.5 items-center"
-                  style={{ backgroundColor: '#818CF8' }}
+                  style={{ backgroundColor: C.tabActive }}
                 >
-                  <Text bold className="text-base text-white">
+                  <Text bold className="text-base" style={{ color: '#FFF' }}>
                     {formatShort(start)} — {formatShort(end)}
                   </Text>
                 </TouchableOpacity>
               ) : (
-                <View className="rounded-xl py-3.5 items-center bg-[rgba(255,255,255,0.04)]">
-                  <Text className="text-sm text-[#8E8E93]">
+                <View style={{ borderRadius: 12, paddingVertical: 14, alignItems: 'center', backgroundColor: C.inputBg }}>
+                  <Text className="text-sm" style={{ color: C.textSec }}>
                     {start ? `Начало: ${formatShort(start)}` : 'Нажмите на начальную дату'}
                   </Text>
                 </View>

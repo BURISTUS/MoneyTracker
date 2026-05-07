@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import { CategoryEditModal } from '../../../src/components/ui/CategoryEditModal';
@@ -13,87 +14,29 @@ import { useToast } from '../../../src/components/ui/Toast';
 import categoriesService from '../../../src/services/categories';
 import type { Category } from '../../../src/types';
 
-const C = {
-  card: '#141418',
-  border: 'rgba(255,255,255,0.08)',
-  textMain: '#F5F5F5',
-  textSec: '#8C8C8C',
-  indigo: '#6366F1',
-  green: '#34D399',
-  red: '#FF3B30',
-  orange: '#FF9500',
-  yellow: '#FBBF24',
-};
-
-const S = StyleSheet.create({
-  header: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: C.textMain },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: C.textSec,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  sectionGap: { marginTop: 20 },
-  actions: { paddingHorizontal: 16, marginTop: 8, marginBottom: 6 },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-    backgroundColor: C.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.border,
-    marginBottom: 8,
-  },
-  actionIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionText: { fontSize: 14, fontWeight: '500', color: C.textMain },
-  list: { paddingHorizontal: 16 },
-  categoryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    backgroundColor: C.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: C.border,
-    marginBottom: 8,
-  },
-  categoryIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryInfo: { flex: 1 },
-  categoryName: { fontSize: 14, fontWeight: '600', color: C.textMain },
-  categorySub: { fontSize: 12, color: C.textSec, marginTop: 2 },
-  limitBar: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    overflow: 'hidden',
-    marginTop: 6,
-  },
-  limitFill: { height: 4, borderRadius: 2 },
-  limitLabel: { fontSize: 11, fontWeight: '500', marginTop: 4 },
-  chevron: { marginLeft: 'auto' },
-  empty: { alignItems: 'center', paddingVertical: 48 },
-});
-
 export default function CategoriesIndexScreen() {
+  const C = useTheme();
+  const S = StyleSheet.create({
+    header: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 },
+    headerTitle: { fontSize: 22, fontWeight: '700', color: C.textMain },
+    sectionTitle: { fontSize: 12, fontWeight: '600', color: C.textSec, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+    sectionGap: { marginTop: 20 },
+    actions: { paddingHorizontal: 16, marginTop: 8, marginBottom: 6 },
+    actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border, marginBottom: 8 },
+    actionIconWrap: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    actionText: { fontSize: 14, fontWeight: '500', color: C.textMain },
+    list: { paddingHorizontal: 16 },
+    categoryCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, marginBottom: 8 },
+    categoryIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    categoryInfo: { flex: 1 },
+    categoryName: { fontSize: 14, fontWeight: '600', color: C.textMain },
+    categorySub: { fontSize: 12, color: C.textSec, marginTop: 2 },
+    limitBar: { height: 4, borderRadius: 2, backgroundColor: C.divider, overflow: 'hidden', marginTop: 6 },
+    limitFill: { height: 4, borderRadius: 2 },
+    limitLabel: { fontSize: 11, fontWeight: '500', marginTop: 4 },
+    chevron: { marginLeft: 'auto' },
+    empty: { alignItems: 'center', paddingVertical: 48 },
+  });
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -168,14 +111,14 @@ export default function CategoriesIndexScreen() {
         onPress={() => setEditingCategory(category)}
         style={S.categoryCard}
       >
-        <View style={[S.categoryIconWrap, { backgroundColor: `${category.color || C.indigo}18` }]}>
-          <CategoryIcon icon={category.icon} color={category.color || C.indigo} size={20} />
+        <View style={[S.categoryIconWrap, { backgroundColor: `${category.color || C.primary}18` }]}>
+          <CategoryIcon icon={category.icon} color={category.color || C.primary} size={20} />
         </View>
         <View style={S.categoryInfo}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Text style={S.categoryName}>{category.name}</Text>
             {category.excludeFromTotal && (
-              <Ionicons name="eye-off-outline" size={13} color="#52525B" />
+              <Ionicons name="eye-off-outline" size={13} color={C.textMuted} />
             )}
             {hasLimit && limitOver && (
               <Ionicons name="warning" size={13} color={C.red} />
@@ -206,13 +149,13 @@ export default function CategoriesIndexScreen() {
             </>
           )}
         </View>
-        <Ionicons name="create-outline" size={18} color="#52525B" style={S.chevron} />
+        <Ionicons name="create-outline" size={18} color={C.textMuted} style={S.chevron} />
       </Pressable>
     );
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0A0A0F', paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
@@ -224,14 +167,14 @@ export default function CategoriesIndexScreen() {
 
         <View style={S.actions}>
           <Pressable onPress={() => router.push('/main/categories/create')} style={S.actionBtn}>
-            <View style={[S.actionIconWrap, { backgroundColor: 'rgba(99,102,241,0.12)' }]}>
-              <Ionicons name="add" size={18} color={C.indigo} />
+            <View style={[S.actionIconWrap, { backgroundColor: C.primaryBg }]}>
+              <Ionicons name="add" size={18} color={C.primary} />
             </View>
-            <Text style={[S.actionText, { color: C.indigo }]}>{t("categories.create")}</Text>
+            <Text style={[S.actionText, { color: C.primary }]}>{t("categories.create")}</Text>
           </Pressable>
 
           <Pressable onPress={() => router.push('/main/categories/chart')} style={S.actionBtn}>
-            <View style={[S.actionIconWrap, { backgroundColor: 'rgba(52,211,153,0.1)' }]}>
+            <View style={[S.actionIconWrap, { backgroundColor: C.greenBg }]}>
               <Ionicons name="bar-chart" size={18} color={C.green} />
             </View>
             <Text style={S.actionText}>{t("categories.expenseChart")}</Text>
@@ -255,7 +198,7 @@ export default function CategoriesIndexScreen() {
 
           {categories.length === 0 && (
             <View style={S.empty}>
-              <Ionicons name="folder-open-outline" size={48} color="#3A3A3C" />
+              <Ionicons name="folder-open-outline" size={48} color={C.textMuted} />
               <Text style={{ fontSize: 15, color: C.textSec, marginTop: 8 }}>{t("categories.noCategories")}</Text>
             </View>
           )}

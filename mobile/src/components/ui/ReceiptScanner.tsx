@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
+import { useTheme } from '../../stores/themeStore';
 import * as ImagePicker from 'expo-image-picker';
 import { aiService } from '../../services/ai';
 import type { AiReceiptResult } from '../../services/ai';
@@ -16,6 +17,7 @@ export function ReceiptScannerButton({
   onResult,
   onError,
 }: ReceiptScannerProps) {
+  const C = useTheme();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleScan = async () => {
@@ -67,18 +69,18 @@ export function ReceiptScannerButton({
           borderRadius: 16,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: isLoading ? 'rgba(255,255,255,0.05)' : 'rgba(99,102,241,0.1)',
+          backgroundColor: isLoading ? C.inputBg : C.primaryBg,
           borderWidth: 1,
-          borderColor: 'rgba(255,255,255,0.08)',
+          borderColor: C.border,
         }}
       >
         {isLoading ? (
-          <Ionicons name="hourglass-outline" size={20} color="#8E8E93" />
+          <Ionicons name="hourglass-outline" size={20} color={C.textSec} />
         ) : (
-          <Ionicons name="camera-outline" size={20} color="#6366F1" />
+          <Ionicons name="camera-outline" size={20} color={C.primary} />
         )}
       </View>
-      <Text className="text-xs text-[#8E8E93]">
+      <Text style={{ fontSize: 12, color: C.textSec }}>
         {isLoading ? 'Скан...' : 'Чек'}
       </Text>
     </TouchableOpacity>
@@ -89,6 +91,7 @@ export function ReceiptGalleryButton({
   onResult,
   onError,
 }: ReceiptScannerProps) {
+  const C = useTheme();
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePick = async () => {
@@ -127,10 +130,10 @@ export function ReceiptGalleryButton({
 
   return (
     <TouchableOpacity onPress={handlePick} disabled={isLoading} className="items-center gap-1">
-      <View className="w-12 h-12 rounded-full items-center justify-center bg-[rgba(99,102,241,0.1)]">
+      <View style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primaryBg }}>
         <Text className="text-xl">🖼️</Text>
       </View>
-      <Text className="text-xs text-[#8E8E93]">Галерея</Text>
+      <Text style={{ fontSize: 12, color: C.textSec }}>Галерея</Text>
     </TouchableOpacity>
   );
 }

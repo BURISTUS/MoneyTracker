@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,64 +9,22 @@ import { Text } from '../../../components/ui/text';
 import { CurrencyPicker } from '../../../src/components/ui/CurrencyPicker';
 import { LanguagePicker, getNativeName } from '../../../src/components/ui/LanguagePicker';
 import { useTranslation } from 'react-i18next';
+import { useTheme, useThemeStore } from '../../../src/stores/themeStore';
 import type { ExchangeRate } from '../../../src/services/currency';
 
-const BORDER = 'rgba(255,255,255,0.08)';
-const CARD_BG = '#141418';
-
-const S = StyleSheet.create({
-  card: {
-    backgroundColor: CARD_BG,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: BORDER,
-    padding: 20,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: CARD_BG,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(239,68,68,0.06)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.15)',
-  },
-  divider: { height: 1, backgroundColor: BORDER },
-  sectionTitle: { fontSize: 13, fontWeight: '600', color: '#8C8C8C', marginBottom: 8, marginTop: 4 },
-  statCard: {
-    flex: 1,
-    backgroundColor: CARD_BG,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: BORDER,
-    padding: 14,
-    alignItems: 'center',
-  },
-  statValue: { fontSize: 18, fontWeight: '800', color: '#F5F5F5' },
-  statLabel: { fontSize: 11, color: '#8C8C8C', marginTop: 4, fontWeight: '500' },
-});
-
 export default function ProfileScreen() {
+  const C = useTheme();
+  const S = {
+    card: { backgroundColor: C.card, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 20 },
+    row: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border },
+    iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center' as const, justifyContent: 'center' as const },
+    logoutBtn: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: C.redBg, borderRadius: 16, borderWidth: 1, borderColor: C.redBorder },
+    divider: { height: 1, backgroundColor: C.border },
+    sectionTitle: { fontSize: 13, fontWeight: '600' as const, color: C.textSec, marginBottom: 8, marginTop: 4 },
+    statCard: { flex: 1, backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 14, alignItems: 'center' as const },
+    statValue: { fontSize: 18, fontWeight: '800' as const, color: C.textMain },
+    statLabel: { fontSize: 11, color: C.textSec, marginTop: 4, fontWeight: '500' as const },
+  };
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuthStore();
@@ -75,6 +33,9 @@ export default function ProfileScreen() {
   const userCurrency = useDataStore((s) => s.userCurrency);
   const currencySymbol = useDataStore((s) => s.currencySymbol);
   const setUserCurrency = useDataStore((s) => s.setUserCurrency);
+
+  const isDark = useThemeStore((s) => s.isDark);
+  const toggleTheme = useThemeStore((s) => s.toggle);
 
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
@@ -90,9 +51,9 @@ export default function ProfileScreen() {
   );
 
   const menuItems = [
-    { icon: 'wallet' as const, label: t('profile.accounts'), path: '/main/accounts', color: '#6366F1' },
+    { icon: 'wallet' as const, label: t('profile.accounts'), path: '/main/accounts', color: C.primary },
     { icon: 'grid' as const, label: t('profile.categories'), path: '/main/categories', color: '#5AC8FA' },
-    { icon: 'flag' as const, label: t('profile.goals'), path: '/main/goals', color: '#34D399' },
+    { icon: 'flag' as const, label: t('profile.goals'), path: '/main/goals', color: C.green },
     { icon: 'bar-chart' as const, label: t('profile.analytics'), path: '/main/analytics', color: '#A78BFA' },
     { icon: 'time' as const, label: t('profile.lifeCost'), path: '/main/life-cost', color: '#F472B6' },
   ];
@@ -100,7 +61,7 @@ export default function ProfileScreen() {
   return (
     <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 }}>
-        <Text className="text-2xl font-bold text-typography-white">{t('profile.title', 'Профиль')}</Text>
+        <Text className="text-2xl font-bold" style={{ color: C.textMain }}>{t('profile.title', 'Профиль')}</Text>
       </View>
 
       <ScrollView
@@ -112,16 +73,16 @@ export default function ProfileScreen() {
           {/* Hero Card */}
           <View style={S.card}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-              <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(99,102,241,0.15)', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 20, fontWeight: '800', color: '#6366F1' }}>
+              <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: C.primaryBg, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 20, fontWeight: '800', color: C.primary }}>
                   {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                 </Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#F5F5F5' }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: C.textMain }}>
                   {user?.name || 'Пользователь'}
                 </Text>
-                <Text style={{ fontSize: 13, color: '#8C8C8C', marginTop: 2 }}>
+                <Text style={{ fontSize: 13, color: C.textSec, marginTop: 2 }}>
                   {user?.email}
                 </Text>
               </View>
@@ -131,11 +92,11 @@ export default function ProfileScreen() {
           {/* Stats */}
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={S.statCard}>
-              <Text style={[S.statValue, { color: '#34D399' }]}>{rejectedCount}</Text>
+              <Text style={[S.statValue, { color: C.green }]}>{rejectedCount}</Text>
               <Text style={S.statLabel}>{t("profile.refusals")}</Text>
             </View>
             <View style={S.statCard}>
-              <Text style={[S.statValue, { color: '#34D399' }]}>
+              <Text style={[S.statValue, { color: C.green }]}>
                 {totalSavedKopecks > 0 ? `${(totalSavedKopecks / 100).toLocaleString('ru-RU')} ₽` : '—'}
               </Text>
               <Text style={S.statLabel}>{t("profile.saved")}</Text>
@@ -153,10 +114,10 @@ export default function ProfileScreen() {
               <View style={[S.iconWrap, { backgroundColor: `${item.color}15` }]}>
                 <Ionicons name={item.icon} size={18} color={item.color} />
               </View>
-              <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: '#F5F5F5' }}>
+              <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: C.textMain }}>
                 {item.label}
               </Text>
-              <Ionicons name="chevron-forward" size={18} color="#71717A" />
+              <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
             </Pressable>
           ))}
 
@@ -166,30 +127,48 @@ export default function ProfileScreen() {
             onPress={() => setShowCurrencyPicker(true)}
             style={S.row}
           >
-            <View style={[S.iconWrap, { backgroundColor: 'rgba(99,102,241,0.12)' }]}>
-              <Ionicons name="cash-outline" size={18} color="#818CF8" />
+            <View style={[S.iconWrap, { backgroundColor: C.primaryBg }]}>
+              <Ionicons name="cash-outline" size={18} color={C.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '500', color: '#F5F5F5' }}>{t("profile.currency")}</Text>
-              <Text style={{ fontSize: 12, color: '#8C8C8C', marginTop: 1 }}>{userCurrency} · {currencySymbol}</Text>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: C.textMain }}>{t("profile.currency")}</Text>
+              <Text style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>{userCurrency} · {currencySymbol}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#71717A" />
+            <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
           </Pressable>
 
           <Pressable
             onPress={() => setShowLanguagePicker(true)}
             style={S.row}
           >
-            <View style={[S.iconWrap, { backgroundColor: 'rgba(52,211,153,0.12)' }]}>
-              <Ionicons name="language" size={18} color="#34D399" />
+            <View style={[S.iconWrap, { backgroundColor: C.greenBg }]}>
+              <Ionicons name="language" size={18} color={C.green} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '500', color: '#F5F5F5' }}>{t("profile.language")}</Text>
-              <Text style={{ fontSize: 12, color: '#8C8C8C', marginTop: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: C.textMain }}>{t("profile.language")}</Text>
+              <Text style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>
                 {getNativeName(i18n.language)}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#71717A" />
+            <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+          </Pressable>
+
+          <Pressable
+            onPress={toggleTheme}
+            style={S.row}
+          >
+            <View style={[S.iconWrap, { backgroundColor: C.primaryBg }]}>
+              <Ionicons name={isDark ? 'moon' : 'sunny'} size={18} color={C.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: C.textMain }}>{t('profile.theme', 'Тема')}</Text>
+              <Text style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>
+                {isDark ? t('profile.dark', 'Тёмная') : t('profile.light', 'Светлая')}
+              </Text>
+            </View>
+            <View style={{ width: 44, height: 28, borderRadius: 14, backgroundColor: isDark ? C.primary : '#D1D5DB', justifyContent: 'center', paddingHorizontal: 2 }}>
+              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFF', alignSelf: isDark ? 'flex-end' as const : 'flex-start' as const, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2 }} />
+            </View>
           </Pressable>
 
           <View style={S.divider} />
@@ -201,8 +180,8 @@ export default function ProfileScreen() {
             }}
             style={S.logoutBtn}
           >
-            <Ionicons name="log-out-outline" size={20} color="#F87171" />
-            <Text style={{ fontSize: 15, fontWeight: '500', color: '#EF4444' }}>
+            <Ionicons name="log-out-outline" size={20} color={C.red} />
+            <Text style={{ fontSize: 15, fontWeight: '500', color: C.red }}>
               {t('profile.logout', 'Выйти')}
             </Text>
           </Pressable>

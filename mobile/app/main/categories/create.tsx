@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { useTranslation } from 'react-i18next';
 import { ICON_BANK, serializeIcon } from '../../../src/utils/iconBank';
@@ -20,190 +21,11 @@ import type { CategoryType } from '../../../src/types';
 import { CategoryType as CategoryTypeEnum } from '../../../src/types';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-// ============================================================
-// Color & Design Tokens — matching CategoryEditModal
-// ============================================================
-
-const C = {
-  bg: '#0A0A0F',
-  card: '#141418',
-  border: 'rgba(255,255,255,0.08)',
-  textMain: '#F5F5F5',
-  textSec: '#8C8C8C',
-  indigo: '#6366F1',
-  red: '#FF3B30',
-  green: '#34C759',
-  inputBg: 'rgba(255,255,255,0.05)',
-};
-
 const COLORS = [
   '#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#007AFF',
   '#5856D6', '#AF52DE', '#FF2D55', '#5AC8FA', '#FBBF24',
   '#34D399', '#6366F1', '#EC4899', '#14B8A6', '#F97316',
 ];
-
-// ============================================================
-// Styles
-// ============================================================
-
-const S = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.bg },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: 48,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: C.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 120 },
-
-  // Preview
-  preview: { alignItems: 'center', paddingVertical: 32, borderBottomWidth: 1, borderBottomColor: C.border },
-  previewCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-    backgroundColor: C.card,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  previewName: { fontSize: 18, fontWeight: '700', color: C.textMain, marginBottom: 4 },
-  previewType: { fontSize: 14, color: C.textSec },
-
-  // Section
-  section: { paddingHorizontal: 20, marginBottom: 20 },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: C.textSec,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  input: {
-    backgroundColor: C.inputBg,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: C.textMain,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-
-  // Type toggle
-  typeRow: { flexDirection: 'row', gap: 8 },
-  typeBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.card,
-  },
-  typeBtnActive: { borderColor: 'transparent' },
-  typeLabel: { fontSize: 15, fontWeight: '600', color: C.textSec },
-
-  // Colors
-  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  colorDot: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: 'transparent',
-  },
-  colorDotActive: { borderColor: '#FFF' },
-
-  // Icon groups
-  groupWrap: { marginBottom: 12 },
-  groupHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  groupTitle: { fontSize: 11, fontWeight: '600', color: C.textSec, textTransform: 'uppercase' as const },
-  groupExpand: { fontSize: 12, color: C.indigo },
-  iconRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  iconItem: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: C.card,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  iconItemActive: { borderColor: 'transparent' },
-
-  // Bottom
-  bottomBar: {
-    position: 'absolute' as const,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: C.bg,
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  saveBtn: {
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-
-  // Limit & toggle
-  limitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: C.inputBg,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: 14,
-  },
-  limitInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: C.textMain },
-  clearLimit: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  toggleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: C.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  toggleLabel: { fontSize: 14, fontWeight: '500', color: C.textMain },
-  toggleDesc: { fontSize: 11, color: C.textSec, marginTop: 2 },
-});
 
 // ============================================================
 // Filter icons by category type
@@ -221,6 +43,45 @@ function filterIconBank(type: CategoryType, t: (key: string) => string) {
 // ============================================================
 
 export default function CreateCategoryScreen() {
+  const C = useTheme();
+  const S = StyleSheet.create({
+    screen: { flex: 1, backgroundColor: C.bg },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, paddingTop: 48, borderBottomWidth: 1, borderBottomColor: C.border },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+    closeBtn: { width: 32, height: 32, borderRadius: 10, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border },
+    scroll: { flex: 1 },
+    scrollContent: { paddingBottom: 120 },
+    preview: { alignItems: 'center', paddingVertical: 32, borderBottomWidth: 1, borderBottomColor: C.border },
+    previewCircle: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border },
+    previewName: { fontSize: 18, fontWeight: '700', color: C.textMain, marginBottom: 4 },
+    previewType: { fontSize: 14, color: C.textSec },
+    section: { paddingHorizontal: 20, marginBottom: 20 },
+    sectionTitle: { fontSize: 12, fontWeight: '600', color: C.textSec, marginBottom: 8, textTransform: 'uppercase' },
+    input: { backgroundColor: C.inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, fontSize: 16, color: C.textMain, borderWidth: 1, borderColor: C.border },
+    typeRow: { flexDirection: 'row', gap: 8 },
+    typeBtn: { flex: 1, paddingVertical: 14, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
+    typeBtnActive: { borderColor: 'transparent' },
+    typeLabel: { fontSize: 15, fontWeight: '600', color: C.textSec },
+    colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    colorDot: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: 'transparent' },
+    colorDotActive: { borderColor: '#FFF' },
+    groupWrap: { marginBottom: 12 },
+    groupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+    groupTitle: { fontSize: 11, fontWeight: '600', color: C.textSec, textTransform: 'uppercase' as const },
+    groupExpand: { fontSize: 12, color: C.primary },
+    iconRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    iconItem: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border },
+    iconItemActive: { borderColor: 'transparent' },
+    bottomBar: { position: 'absolute' as const, bottom: 0, left: 0, right: 0, backgroundColor: C.bg, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: 20, paddingVertical: 16 },
+    saveBtn: { paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
+    saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+    limitRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.inputBg, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingHorizontal: 14 },
+    limitInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: C.textMain },
+    clearLimit: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+    toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border },
+    toggleLabel: { fontSize: 14, fontWeight: '500', color: C.textMain },
+    toggleDesc: { fontSize: 11, color: C.textSec, marginTop: 2 },
+  });
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -443,8 +304,8 @@ export default function CreateCategoryScreen() {
             <Switch
               value={excludeFromTotal}
               onValueChange={setExcludeFromTotal}
-              trackColor={{ false: 'rgba(255,255,255,0.08)', true: `${C.indigo}40` }}
-              thumbColor={excludeFromTotal ? C.indigo : '#52525B'}
+              trackColor={{ false: 'rgba(255,255,255,0.08)', true: `${C.primary}40` }}
+              thumbColor={excludeFromTotal ? C.primary : '#52525B'}
             />
           </View>
         </View>

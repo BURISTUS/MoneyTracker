@@ -11,19 +11,9 @@ import { ru } from 'date-fns/locale';
 import { chatService, type ChatMessage } from '../../../src/services/chat';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../../src/stores/authStore';
+import { useTheme } from '../../../src/stores/themeStore';
 import { useToast } from '../../../src/components/ui/Toast';
 import { ConfirmModal } from '../../../src/components/ui/ConfirmModal';
-
-const C = {
-  bg: '#0A0A0F',
-  card: '#141418',
-  border: 'rgba(255,255,255,0.08)',
-  indigo: '#6366F1',
-  indigoSoft: 'rgba(99,102,241,0.12)',
-  textMain: '#F5F5F5',
-  textSec: '#8C8C8C',
-  textDark: '#52525B',
-};
 
 // TabBar is absolute-positioned in parent layout: ~52px content + safe area
 const TAB_BAR_CONTENT_HEIGHT = 52;
@@ -58,6 +48,7 @@ function Spinner({ size = 20, color = '#FFF' }: { size?: number; color?: string 
 }
 
 function TypingIndicator() {
+  const C = useTheme();
   const d1 = useRef(new Animated.Value(0)).current;
   const d2 = useRef(new Animated.Value(0)).current;
   const d3 = useRef(new Animated.Value(0)).current;
@@ -74,13 +65,13 @@ function TypingIndicator() {
   }, []);
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 16, paddingTop: 8 }}>
-      <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.indigoSoft, alignItems: 'center', justifyContent: 'center' }}>
-        <Ionicons name="sparkles" size={14} color={C.indigo} />
+      <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.primaryBg, alignItems: 'center', justifyContent: 'center' }}>
+        <Ionicons name="sparkles" size={14} color={C.primary} />
       </View>
       <View style={{ backgroundColor: C.card, borderRadius: 20, borderBottomLeftRadius: 4, paddingHorizontal: 18, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: C.border }}>
         {[d1, d2, d3].map((d, i) => (
           <Animated.View key={i} style={{
-            width: 7, height: 7, borderRadius: 4, backgroundColor: C.indigo,
+            width: 7, height: 7, borderRadius: 4, backgroundColor: C.primary,
             opacity: d.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
             transform: [{ translateY: d.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }],
           }} />
@@ -90,27 +81,27 @@ function TypingIndicator() {
   );
 }
 
-function renderMd(text: string, isUser: boolean) {
+function renderMd(text: string, isUser: boolean, C: ReturnType<typeof useTheme>) {
   return text.split('\n').map((line, i) => {
     const num = line.match(/^(\d+)\.\s(.+)$/);
     if (num) return (
       <View key={i} style={{ flexDirection: 'row', gap: 6, marginTop: 3 }}>
-        <Text style={{ color: C.indigo, fontWeight: '700', fontSize: 14 }}>{num[1]}.</Text>
-        <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: '#D4D4D8' }}>{inlineBold(num[2])}</Text>
+        <Text style={{ color: C.primary, fontWeight: '700', fontSize: 14 }}>{num[1]}.</Text>
+        <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: C.textSec }}>{inlineBold(num[2], C)}</Text>
       </View>
     );
     const bul = line.match(/^[•\-\*]\s(.+)$/);
     if (bul) return (
       <View key={i} style={{ flexDirection: 'row', gap: 6, marginTop: 3 }}>
-        <Text style={{ color: C.indigo, fontSize: 14 }}>•</Text>
-        <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: '#D4D4D8' }}>{inlineBold(bul[1])}</Text>
+        <Text style={{ color: C.primary, fontSize: 14 }}>•</Text>
+        <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: C.textSec }}>{inlineBold(bul[1], C)}</Text>
       </View>
     );
-    return <Text key={i} style={{ fontSize: 14, lineHeight: 20, color: isUser ? '#FFFFFF' : '#D4D4D8', marginTop: i > 0 ? 2 : 0 }}>{inlineBold(line)}</Text>;
+    return <Text key={i} style={{ fontSize: 14, lineHeight: 20, color: isUser ? C.textMain : C.textSec, marginTop: i > 0 ? 2 : 0 }}>{inlineBold(line, C)}</Text>;
   });
 }
 
-function inlineBold(text: string): React.ReactNode[] {
+function inlineBold(text: string, C: ReturnType<typeof useTheme>): React.ReactNode[] {
   const parts: React.ReactNode[] = [];
   const re = /\*\*(.+?)\*\*/g;
   let last = 0, m: RegExpExecArray | null;
@@ -124,31 +115,33 @@ function inlineBold(text: string): React.ReactNode[] {
 }
 
 const Bubble = memo(({ item }: { item: ChatMessage }) => {
+  const C = useTheme();
   const isUser = item.role === 'USER';
   return (
     <View style={{ flexDirection: 'row', justifyContent: isUser ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 8 }}>
       {!isUser && (
-        <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.indigoSoft, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="sparkles" size={14} color={C.indigo} />
+        <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.primaryBg, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="sparkles" size={14} color={C.primary} />
         </View>
       )}
       <View style={{
         maxWidth: '82%',
-        backgroundColor: isUser ? '#312E81' : C.card,
+        backgroundColor: isUser ? C.primary : C.card,
         borderRadius: 20,
         borderBottomLeftRadius: isUser ? 20 : 4,
         borderBottomRightRadius: isUser ? 4 : 20,
         paddingHorizontal: 16, paddingVertical: 10,
         borderWidth: 1, borderColor: isUser ? 'transparent' : C.border,
       }}>
-        {renderMd(item.content, isUser)}
-        <Text style={{ fontSize: 10, color: C.textDark, marginTop: 4, textAlign: isUser ? 'right' : 'left' }}>{formatTime(item.createdAt)}</Text>
+        {renderMd(item.content, isUser, C)}
+        <Text style={{ fontSize: 10, color: C.textMuted, marginTop: 4, textAlign: isUser ? 'right' : 'left' }}>{formatTime(item.createdAt)}</Text>
       </View>
     </View>
   );
 });
 
 export default function ChatScreen() {
+  const C = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const toast = useToast();
@@ -192,7 +185,7 @@ export default function ChatScreen() {
   }, [toast]);
 
   if (!isInitialized) {
-    return <View style={{ flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}><Spinner size={32} color={C.indigo} /></View>;
+    return <View style={{ flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}><Spinner size={32} color={C.primary} /></View>;
   }
 
   return (
@@ -200,8 +193,8 @@ export default function ChatScreen() {
       {/* Header */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, paddingTop: insets.top + 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.indigoSoft, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="sparkles" size={20} color={C.indigo} />
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.primaryBg, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="sparkles" size={20} color={C.primary} />
           </View>
           <View>
             <Text style={{ fontSize: 22, fontWeight: '800', color: C.textMain }}>{t("chat.title")}</Text>
@@ -232,8 +225,8 @@ export default function ChatScreen() {
         ListFooterComponent={isLoading ? <TypingIndicator /> : null}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingVertical: 60 }}>
-            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.indigoSoft, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="sparkles" size={28} color={C.indigo} />
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.primaryBg, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="sparkles" size={28} color={C.primary} />
             </View>
             <Text style={{ fontSize: 20, fontWeight: '800', color: C.textMain, textAlign: 'center', marginTop: 20 }}>{t("chat.greeting")}</Text>
             <Text style={{ fontSize: 14, color: C.textSec, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
@@ -267,10 +260,10 @@ export default function ChatScreen() {
                   borderRadius: 20,
                   backgroundColor: C.card,
                   borderWidth: 2,
-                  borderColor: C.indigo,
+                  borderColor: C.primary,
                 }}
               >
-                <Ionicons name={p.icon as any} size={20} color={C.indigo} />
+                <Ionicons name={p.icon as any} size={20} color={C.primary} />
                 <Text style={{ fontSize: 14, fontWeight: '700', color: C.textMain, marginLeft: 8 }}>{p.label}</Text>
               </TouchableOpacity>
             ))}
@@ -292,10 +285,10 @@ export default function ChatScreen() {
                   borderRadius: 20,
                   backgroundColor: C.card,
                   borderWidth: 2,
-                  borderColor: C.indigo,
+                  borderColor: C.primary,
                 }}
               >
-                <Ionicons name={p.icon as any} size={20} color={C.indigo} />
+                <Ionicons name={p.icon as any} size={20} color={C.primary} />
                 <Text style={{ fontSize: 14, fontWeight: '700', color: C.textMain, marginLeft: 8 }}>{p.label}</Text>
               </TouchableOpacity>
             ))}
@@ -308,7 +301,7 @@ export default function ChatScreen() {
             value={inputText}
             onChangeText={setInputText}
             placeholder="Спросите о финансах..."
-            placeholderTextColor={C.textDark}
+            placeholderTextColor={C.textMuted}
             multiline
             maxLength={1000}
             style={{ flex: 1, backgroundColor: C.card, borderRadius: 24, paddingHorizontal: 18, paddingVertical: 12, fontSize: 15, color: C.textMain, maxHeight: 100, borderWidth: 1, borderColor: C.border }}
@@ -316,7 +309,7 @@ export default function ChatScreen() {
           <TouchableOpacity
             onPress={() => { send(inputText); setInputText(''); }}
             disabled={!inputText.trim() || isLoading}
-            style={{ width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: !inputText.trim() || isLoading ? 'rgba(99,102,248,0.25)' : C.indigo }}
+            style={{ width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: !inputText.trim() || isLoading ? 'rgba(99,102,248,0.25)' : C.primary }}
           >
             {isLoading ? <Spinner size={18} /> : <Ionicons name="arrow-up" size={20} color="white" />}
           </TouchableOpacity>
