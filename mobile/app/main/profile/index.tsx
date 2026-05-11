@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useSubscriptionStore } from '../../../src/stores/subscriptionStore';
+import { api } from '../../../src/services/api';
 import { Text } from '../../../components/ui/text';
 import { CurrencyPicker } from '../../../src/components/ui/CurrencyPicker';
 import { LanguagePicker, getNativeName } from '../../../src/components/ui/LanguagePicker';
@@ -36,6 +38,9 @@ export default function ProfileScreen() {
 
   const isDark = useThemeStore((s) => s.isDark);
   const toggleTheme = useThemeStore((s) => s.toggle);
+
+  const isPremium = useSubscriptionStore((s) => s.isPremium());
+  const fetchStatus = useSubscriptionStore((s) => s.fetchStatus);
 
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
@@ -151,6 +156,35 @@ export default function ProfileScreen() {
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+          </Pressable>
+
+          {/* Premium Toggle */}
+          <Pressable
+            onPress={async () => {
+              try {
+                if (isPremium) {
+                  await api.post('/subscription/cancel');
+                } else {
+                  await api.post('/subscription/activate', { platform: 'manual' });
+                }
+                await fetchStatus();
+                await useDataStore.getState().initializeData();
+              } catch (e) {
+                console.error('Toggle premium error:', e);
+              }
+            }}
+            style={S.row}
+          >
+            <View style={[S.iconWrap, { backgroundColor: isPremium ? '#F59E0B15' : C.primaryBg }]}>
+              <Ionicons name={isPremium ? 'diamond' : 'diamond-outline'} size={18} color={isPremium ? '#F59E0B' : C.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: C.textMain }}>{isPremium ? 'Premium ✦' : 'Free план'}</Text>
+              <Text style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>{isPremium ? 'Все фичи разблокированы' : 'Нажми для переключения'}</Text>
+            </View>
+            <View style={{ width: 44, height: 28, borderRadius: 14, backgroundColor: isPremium ? '#F59E0B' : '#D1D5DB', justifyContent: 'center', paddingHorizontal: 2 }}>
+              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFF', alignSelf: isPremium ? 'flex-end' as const : 'flex-start' as const, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2 }} />
+            </View>
           </Pressable>
 
           <Pressable

@@ -7,6 +7,9 @@ export interface User {
   monthlyHours: number;
   currency?: string;
   language?: string;
+  plan?: 'FREE' | 'PREMIUM';
+  isPremium?: boolean;
+  subscriptionExpiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -390,4 +393,34 @@ export interface Article {
   language: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// === Subscription & Features ===
+
+export type FeatureKey =
+  | 'AI_CHAT'
+  | 'AI_VOICE'
+  | 'AI_RECEIPT'
+  | 'ACCOUNTS'
+  | 'GOALS'
+  | 'WISHLIST_INCUBATOR'
+  | 'LIFE_COST'
+  | 'ANALYTICS_BASIC'
+  | 'ANALYTICS_ADVANCED'
+  | 'EXPORT'
+  | 'ARTICLES';
+
+export interface FeatureAccess {
+  allowed: boolean;
+  limit?: number;
+  limitUnit?: string;
+}
+
+export interface SubscriptionStatus {
+  plan: 'free' | 'premium';
+  isPremium: boolean;
+  expiresAt: string | null;
+  startedAt: string;
+  cancelledAt: string | null;
+  features: Record<FeatureKey, FeatureAccess>;
 }

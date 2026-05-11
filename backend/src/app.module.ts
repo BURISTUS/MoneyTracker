@@ -18,6 +18,8 @@ import { I18nApiModule } from './i18n-controller/i18n-api.module';
 import { ChatModule } from './chat/chat.module';
 import { AiModule } from './ai/ai.module';
 import { ArticlesModule } from './articles/articles.module';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 @Module({
   imports: [
@@ -53,6 +55,8 @@ import { ArticlesModule } from './articles/articles.module';
     ChatModule,
     AiModule,
     ArticlesModule,
+    RateLimitModule,
+    SubscriptionModule,
   ],
 })
 export class AppModule {}

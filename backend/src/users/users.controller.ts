@@ -2,11 +2,15 @@ import { Controller, Get, Patch, Body, UseGuards, Request, NotFoundException } f
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private subscriptionService: SubscriptionService,
+  ) {}
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
@@ -17,6 +21,7 @@ export class UsersController {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    const subscription = await this.subscriptionService.getOrCreate(req.user.id);
     return {
       id: user.id,
       email: user.email,
@@ -26,6 +31,9 @@ export class UsersController {
       hourlyRate: user.hourlyRate,
       monthlyHours: user.monthlyHours,
       gamification: user.gamification,
+      plan: subscription.plan,
+      isPremium: subscription.plan === 'PREMIUM',
+      subscriptionExpiresAt: subscription.expiresAt,
     };
   }
 

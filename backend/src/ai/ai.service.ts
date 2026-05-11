@@ -4,11 +4,11 @@ import OpenAI from 'openai';
 
 export interface ParsedTransaction {
   type: 'INCOME' | 'EXPENSE';
-  amount: number; // в основных единицах валюты (рубли, а не копейки)
+  amount: number;
   description: string;
   categoryName: string;
   categoryType: 'INCOME' | 'EXPENSE';
-  date?: string; // ISO string
+  date?: string;
 }
 
 export interface ParsedReceipt extends ParsedTransaction {
@@ -20,6 +20,46 @@ export interface ParsedReceipt extends ParsedTransaction {
     categoryName: string;
   }>;
 }
+
+const VOICE_SYSTEM_PROMPT = `Ты — парсер финансовых транзакций. Твоя единственная задача — извлечь из текста пользователя данные о транзакции и вернуть их в формате JSON.
+
+## Правила извлечения
+1. **Сумма**: извлекай числовое значение в основных единицах валюты (рубли, а не копейки; доллары, а не центы). «Полторашка пива за 150» → amount: 150. «Тысяча двести рублей» → amount: 1200.
+2. **Тип**: EXPENSE по умолчанию. INCOME только если явно указано: «зарплата», «доход», «получил», «перевод на счёт», «премия».
+3. **Описание**: краткое, 2–5 слов. «Купил кофе в старбаксе» → «Кофе Starbucks». «Заправил машину на 3000» → «АЗС заправка».
+4. **Категория**: сопоставляй с существующими категориями пользователя. Если подходящей нет — предложи новую, названием которой будет 1–2 слова.
+5. **Дата**: если указана («вчера», «в прошлую пятницу», «27 мая») — преобразуй в ISO-8601. Если не указана — не добавляй поле date.
+6. **Валюта**: не включай в ответ, валюта определяется профилем пользователя.
+
+## Формат ответа
+Верни ТОЛЬКО валидный JSON. Без markdown, без комментариев, без пояснений.
+
+Успешный парсинг:
+{"type":"EXPENSE","amount":150,"description":"Кофе Starbucks","categoryName":"Кафе","categoryType":"EXPENSE"}
+
+Не удалось распознать:
+{"error":"Не удалось распознать транзакцию","detail":"причина"}`;
+
+const RECEIPT_SYSTEM_PROMPT = `Ты — сканер чеков. Проанализируй фото чека и извлеки данные о покупках.
+
+## Правила
+1. Определи **магазин** (название, адрес если есть).
+2. Извлеки **каждую позицию** чека: название товара, цена, категория.
+3. Сопоставляй товары с категориями пользователя. Если подходящей категории нет — предложи новую.
+4. **totalAmount** — итоговая сумма чека.
+5. **amount** — итого для главной записи (равно totalAmount).
+6. Суммы — в основных единицах валюты (рубли, не копейки).
+7. Дата чека — в ISO-8601, если распознана.
+8. Если чек не удалось распознать (размытое фото, не чек) — верни ошибку.
+
+## Формат ответа
+Верни ТОЛЬКО валидный JSON. Без markdown, без комментариев.
+
+Успешно:
+{"type":"EXPENSE","amount":1250,"description":"Пятёрочка","categoryName":"Продукты","categoryType":"EXPENSE","date":"2025-01-15","store":"Пятёрочка, ул. Ленина 42","totalAmount":1250,"items":[{"name":"Молоко 3.2%","amount":89,"categoryName":"Продукты"},{"name":"Хлеб белый","amount":45,"categoryName":"Продукты"},{"name":"Шоколад Milka","amount":119,"categoryName":"Сладости"}]}
+
+Ошибка:
+{"error":"Не удалось распознать чек","detail":"Фото размыто или не содержит кассового чека"}`;
 
 @Injectable()
 export class AiService {
@@ -42,7 +82,6 @@ export class AiService {
     });
   }
 
-  /** Получить категории пользователя для контекста промпта */
   private async getUserCategories(userId: string) {
     const categories = await this.prisma.category.findMany({
       where: { userId },
@@ -56,72 +95,20 @@ export class AiService {
     }));
   }
 
-  /** Системный промпт для парсинга транзакции */
-  private buildSystemPrompt(categories: Array<{ name: string; type: string }>, language?: string): string {
+  private buildVoiceContext(categories: Array<{ name: string; type: string }>, language?: string): string {
     const incomeCats = categories.filter((c) => c.type === 'INCOME').map((c) => c.name);
     const expenseCats = categories.filter((c) => c.type === 'EXPENSE').map((c) => c.name);
-
-    return `Ты — парсер финансовых транзакций. Твоя задача — извлечь из текста пользователя данные о транзакции и вернуть их в виде JSON.
-
-Категории доходов пользователя: ${incomeCats.join(', ') || '(нет)'}
-Категории расходов пользователя: ${expenseCats.join(', ') || '(нет)'}
-
-Правила:
-1. Сопоставляй название категории из текста с существующими категориями пользователя. Если близкое совпадение — используй существующую категорию.
-2. Если подходящей категории нет — предложи новую (categoryName будет новым названием).
-3. Сумма указывается в основных единицах валюты (рубли, а не копейки).
-4. Если дата не указана — не добавляй поле date.
-5. Тип транзакции по умолчанию — EXPENSE (расход), если явно не указано "доход", "зарплата", "получил" и т.д.
-6. Язык ответа: ${language || 'ru'}
-
-Верни ТОЛЬКО валидный JSON без markdown и пояснений:
-{
-  "type": "INCOME" или "EXPENSE",
-  "amount": число,
-  "description": "описание покупки/операции",
-  "categoryName": "название категории",
-  "categoryType": "INCOME" или "EXPENSE",
-  "date": "ISO дата" (опционально)
-}`;
+    let prompt = VOICE_SYSTEM_PROMPT;
+    prompt += `\n\n## Категории пользователя\nДоходы: ${incomeCats.join(', ') || '(нет)'}\nРасходы: ${expenseCats.join(', ') || '(нет)'}\nЯзык ответа: ${language || 'ru'}`;
+    return prompt;
   }
 
-  /** Системный промпт для сканирования чека */
-  private buildReceiptPrompt(categories: Array<{ name: string; type: string }>, language?: string): string {
+  private buildReceiptContext(categories: Array<{ name: string; type: string }>, language?: string): string {
     const incomeCats = categories.filter((c) => c.type === 'INCOME').map((c) => c.name);
     const expenseCats = categories.filter((c) => c.type === 'EXPENSE').map((c) => c.name);
-
-    return `Ты — сканер чеков. Проанализируй фото чека и извлеки данные о покупках.
-
-Категории расходов пользователя: ${expenseCats.join(', ') || '(нет)'}
-Категории доходов пользователя: ${incomeCats.join(', ') || '(нет)'}
-
-Правила:
-1. Сопоставляй товары с категориями пользователя. Если нет подходящей — предложи новую.
-2. Суммы указывай в основных единицах валюты (рубли, а не копейки).
-3. Если на чеке есть дата — добавь поле date.
-4. Определи магазин в поле store.
-5. Общая сумма чека — в totalAmount.
-6. Каждый товар — в items с amount и categoryName.
-7. Общая категория чека — categoryName (наиболее подходящая).
-8. Язык: ${language || 'ru'}
-
-Верни ТОЛЬКО валидный JSON без markdown и пояснений:
-{
-  "type": "EXPENSE",
-  "amount": общая_сумма_число,
-  "description": "название_магазина",
-  "categoryName": "основная_категория",
-  "categoryType": "EXPENSE",
-  "date": "ISO дата" (опционально),
-  "store": "название магазина",
-  "totalAmount": общая_сумма,
-  "items": [
-    { "name": "товар", "amount": цена, "categoryName": "категория" }
-  ]
-}
-
-Если чек не удалось распознать — верни:
-{ "error": "Не удалось распознать чек" }`;
+    let prompt = RECEIPT_SYSTEM_PROMPT;
+    prompt += `\n\n## Категории пользователя\nДоходы: ${incomeCats.join(', ') || '(нет)'}\nРасходы: ${expenseCats.join(', ') || '(нет)'}\nЯзык ответа: ${language || 'ru'}`;
+    return prompt;
   }
 
   /** Парсинг текстовой транзакции (голос/текст) */
@@ -135,9 +122,9 @@ export class AiService {
     }
 
     const categories = await this.getUserCategories(userId);
-    const systemPrompt = this.buildSystemPrompt(categories, language);
+    const systemPrompt = this.buildVoiceContext(categories, language);
 
-    this.logger.log(`🎙️ Voice parse for user ${userId}: "${text}"`);
+    this.logger.log(`Voice parse for user ${userId}: "${text}"`);
 
     const response = await this.openai.chat.completions.create({
       model: 'deepseek-chat',
@@ -150,7 +137,7 @@ export class AiService {
     });
 
     const content = response.choices[0]?.message?.content || '';
-    this.logger.log(`🤖 DeepSeek response: ${content}`);
+    this.logger.debug(`DeepSeek voice response: ${content}`);
 
     return this.parseResponse<ParsedTransaction>(content);
   }
@@ -167,12 +154,10 @@ export class AiService {
     }
 
     const categories = await this.getUserCategories(userId);
-    const systemPrompt = this.buildReceiptPrompt(categories, language);
-
-    // Формируем data URL для DeepSeek Vision
+    const systemPrompt = this.buildReceiptContext(categories, language);
     const dataUrl = `data:${mimeType};base64,${imageBase64}`;
 
-    this.logger.log(`📷 Receipt parse for user ${userId}, image size: ${imageBase64.length}`);
+    this.logger.log(`Receipt parse for user ${userId}, image size: ${imageBase64.length}`);
 
     const response = await this.openai.chat.completions.create({
       model: 'deepseek-chat',
@@ -181,14 +166,8 @@ export class AiService {
         {
           role: 'user',
           content: [
-            {
-              type: 'image_url',
-              image_url: { url: dataUrl },
-            },
-            {
-              type: 'text',
-              text: 'Проанализируй этот чек и извлеки данные о покупках.',
-            },
+            { type: 'image_url', image_url: { url: dataUrl } },
+            { type: 'text', text: 'Проанализируй этот чек и извлеки данные о покупках.' },
           ],
         },
       ],
@@ -197,14 +176,13 @@ export class AiService {
     });
 
     const content = response.choices[0]?.message?.content || '';
-    this.logger.log(`🤖 DeepSeek receipt response: ${content}`);
+    this.logger.debug(`DeepSeek receipt response: ${content}`);
 
     return this.parseResponse<ParsedReceipt>(content);
   }
 
   /** Парсинг JSON из ответа DeepSeek */
   private parseResponse<T>(content: string): T {
-    // Убираем markdown-обёртки если есть
     let cleaned = content.trim();
     if (cleaned.startsWith('```json')) {
       cleaned = cleaned.slice(7);
@@ -220,13 +198,15 @@ export class AiService {
       const parsed = JSON.parse(cleaned);
 
       if (parsed.error) {
-        throw new Error(parsed.error);
+        throw new Error(parsed.detail || parsed.error);
       }
 
       return parsed as T;
     } catch (e) {
       this.logger.error(`Failed to parse AI response: ${content}`, e);
-      throw new Error(`Не удалось распознать ответ AI: ${e instanceof Error ? e.message : 'неизвестная ошибка'}`);
+      throw new Error(
+        `Не удалось распознать ответ AI: ${e instanceof Error ? e.message : 'неизвестная ошибка'}`,
+      );
     }
   }
 }

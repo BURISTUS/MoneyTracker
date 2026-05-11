@@ -2,6 +2,7 @@ import { Controller, Get, Post, Delete, Body, UseGuards, Request } from '@nestjs
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RateLimitGuard } from '../rate-limit/rate-limit.guard';
 
 @ApiTags('chat')
 @ApiBearerAuth()
@@ -17,35 +18,21 @@ export class ChatController {
   }
 
   @Post('message')
+  @UseGuards(JwtAuthGuard, RateLimitGuard)
   @ApiOperation({ summary: 'Send message to AI assistant' })
   async sendMessage(
     @Request() req: any,
     @Body() body: { content: string; presetType?: string },
   ) {
-    // Save user message
-    const userMessage = await this.chatService.createMessage({
-      userId: req.user.id,
-      role: 'USER',
-      content: body.content,
-      presetType: body.presetType as any,
-    });
+    if (!body.content?.trim()) {
+      return { error: 'Сообщение не может быть пустым' };
+    }
 
-    // TODO: Call DeepSeek API here
-    // For now, return mock response
-    const assistantContent = await this.chatService.getMockResponse(body.presetType, req.user.id);
-
-    // Save assistant response
-    const assistantMessage = await this.chatService.createMessage({
-      userId: req.user.id,
-      role: 'ASSISTANT',
-      content: assistantContent,
-      presetType: body.presetType as any,
-    });
-
-    return {
-      userMessage,
-      assistantMessage,
-    };
+    return this.chatService.sendMessage(
+      req.user.id,
+      body.content.trim(),
+      body.presetType,
+    );
   }
 
   @Delete('messages')

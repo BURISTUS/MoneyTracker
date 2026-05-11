@@ -16,5 +16,7 @@
   "invalidCredentials": "Неверный email или пароль",
   "emailExists": "Пользователь с таким email уже существует",
   "articleNotFound": "Статья не найдена",
-  "articleSlugExists": "Статья с таким slug уже существует"
+  "articleSlugExists": "Статья с таким slug уже существует",
+  "featurePremiumOnly": "{{feature}} доступна на Premium-подписке. Обновите план.",
+  "rateLimitExceeded": "Слишком много запросов для {{feature}}. Попробуйте позже или обновите до Premium."
 }

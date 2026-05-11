@@ -16,5 +16,7 @@
   "invalidCredentials": "Invalid email or password",
   "emailExists": "User with this email already exists",
   "articleNotFound": "Article not found",
-  "articleSlugExists": "Article with this slug already exists"
+  "articleSlugExists": "Article with this slug already exists",
+  "featurePremiumOnly": "{{feature}} is available on Premium plan. Upgrade to unlock.",
+  "rateLimitExceeded": "Too many requests for {{feature}}. Try again later or upgrade to Premium."
 }

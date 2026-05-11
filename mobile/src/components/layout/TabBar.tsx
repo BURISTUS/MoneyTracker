@@ -1,13 +1,11 @@
-import React from 'react';
-import { View, Pressable, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Pressable, Keyboard } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../components/ui/text';
 import { useRouter, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../stores/themeStore';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface TabItem {
   key: string;
@@ -31,6 +29,15 @@ export const TabBar: React.FC = React.memo(() => {
   const pathname = usePathname();
   const { t } = useTranslation();
   const C = useTheme();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+
+  if (keyboardVisible) return null;
 
   const isActive = (tab: TabItem) => {
     if (tab.key === 'home') return pathname === '/main';
@@ -38,18 +45,15 @@ export const TabBar: React.FC = React.memo(() => {
   };
 
   return (
-    <View
-      className="absolute bottom-0 left-0 right-0"
-      style={{ paddingBottom: Math.max(insets.bottom, 8), paddingTop: 8, backgroundColor: C.tabBar, borderTopWidth: 1, borderTopColor: C.tabBarBorder }}
-    >
-      <View className="flex-row justify-around items-center px-1">
+    <View style={{ paddingBottom: Math.max(insets.bottom, 8), paddingTop: 8, backgroundColor: C.tabBar, borderTopWidth: 1, borderTopColor: C.tabBarBorder }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingHorizontal: 4 }}>
         {tabs.map((tab) => {
           const active = isActive(tab);
           return (
             <Pressable
               key={tab.key}
               onPress={() => router.replace(tab.path as never)}
-              className="flex-1 items-center justify-center gap-0.5 p-1"
+              style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, paddingVertical: 4 }}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
             >
@@ -58,7 +62,7 @@ export const TabBar: React.FC = React.memo(() => {
                 size={22}
                 color={active ? C.tabActive : C.tabInactive}
               />
-              <Text bold={active} className={`text-[10px] ${active ? 'text-primary-300' : 'text-typography-400'}`}>
+              <Text bold={active} style={{ fontSize: 10, color: active ? C.tabActive : C.tabInactive }}>
                 {t(tab.label)}
               </Text>
               {active && (

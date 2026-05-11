@@ -2,15 +2,18 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request }
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GoalsService } from './goals.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PremiumGuard } from '../common/premium.guard';
+import { RequirePremium } from '../common/require-premium.decorator';
 
 @ApiTags('Goals')
 @Controller('goals')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PremiumGuard)
 @ApiBearerAuth()
 export class GoalsController {
   constructor(private goalsService: GoalsService) {}
 
   @Get()
+  @RequirePremium('GOALS')
   @ApiOperation({ summary: 'Get all goals with progress and contributions' })
   async findAll(@Request() req: any) {
     return this.goalsService.findAll(req.user.id);

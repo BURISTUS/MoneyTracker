@@ -2,15 +2,18 @@ import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { WishlistService } from './wishlist.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PremiumGuard } from '../common/premium.guard';
+import { RequirePremium } from '../common/require-premium.decorator';
 
 @ApiTags('Wishlist')
 @Controller('wishlist')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PremiumGuard)
 @ApiBearerAuth()
 export class WishlistController {
   constructor(private wishlistService: WishlistService) {}
 
   @Get()
+  @RequirePremium('WISHLIST_INCUBATOR')
   @ApiOperation({ summary: 'Get all wishlist items' })
   async findAll(@Request() req: any) {
     return this.wishlistService.findAll(req.user.id);

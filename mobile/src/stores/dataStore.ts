@@ -13,6 +13,7 @@ import currencyService from '../services/currency';
 import wishlistService from '../services/wishlist';
 import goalsService from '../services/goals';
 import articlesService from '../services/articles';
+import { useSubscriptionStore } from './subscriptionStore';
 import type { ExchangeRate } from '../services/currency';
 import { setCurrencyConfig } from '../utils/formatters';
 
@@ -556,18 +557,37 @@ export const useDataStore = create<DataState>()(
           console.log('🎮 Demo mode — skipping API calls');
           return;
         }
-        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate, fetchCurrencyRates, fetchWishlist, fetchGoals, fetchArticles } = get();
-        await Promise.all([
+
+        // Fetch subscription first to know what features are accessible
+        const { fetchStatus } = useSubscriptionStore.getState();
+        await fetchStatus();
+
+        const isPremium = useSubscriptionStore.getState().isPremium();
+        const check = useSubscriptionStore.getState().checkAccess;
+
+        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchCurrencyRates, fetchArticles } = get();
+
+        const promises: Promise<any>[] = [
           fetchAccounts(),
           fetchCategories(),
           fetchTransactions(),
           fetchGamification(),
-          fetchHourlyRate(),
           fetchCurrencyRates(),
-          fetchWishlist(),
-          fetchGoals(),
           fetchArticles(),
-        ]);
+        ];
+
+        // Only fetch premium features if accessible
+        if (check('LIFE_COST')?.allowed) {
+          promises.push(get().fetchHourlyRate());
+        }
+        if (check('WISHLIST_INCUBATOR')?.allowed) {
+          promises.push(get().fetchWishlist());
+        }
+        if (check('GOALS')?.allowed) {
+          promises.push(get().fetchGoals());
+        }
+
+        await Promise.all(promises);
       },
     }),
     {
