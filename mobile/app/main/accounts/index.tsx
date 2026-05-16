@@ -13,6 +13,9 @@ import { formatCurrency } from '../../../src/utils/formatters';
 import { currencyService } from '../../../src/services/currency';
 import type { AccountType, TransactionType } from '../../../src/types';
 import { AccountType as AccountTypeEnum, TransactionType as TransactionTypeEnum } from '../../../src/types';
+import { useSubscriptionStore } from '../../../src/stores/subscriptionStore';
+import { PremiumBadge } from '../../../src/components/ui/PremiumBadge';
+import type { FeatureKey } from '../../../src/types';
 import type { ExchangeRate } from '../../../src/services/currency';
 
 const accountIcons: Record<AccountType, { icon: keyof typeof Ionicons.glyphMap; color: string }> = {
@@ -125,13 +128,16 @@ export default function AccountsScreen() {
       return sum + Math.round(converted * 100);
     }, 0);
 
-  const accountTypes: { value: AccountType; label: string }[] = [
+  const allowedTypes = useSubscriptionStore((s) => s.allowedAccountTypes());
+  const showPaywall = useSubscriptionStore((s) => s.showPaywall);
+  const allAccountTypes: { value: AccountType; label: string; premiumKey?: string }[] = [
     { value: AccountTypeEnum.CASH, label: 'Наличные' },
     { value: AccountTypeEnum.BANK, label: 'Банковский' },
-    { value: AccountTypeEnum.CREDIT, label: 'Кредитный' },
-    { value: AccountTypeEnum.INVESTMENT, label: 'Инвестиции' },
-    { value: AccountTypeEnum.DEBT, label: 'Долг' },
+    { value: AccountTypeEnum.CREDIT, label: 'Кредитная карта', premiumKey: 'ACCOUNT_CREDIT' },
+    { value: AccountTypeEnum.INVESTMENT, label: 'Инвестиции', premiumKey: 'ACCOUNT_INVESTMENT' },
+    { value: AccountTypeEnum.DEBT, label: 'Долг', premiumKey: 'ACCOUNT_DEBT' },
   ];
+  const accountTypes = allAccountTypes;
 
   const handleAdd = useCallback(async () => {
     if (!name) return;
@@ -351,15 +357,23 @@ export default function AccountsScreen() {
               <View style={s.typeRow}>
                 {accountTypes.map((at) => {
                   const active = type === at.value;
+                  const locked = at.premiumKey && !allowedTypes.includes(at.value);
                   return (
                     <Pressable
                       key={at.value}
-                      onPress={() => setType(at.value)}
-                      style={[s.typeChip, active && s.typeChipActive]}
+                      onPress={() => {
+                        if (locked && at.premiumKey) {
+                          showPaywall(at.premiumKey as FeatureKey);
+                          return;
+                        }
+                        setType(at.value);
+                      }}
+                      style={[s.typeChip, active && s.typeChipActive, locked && { opacity: 0.5 }]}
                     >
                       <Text style={[s.typeChipText, active && s.typeChipTextActive]}>
                         {at.label}
                       </Text>
+                      {locked && <PremiumBadge />}
                     </Pressable>
                   );
                 })}

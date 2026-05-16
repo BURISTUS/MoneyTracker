@@ -8,6 +8,7 @@ import { format, isToday, isYesterday } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { chatService, type ChatMessage } from '../../../src/services/chat';
 import { useAuthStore } from '../../../src/stores/authStore';
+import { useSubscriptionStore } from '../../../src/stores/subscriptionStore';
 import { useToast } from '../../../src/components/ui/Toast';
 import { ConfirmModal } from '../../../src/components/ui/ConfirmModal';
 import { useTheme } from '../../../src/stores/themeStore';
@@ -148,6 +149,9 @@ export default function ChatScreen() {
   const C = useTheme();
   const toast = useToast();
   const { isDemoMode } = useAuthStore();
+  const showPaywall = useSubscriptionStore((s) => s.showPaywall);
+  const isPremium = useSubscriptionStore((s) => s.isPremium());
+  const [chatBlocked, setChatBlocked] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -155,6 +159,17 @@ export default function ChatScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [showClear, setShowClear] = useState(false);
+
+  // Check AI_CHAT access — react to subscription changes
+  useEffect(() => {
+    const access = useSubscriptionStore.getState().checkAccess('AI_CHAT');
+    if (!access?.allowed) {
+      showPaywall('AI_CHAT');
+      setChatBlocked(true);
+    } else {
+      setChatBlocked(false);
+    }
+  }, [isPremium]);
 
   useEffect(() => {
     if (isDemoMode) { setIsInitialized(true); return; }
@@ -168,6 +183,7 @@ export default function ChatScreen() {
   const send = async (content: string, presetType?: string) => {
     if (!content.trim() || isLoading) return;
     if (isDemoMode) { toast.showError('В демо-режиме чат недоступен'); return; }
+    if (showPaywall('AI_CHAT')) return;
     setIsLoading(true);
     try {
       const res = await chatService.sendMessage({ content: content.trim(), presetType });
@@ -182,6 +198,31 @@ export default function ChatScreen() {
     catch { toast.showError('Ошибка'); }
     setShowClear(false);
   }, [toast]);
+
+  if (chatBlocked) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#F59E0B15', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+          <Ionicons name="lock-closed" size={32} color="#F59E0B" />
+        </View>
+        <Text style={{ fontSize: 22, fontWeight: '800', color: C.textMain, textAlign: 'center', marginBottom: 8 }}>
+          AI-ассистент
+        </Text>
+        <Text style={{ fontSize: 15, color: C.textSec, textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
+          Доступен только на Premium-подписке. Задавай вопросы о финансах, проси отчёты и советы.
+        </Text>
+        <Pressable
+          onPress={() => {
+            useSubscriptionStore.getState().showPaywall('AI_CHAT');
+          }}
+          style={{ backgroundColor: '#F59E0B', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 32, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+        >
+          <Ionicons name="diamond" size={18} color="#FFF" />
+          <Text style={{ fontSize: 17, fontWeight: '700', color: '#FFF' }}>Разблокировать Premium</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   if (!isInitialized) {
     return (

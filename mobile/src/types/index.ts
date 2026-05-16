@@ -402,13 +402,18 @@ export type FeatureKey =
   | 'AI_VOICE'
   | 'AI_RECEIPT'
   | 'ACCOUNTS'
+  | 'ACCOUNT_CREDIT'
+  | 'ACCOUNT_INVESTMENT'
+  | 'ACCOUNT_DEBT'
   | 'GOALS'
   | 'WISHLIST_INCUBATOR'
   | 'LIFE_COST'
   | 'ANALYTICS_BASIC'
-  | 'ANALYTICS_ADVANCED'
+  | 'ANALYTICS_COMPARISON'
+  | 'ANALYTICS_TRENDS'
   | 'EXPORT'
-  | 'ARTICLES';
+  | 'ARTICLES'
+  | 'FAMILY';
 
 export interface FeatureAccess {
   allowed: boolean;
@@ -417,10 +422,16 @@ export interface FeatureAccess {
 }
 
 export interface SubscriptionStatus {
-  plan: 'free' | 'premium';
+  plan: 'free' | 'premium' | 'premium_family';
   isPremium: boolean;
   expiresAt: string | null;
   startedAt: string;
   cancelledAt: string | null;
-  features: Record<FeatureKey, FeatureAccess>;
+  allowedAccountTypes: string[];
+  accountLimit: number;
+  features: Record<string, FeatureAccess>;
+  familyId?: string;
+  familyName?: string;
+  familyCode?: string;
+  familyRole?: 'OWNER' | 'MEMBER';
 }

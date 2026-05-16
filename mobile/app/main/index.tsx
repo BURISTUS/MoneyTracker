@@ -22,6 +22,9 @@ import { Loading } from '../../src/components/ui/Loading';
 import { formatCurrency } from '../../src/utils/formatters';
 import { AddTransactionModal } from '../../src/components/ui/AddTransactionModal';
 import { TransactionType as TransactionTypeEnum } from '../../src/types';
+import { useSubscriptionStore } from '../../src/stores/subscriptionStore';
+import { PremiumBadge } from '../../src/components/ui/PremiumBadge';
+import type { FeatureKey } from '../../src/types';
 
 function formatHours(hours: number): string {
   if (hours < 1) return `${Math.round(hours * 60)} мин`;
@@ -110,6 +113,8 @@ export default function HomeScreen() {
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [showAiPreview, setShowAiPreview] = useState(false);
   const [aiResult, setAiResult] = useState<AiTransactionResult | AiReceiptResult | null>(null);
+  const showPaywallFn = useSubscriptionStore((s) => s.showPaywall);
+  const checkAccess = useSubscriptionStore((s) => s.checkAccess);
 
   useEffect(() => {
     initializeData();
@@ -352,11 +357,15 @@ export default function HomeScreen() {
                 <Text style={[S.actionText, { color: C.red }]}>{t("home.addExpense")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => setShowVoiceModal(true)}
+                onPress={() => {
+                  if (showPaywallFn('AI_VOICE')) return;
+                  setShowVoiceModal(true);
+                }}
                 style={[S.actionBtn, { backgroundColor: 'rgba(99,102,241,0.08)', borderColor: 'rgba(99,102,241,0.15)' }]}
               >
                 <Ionicons name="mic" size={22} color="#6366F1" />
                 <Text style={[S.actionText, { color: '#6366F1' }]}>{t("home.voiceInput")}</Text>
+                {!checkAccess('AI_VOICE')?.allowed && <PremiumBadge size="sm" />}
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push('/main/wishlist/' as never)}
@@ -367,6 +376,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={async () => {
+                  if (showPaywallFn('AI_RECEIPT')) return;
                   try {
                     const ImagePicker = require('expo-image-picker');
                     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -399,6 +409,7 @@ export default function HomeScreen() {
               >
                 <Ionicons name="camera" size={22} color="#818CF8" />
                 <Text style={[S.actionText, { color: '#818CF8' }]}>{t("home.receiptScan")}</Text>
+                {!checkAccess('AI_RECEIPT')?.allowed && <PremiumBadge size="sm" />}
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => { setAddType(TransactionTypeEnum.INCOME); setShowAddModal(true); }}

@@ -18,5 +18,7 @@
   "articleNotFound": "Статья не найдена",
   "articleSlugExists": "Статья с таким slug уже существует",
   "featurePremiumOnly": "{{feature}} доступна на Premium-подписке. Обновите план.",
-  "rateLimitExceeded": "Слишком много запросов для {{feature}}. Попробуйте позже или обновите до Premium."
+  "rateLimitExceeded": "Слишком много запросов для {{feature}}. Попробуйте позже или обновите до Premium.",
+  "accountTypeNotAllowed": "Тип счёта '{{type}}' недоступен на текущем плане",
+  "accountLimitReached": "Лимит счетов достигнут ({{limit}} на Free плане)"
 }

@@ -376,14 +376,16 @@ model Family {
 }
 
 model FamilyMember {
-  id          String   @id @default(uuid())
-  familyId    String
-  userId      String   @unique
-  role        FamilyRole @default(MEMBER)
-  joinedAt    DateTime @default(now())
+  id              String        @id @default(uuid())
+  familyId        String
+  userId          String        @unique
+  role            FamilyRole    @default(MEMBER)
+  joinedAt        DateTime      @default(now())
+  subscriptionId  String?       // связь с подпиской OWNER (PREMIUM_FAMILY)
 
-  family      Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  family          Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
 
   @@unique([familyId, userId])
   @@map("family_members")
@@ -611,6 +613,7 @@ model ExchangeRate {
 enum SubscriptionPlan {
   FREE
   PREMIUM
+  PREMIUM_FAMILY
 }
 
 model Subscription {
@@ -626,6 +629,7 @@ model Subscription {
   updatedAt     DateTime  @updatedAt
 
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyMembers FamilyMember[]       // члены семьи (если PREMIUM_FAMILY)
 
   @@map("subscriptions")
 }

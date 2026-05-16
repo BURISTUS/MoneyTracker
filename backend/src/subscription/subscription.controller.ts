@@ -16,24 +16,35 @@ export class SubscriptionController {
     return this.subscriptionService.getSubscriptionStatus(req.user.id);
   }
 
-  @Get('check/:feature')
-  @ApiOperation({ summary: 'Check if user has access to a feature' })
-  async checkFeature(@Request() req: any, feature: string) {
-    return this.subscriptionService.checkAccess(req.user.id, feature as any);
+  @Get('account-types')
+  @ApiOperation({ summary: 'Get allowed account types for current plan' })
+  async getAccountTypes(@Request() req: any) {
+    return {
+      types: await this.subscriptionService.getAllowedAccountTypes(req.user.id),
+      limit: await this.subscriptionService.getAccountLimit(req.user.id),
+    };
   }
 
   @Post('activate')
   @ApiOperation({ summary: 'Activate premium (manual or after payment validation)' })
   async activatePremium(
     @Request() req: any,
-    @Body() body: { platform?: string; transactionId?: string; expiresAt?: string },
+    @Body() body: { plan?: 'premium' | 'premium_family'; platform?: string; transactionId?: string; expiresAt?: string },
   ) {
     const expiresAt = body.expiresAt ? new Date(body.expiresAt) : undefined;
     return this.subscriptionService.activatePremium(req.user.id, {
+      plan: body.plan,
       platform: body.platform,
       transactionId: body.transactionId,
       expiresAt,
     });
+  }
+
+  @Post('toggle')
+  @ApiOperation({ summary: 'Toggle subscription plan: Free → Premium → Family → Free' })
+  async togglePlan(@Request() req: any) {
+    const result = await this.subscriptionService.togglePlan(req.user.id);
+    return this.subscriptionService.getSubscriptionStatus(req.user.id);
   }
 
   @Post('cancel')

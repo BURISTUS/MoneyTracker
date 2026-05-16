@@ -25,6 +25,8 @@ import { TransactionType as TransactionTypeEnum } from '../../types';
 import { ReceiptScannerButton } from './ReceiptScanner';
 import { AiTransactionPreview } from './AiTransactionPreview';
 import type { AiTransactionResult, AiReceiptResult } from '../../services/ai';
+import { useSubscriptionStore } from '../../stores/subscriptionStore';
+import { PremiumBadge } from './PremiumBadge';
 
 type MathOp = '+' | '−' | '×' | '÷' | null;
 
@@ -95,6 +97,8 @@ export function AddTransactionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [showAiPreview, setShowAiPreview] = useState(false);
+  const showPaywall = useSubscriptionStore((s) => s.showPaywall);
+  const checkAccess = useSubscriptionStore((s) => s.checkAccess);
   const [aiResult, setAiResult] = useState<AiTransactionResult | AiReceiptResult | null>(null);
   const deleteTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -672,9 +676,15 @@ export function AddTransactionModal({
                 </TouchableOpacity>
 
                 {/* Голос */}
-                <TouchableOpacity onPress={() => setShowVoiceModal(true)} style={S.actionBtn}>
-                  <View style={[S.actionIconWrap, { backgroundColor: C.primaryBg, borderColor: C.primaryBorder }]}>
-                    <Ionicons name="mic-outline" size={20} color={C.primary} />
+                <TouchableOpacity onPress={() => {
+                  if (showPaywall('AI_VOICE')) return;
+                  setShowVoiceModal(true);
+                }} style={S.actionBtn}>
+                  <View style={{ position: 'relative' }}>
+                    <View style={[S.actionIconWrap, { backgroundColor: C.primaryBg, borderColor: C.primaryBorder }]}>
+                      <Ionicons name="mic-outline" size={20} color={C.primary} />
+                    </View>
+                    {!checkAccess('AI_VOICE')?.allowed && <PremiumBadge size="sm" style={{ position: 'absolute', top: -6, right: -6 }} />}
                   </View>
                   <Text style={S.actionLabel}>Голос</Text>
                 </TouchableOpacity>

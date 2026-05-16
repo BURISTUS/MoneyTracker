@@ -2,18 +2,15 @@ import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { LifeCostService } from './life-cost.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { PremiumGuard } from '../common/premium.guard';
-import { RequirePremium } from '../common/require-premium.decorator';
 
 @ApiTags('Life Cost')
 @Controller('life-cost')
-@UseGuards(JwtAuthGuard, PremiumGuard)
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class LifeCostController {
   constructor(private lifeCostService: LifeCostService) {}
 
   @Get('rate')
-  @RequirePremium('LIFE_COST')
   @ApiOperation({ summary: 'Get user hourly rate' })
   async getRate(@Request() req: any) {
     const rate = await this.lifeCostService.getHourlyRate(req.user.id);

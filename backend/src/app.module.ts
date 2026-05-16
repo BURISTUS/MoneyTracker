@@ -20,6 +20,8 @@ import { AiModule } from './ai/ai.module';
 import { ArticlesModule } from './articles/articles.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { ExportModule } from './export/export.module';
+import { FamilyModule } from './family/family.module';
 
 @Module({
   imports: [
@@ -57,6 +59,8 @@ import { SubscriptionModule } from './subscription/subscription.module';
     ArticlesModule,
     RateLimitModule,
     SubscriptionModule,
+    ExportModule,
+    FamilyModule,
   ],
 })
 export class AppModule {}

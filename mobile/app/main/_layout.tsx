@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabBar } from '../../src/components/layout/TabBar';
 import { ToastProvider, ToastContainer } from '../../src/components/ui/Toast';
+import { PaywallModal } from '../../src/components/ui/PaywallModal';
 import { useTheme } from '../../src/stores/themeStore';
 
 export default function MainLayout() {
@@ -33,6 +34,8 @@ export default function MainLayout() {
             <Stack.Screen name="categories/chart" />
             <Stack.Screen name="wishlist/index" />
             <Stack.Screen name="profile/index" />
+          <Stack.Screen name="profile/premium" />
+            <Stack.Screen name="profile/family" />
             <Stack.Screen name="accounts/index" />
             <Stack.Screen name="goals/index" />
             <Stack.Screen name="life-cost/index" />
@@ -42,6 +45,7 @@ export default function MainLayout() {
           </Stack>
         </KeyboardAvoidingView>
         <ToastContainer />
+        <PaywallModal />
         <TabBar />
       </View>
     </ToastProvider>

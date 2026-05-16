@@ -336,6 +336,8 @@ export const useDataStore = create<DataState>()(
       setGamification: (gamification) => set({ gamification }),
       setUser: (user: User | null) => set({ user }),
       fetchGamification: async () => {
+        const allowed = useSubscriptionStore.getState().checkAccess('LIFE_COST')?.allowed;
+        if (!allowed) return;
         try {
           const rate = await lifeCostService.getHourlyRate();
           set((state) => ({

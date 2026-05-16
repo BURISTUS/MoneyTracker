@@ -18,5 +18,7 @@
   "articleNotFound": "Article not found",
   "articleSlugExists": "Article with this slug already exists",
   "featurePremiumOnly": "{{feature}} is available on Premium plan. Upgrade to unlock.",
-  "rateLimitExceeded": "Too many requests for {{feature}}. Try again later or upgrade to Premium."
+  "rateLimitExceeded": "Too many requests for {{feature}}. Try again later or upgrade to Premium.",
+  "accountTypeNotAllowed": "Account type '{{type}}' is not available on your current plan",
+  "accountLimitReached": "Account limit reached ({{limit}} accounts on Free plan)"
 }

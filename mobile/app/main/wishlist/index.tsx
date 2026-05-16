@@ -21,6 +21,9 @@ import { formatCurrency } from '../../../src/utils/formatters';
 import { useToast } from '../../../src/components/ui/Toast';
 import { ConfirmModal } from '../../../src/components/ui/ConfirmModal';
 import { WishlistStatus as WishlistStatusEnum } from '../../../src/types';
+import { useSubscriptionStore } from '../../../src/stores/subscriptionStore';
+import { PremiumBadge } from '../../../src/components/ui/PremiumBadge';
+import type { FeatureKey } from '../../../src/types';
 import wishlistService from '../../../src/services/wishlist';
 import type { WishlistItem } from '../../../src/types';
 import type { ThemeColors } from '../../../src/stores/themeStore';
@@ -987,7 +990,17 @@ export default function WishlistScreen() {
             <Text style={S.headerTitle}>{t("wishlist.incubatorTitle")}</Text>
             <Text style={S.headerSub}>{t("wishlist.freezeImpulse")}</Text>
           </View>
-          <TouchableOpacity onPress={() => setShowAddModal(true)} style={S.addBtn}>
+          <TouchableOpacity onPress={() => {
+            const access = useSubscriptionStore.getState().checkAccess('WISHLIST_INCUBATOR');
+            if (access?.limit) {
+              const current = filteredItems.filter(i => i.status !== 'PURCHASED' && i.status !== 'REJECTED').length;
+              if (current >= access.limit) {
+                useSubscriptionStore.getState().showPaywall('WISHLIST_INCUBATOR');
+                return;
+              }
+            }
+            setShowAddModal(true);
+          }} style={S.addBtn}>
             <Ionicons name="add" size={22} color="#FFF" />
           </TouchableOpacity>
         </View>

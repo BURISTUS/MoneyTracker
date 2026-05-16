@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
 import { RateLimitService, RateLimitFeature } from './rate-limit.service';
 import { SubscriptionService } from '../subscription/subscription.service';
-import { FEATURES, FeatureKey, getLimit } from '../common/features.config';
+import { FEATURES, FeatureKey, FeatureTier, getLimit } from '../common/features.config';
 
 const PATH_TO_FEATURE: Record<string, FeatureKey> = {
   '/api/chat/message': 'AI_CHAT',
@@ -32,10 +32,22 @@ export class RateLimitGuard implements CanActivate {
     if (!featureKey) return true;
 
     const plan = await this.subscriptionService.getPlan(userId);
-    const planConfig = FEATURES[featureKey][plan];
+    const planConfig = FEATURES[featureKey][plan] as FeatureTier;
+    const description = FEATURES[featureKey].description;
 
-    if (!planConfig.allowed) return true; // PremiumGuard заблокирует
-    if (!planConfig.limit) return true;    // Безлимитная фича
+    if (!planConfig.allowed) {
+      throw new HttpException(
+        {
+          statusCode: 403,
+          message: `${description} доступна на Premium-подписке`,
+          error: 'Forbidden',
+          feature: featureKey,
+          premiumOnly: true,
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    if (!((planConfig as any).limit)) return true;
 
     const maxLimit = getLimit(featureKey, plan);
     const rateFeature: RateLimitFeature = FEATURE_TO_RATE[featureKey] || 'chat';

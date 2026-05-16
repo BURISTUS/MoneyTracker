@@ -1,13 +1,42 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionPlan } from '@prisma/client';
-import { FEATURES, FeatureKey, getLimit, isAllowed } from '../common/features.config';
+import { FEATURES, FeatureKey, FeatureConfig, FeatureTier, PlanType, ACCOUNT_TYPE_ACCESS, ACCOUNT_LIMITS } from '../common/features.config';
 
 @Injectable()
 export class SubscriptionService {
   private readonly logger = new Logger(SubscriptionService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Проверить эффективный план с учётом членства в семье */
+  private async getEffectivePlan(userId: string): Promise<PlanType> {
+    const sub = await this.prisma.subscription.findUnique({ where: { userId } });
+    const ownPlan = sub ? this.mapPlan(sub.plan) : 'free';
+
+    // Если уже на premium/premium_family — возвращаем как есть
+    if (ownPlan !== 'free') return ownPlan;
+
+    // Проверяем, состоит ли пользователь в семье
+    const familyMember = await this.prisma.familyMember.findUnique({ where: { userId } });
+    if (!familyMember) return 'free';
+
+    // Проверяем, что владелец семьи действительно на PREMIUM_FAMILY
+    const family = await this.prisma.family.findUnique({
+      where: { id: familyMember.familyId },
+      include: { members: true },
+    });
+    if (!family) return 'free';
+
+    const owner = family.members.find((m) => m.role === 'OWNER');
+    if (!owner) return 'free';
+
+    const ownerSub = await this.prisma.subscription.findUnique({ where: { userId: owner.userId } });
+    if (!ownerSub || ownerSub.plan !== SubscriptionPlan.PREMIUM_FAMILY) return 'free';
+
+    // Владелец на PREMIUM_FAMILY — наследуем
+    return 'premium_family';
+  }
 
   /** Получить или создать подписку пользователя */
   async getOrCreate(userId: string) {
@@ -20,7 +49,7 @@ export class SubscriptionService {
     }
 
     // Проверяем просрочку
-    if (sub.plan === SubscriptionPlan.PREMIUM && sub.expiresAt && new Date() > sub.expiresAt) {
+    if (sub.plan !== SubscriptionPlan.FREE && sub.expiresAt && new Date() > sub.expiresAt) {
       sub = await this.prisma.subscription.update({
         where: { id: sub.id },
         data: { plan: SubscriptionPlan.FREE },
@@ -31,21 +60,36 @@ export class SubscriptionService {
     return sub;
   }
 
-  /** Текущий план пользователя */
-  async getPlan(userId: string): Promise<'free' | 'premium'> {
-    const sub = await this.getOrCreate(userId);
-    return sub.plan === SubscriptionPlan.PREMIUM ? 'premium' : 'free';
+  /** Текущий план пользователя (с учётом семьи) */
+  async getPlan(userId: string): Promise<PlanType> {
+    return this.getEffectivePlan(userId);
   }
 
-  /** Активировать премиум */
+  /** Маппинг Prisma enum → PlanType */
+  private mapPlan(plan: SubscriptionPlan): PlanType {
+    switch (plan) {
+      case SubscriptionPlan.PREMIUM:
+        return 'premium';
+      case SubscriptionPlan.PREMIUM_FAMILY:
+        return 'premium_family';
+      default:
+        return 'free';
+    }
+  }
+
+  /** Активировать подписку */
   async activatePremium(
     userId: string,
-    data: { platform?: string; transactionId?: string; expiresAt?: Date },
+    data: { plan?: 'premium' | 'premium_family'; platform?: string; transactionId?: string; expiresAt?: Date },
   ) {
+    const prismaPlan = data.plan === 'premium_family'
+      ? SubscriptionPlan.PREMIUM_FAMILY
+      : SubscriptionPlan.PREMIUM;
+
     return this.prisma.subscription.upsert({
       where: { userId },
       update: {
-        plan: SubscriptionPlan.PREMIUM,
+        plan: prismaPlan,
         expiresAt: data.expiresAt,
         platform: data.platform,
         transactionId: data.transactionId,
@@ -53,7 +97,7 @@ export class SubscriptionService {
       },
       create: {
         userId,
-        plan: SubscriptionPlan.PREMIUM,
+        plan: prismaPlan,
         expiresAt: data.expiresAt,
         platform: data.platform,
         transactionId: data.transactionId,
@@ -70,52 +114,109 @@ export class SubscriptionService {
     });
   }
 
+  /** Переключить план (для тогла в профиле) */
+  async togglePlan(userId: string) {
+    const sub = await this.getOrCreate(userId);
+    const currentPlan = this.mapPlan(sub.plan);
+
+    // Free → Premium → Premium Family → Free
+    let newPlan: SubscriptionPlan;
+    if (currentPlan === 'free') {
+      newPlan = SubscriptionPlan.PREMIUM;
+    } else if (currentPlan === 'premium') {
+      newPlan = SubscriptionPlan.PREMIUM_FAMILY;
+    } else {
+      newPlan = SubscriptionPlan.FREE;
+    }
+
+    return this.prisma.subscription.update({
+      where: { id: sub.id },
+      data: { plan: newPlan, cancelledAt: null },
+    });
+  }
+
   /** Проверить доступ к фиче */
-  async checkAccess(userId: string, feature: FeatureKey): Promise<{ allowed: boolean; remaining?: number; limit?: number; limitUnit?: string; plan: 'free' | 'premium' }> {
+  async checkAccess(userId: string, feature: FeatureKey): Promise<{ allowed: boolean; remaining?: number; limit?: number; limitUnit?: string; plan: PlanType }> {
     const plan = await this.getPlan(userId);
-    const config = FEATURES[feature][plan];
-    const featureDef = FEATURES[feature];
+    const config = FEATURES[feature][plan] as FeatureTier;
+    const featureDef = FEATURES[feature] as FeatureConfig;
+    const description = featureDef.description;
 
     if (!config.allowed) {
       return { allowed: false, plan };
     }
 
-    if (!config.limit) {
+    const limit = (config as any).limit as number | undefined;
+    const limitUnit = featureDef.limitUnit;
+
+    if (!limit) {
       return { allowed: true, remaining: Infinity, plan };
     }
 
     return {
       allowed: true,
-      remaining: config.limit,
-      limit: config.limit,
-      limitUnit: featureDef.limitUnit,
+      remaining: limit,
+      limit,
+      ...(limitUnit ? { limitUnit } : {}),
       plan,
     };
+  }
+
+  /** Получить допустимые типы счетов для пользователя */
+  async getAllowedAccountTypes(userId: string): Promise<string[]> {
+    const plan = await this.getPlan(userId);
+    return ACCOUNT_TYPE_ACCESS[plan];
+  }
+
+  /** Получить лимит счетов для пользователя */
+  async getAccountLimit(userId: string): Promise<number> {
+    const plan = await this.getPlan(userId);
+    return ACCOUNT_LIMITS[plan];
   }
 
   /** Полный статус подписки для мобильного клиента */
   async getSubscriptionStatus(userId: string) {
     const sub = await this.getOrCreate(userId);
-    const plan = sub.plan === SubscriptionPlan.PREMIUM ? 'premium' : 'free';
-    const isPremium = sub.plan === SubscriptionPlan.PREMIUM;
+    const effectivePlan = await this.getEffectivePlan(userId);
+    const isPremium = effectivePlan !== 'free';
+
+    // Проверяем членство в семье
+    const familyMember = await this.prisma.familyMember.findUnique({ where: { userId } });
+    const isFamily = effectivePlan === 'premium_family';
 
     const features: Record<string, { allowed: boolean; limit?: number; limitUnit?: string }> = {};
     for (const [key, config] of Object.entries(FEATURES)) {
-      const planConfig = config[plan as 'free' | 'premium'];
+      const planConfig = config[effectivePlan] as FeatureTier;
       features[key] = {
         allowed: planConfig.allowed,
-        ...(planConfig.limit ? { limit: planConfig.limit } : {}),
-        ...(config.limitUnit ? { limitUnit: config.limitUnit } : {}),
+        ...((planConfig as any).limit ? { limit: (planConfig as any).limit } : {}),
+        ...((config as any).limitUnit ? { limitUnit: (config as any).limitUnit } : {}),
       };
     }
 
-    return {
-      plan,
+    const result: any = {
+      plan: effectivePlan,
       isPremium,
       expiresAt: sub.expiresAt,
       startedAt: sub.startedAt,
       cancelledAt: sub.cancelledAt,
+      allowedAccountTypes: ACCOUNT_TYPE_ACCESS[effectivePlan],
+      accountLimit: ACCOUNT_LIMITS[effectivePlan],
       features,
     };
+
+    // Если пользователь в семье — добавляем информацию
+    if (familyMember) {
+      const family = await this.prisma.family.findUnique({
+        where: { id: familyMember.familyId },
+        include: { members: { include: { user: true } } },
+      });
+      result.familyId = family?.id;
+      result.familyName = family?.name;
+      result.familyCode = family?.inviteCode;
+      result.familyRole = familyMember.role;
+    }
+
+    return result;
   }
 }
