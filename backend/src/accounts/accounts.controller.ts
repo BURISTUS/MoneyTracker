@@ -38,12 +38,16 @@ export class AccountsController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get account by id' })
   async findById(@Param('id') id: string, @Request() req: any) {
     return this.accountsService.findById(id, req.user.id);
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create account' })
   async create(@Request() req: any, @Body() body: { name: string; type: string; currency?: string }) {
     return this.accountsService.create(req.user.id, body);
@@ -58,6 +62,8 @@ export class AccountsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete account' })
   async delete(@Param('id') id: string, @Request() req: any) {
     return this.accountsService.delete(id, req.user.id);

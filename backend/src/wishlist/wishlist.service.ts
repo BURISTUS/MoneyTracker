@@ -60,7 +60,7 @@ export class WishlistService {
       throw new BadRequestException('Item already decided');
     }
 
-    await this.prisma.wishlistItem.update({
+    const updated = await this.prisma.wishlistItem.update({
       where: { id: itemId },
       data: { status: 'REJECTED', decidedAt: new Date() },
     });
@@ -68,9 +68,9 @@ export class WishlistService {
     const futureValue = await this.calculateCompoundInterest(item.price, 10);
 
     return {
-      item: { ...item, price: Number(item.price) },
+      item: { ...updated, price: Number(updated.price) },
       futureValue: Number(futureValue) / 100,
-      message: `Вы не купили ${item.name}. Эти ${Number(item.price) / 100}\u20BD через 10 лет превратятся в ${Number(futureValue) / 100}\u20BD (при 12% годовых)`,
+      message: `Вы не купили ${updated.name}. Эти ${Number(updated.price) / 100}\u20BD через 10 лет превратятся в ${Number(futureValue) / 100}\u20BD (при 12% годовых)`,
     };
   }
 
@@ -85,12 +85,12 @@ export class WishlistService {
       throw new BadRequestException('Item already decided');
     }
 
-    await this.prisma.wishlistItem.update({
+    const updated = await this.prisma.wishlistItem.update({
       where: { id: itemId },
       data: { status: 'PURCHASED', decidedAt: new Date(), purchasedAt: new Date() },
     });
 
-    return { success: true, item: { ...item, price: Number(item.price) }, message: `Вы купили ${item.name} за ${Number(item.price) / 100}\u20BD` };
+    return { success: true, item: { ...updated, price: Number(updated.price) }, message: `Вы купили ${updated.name} за ${Number(updated.price) / 100}\u20BD` };
   }
 
   async snooze(userId: string, itemId: string) {

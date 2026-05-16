@@ -41,14 +41,10 @@ export class TransactionsService {
   }
 
   async create(userId: string, data: { accountId: string; categoryId: string; amount: bigint; type: string; description?: string; date?: Date }) {
-    console.log('📝 Creating transaction for user:', userId, 'data:', data);
-    
-    // Verify account belongs to user
     const account = await this.prisma.account.findFirst({
       where: { id: data.accountId, userId },
     });
     if (!account) {
-      console.error('❌ Invalid account:', data.accountId);
       throw new AppException('errors.accountNotFound', 400);
     }
 
@@ -63,13 +59,9 @@ export class TransactionsService {
       },
     });
     if (!category) {
-      console.error('❌ Invalid category:', data.categoryId, 'userId:', userId);
       throw new AppException('errors.categoryNotFound', 400);
     }
 
-    console.log('✅ Account and category validated:', { account: account.name, category: category.name });
-
-    // Create transaction
     const transaction = await this.prisma.transaction.create({
       data: {
         userId,
@@ -81,8 +73,6 @@ export class TransactionsService {
         date: data.date || new Date(),
       },
     });
-
-    console.log('✅ Transaction created:', transaction.id);
 
     const result = await this.prisma.transaction.findUnique({
       where: { id: transaction.id },
@@ -96,7 +86,6 @@ export class TransactionsService {
       data: { balance: { increment: balanceChange } },
     });
 
-    console.log('✅ Account balance updated');
     return result;
   }
 

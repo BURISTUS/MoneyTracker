@@ -189,6 +189,19 @@
 - [x] XP, уровни, ачивки, стрики, статусы — всё удалено с фронта и бэка
 - [x] Осталось: life-hours, инкубатор, статистика savings
 
+### E2E тесты бэкенда (2026-05-16)
+- [x] Тестовая БД `money_tracker_test` создана на PostgreSQL Docker (port 5433)
+- [x] Jest E2E конфиг: `backend/test/jest-e2e.json`, скрипт `npm run test:e2e`
+- [x] 86 E2E тестов покрывают: Auth, Accounts, Categories, Transactions, Users, Life-Cost, Wishlist, Goals, Subscription, Full User Flow
+- [x] Полный флоу-тест: регистрация → счета → категории → транзакции → summary → premium → goals → wishlist → logout
+
+### Багфиксы при написании тестов (2026-05-16)
+- [x] **AccountsController**: добавлен `@UseGuards(JwtAuthGuard)` на `GET :id`, `POST`, `DELETE` — без них `req.user` был undefined
+- [x] **CategoriesService**: `update/delete` проверяли `{ userId: { not: null } }` вместо `{ userId }` — любой юзер мог удалить чужую категорию
+- [x] **WishlistService**: `reject()/purchase()` возвращали старые данные (до обновления БД) — исправлено на возврат обновлённой записи
+- [x] **CategoriesService**: `create()` бросал raw `Error` вместо `AppException` — исправлено
+- [x] **TransactionsService**: убраны `console.log` из продакшн-кода
+
 ## Бэклог
 
 ### Приоритет высокий (запрошено PM)

@@ -85,7 +85,7 @@ export class CategoriesService implements OnModuleInit {
       where: { name: data.name, userId: null },
     });
     if (existingSystem) {
-      throw new Error('Категория с таким названием уже существует в системных');
+      throw new AppException('errors.categoryNameExists', 409);
     }
 
     return this.prisma.category.create({
@@ -105,7 +105,7 @@ export class CategoriesService implements OnModuleInit {
 
   async update(id: string, userId: string, data: Prisma.CategoryUpdateInput) {
     const category = await this.prisma.category.findFirst({
-      where: { id, userId: { not: null } }, // Только персональные
+      where: { id, userId },
     });
     if (!category) {
       throw new AppException('errors.categoryNotFound', 404);
@@ -120,9 +120,8 @@ export class CategoriesService implements OnModuleInit {
   }
 
   async delete(id: string, userId: string) {
-    // Нельзя удалять системные категории
     const category = await this.prisma.category.findFirst({
-      where: { id, userId: { not: null } }, // Только персональные
+      where: { id, userId },
     });
     if (!category) {
       throw new AppException('errors.categoryNotFound', 404);

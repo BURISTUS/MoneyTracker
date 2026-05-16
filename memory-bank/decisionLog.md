@@ -115,3 +115,9 @@
 
 ### Решение: Кастомный Toast + ConfirmModal вместо Alert.alert (2026-04-27)
 **Почему:** Системный `Alert.alert` выглядит чужеродно в dark-theme приложении (белый фон, системный шрифт). Созданы два компонента: `Toast` (auto-dismiss уведомления success/error/info) через React Context + hook, и `ConfirmModal` (для подтверждений delete/buy/reject). ToastProvider обёрнут глобально в `_layout.tsx`. 17 вызовов Alert.alert заменены в 7 файлах. Toast использует Animated (fade+slide), Supports stacking (несколько тостов подряд), auto-dismiss 3s. ConfirmModal поддерживает два варианта: destructive (красный) и confirm (indigo).
+
+### Решение: E2E тесты через supertest + реальная БД (2026-05-16)
+**Почему:** E2E тесты запускаются против реальной PostgreSQL (`money_tracker_test` на port 5433) через supertest, не моки. Это проверяет полный стек: контроллеры → сервисы → Prisma → БД. Тесты запускаются через `npm run test:e2e` с `--runInBand` (последовательно, т.к. общая БД). 86 тестов покрывают все подключённые модули. Перед каждым набором тестов БД очищается через `TRUNCATE CASCADE`.
+
+### Решение: Исправление security hole в CategoriesService (2026-05-16)
+**Почему:** Методы `update()` и `delete()` в CategoriesService проверяли `{ userId: { not: null } }` вместо `{ userId }`. Это означало, что любой авторизованный пользователь мог обновить или удалить персональную категорию ДРУГОГО пользователя — достаточно знать ID. Исправлено на `{ id, userId }` — теперь проверяется владение.
