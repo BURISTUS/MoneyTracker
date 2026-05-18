@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useDataStore } from '../../stores/dataStore';
 import { useTheme } from '../../stores/themeStore';
 import { Text } from '../../../components/ui/text';
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export function TransactionActionModal({ visible, transaction, onClose }: Props) {
+  const { t } = useTranslation();
   const C = useTheme();
   const transactions = useDataStore((s) => s.transactions);
   const categories = useDataStore((s) => s.categories);
@@ -69,9 +71,9 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
     if (rate <= 0) return null;
     const rubles = localTx.amount / 100;
     const hours = rubles / rate;
-    if (hours < 1) return `${Math.round(hours * 60)} мин`;
-    if (hours < 100) return `${hours.toFixed(1)} ч`;
-    return `${Math.round(hours)} ч`;
+    if (hours < 1) return `${Math.round(hours * 60)} ${t('common.min')}`;
+    if (hours < 100) return `${hours.toFixed(1)} ${t('common.hours')}`;
+    return `${Math.round(hours)} ${t('common.hours')}`;
   }, [localTx, getHourlyRate]);
 
   const handleEdit = useCallback(() => {
@@ -116,8 +118,8 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
     onClose();
   }, [onClose]);
 
-  const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-  const fmtDate = (d: Date) => `${d.getDate()} ${MONTHS_GEN[d.getMonth()]} ${d.getFullYear()}`;
+  const MONTHS_GEN_KEYS = ['monthsGen.jan','monthsGen.feb','monthsGen.mar','monthsGen.apr','monthsGen.may','monthsGen.jun','monthsGen.jul','monthsGen.aug','monthsGen.sep','monthsGen.oct','monthsGen.nov','monthsGen.dec'] as const;
+  const fmtDate = (d: Date) => `${d.getDate()} ${t(MONTHS_GEN_KEYS[d.getMonth()])} ${d.getFullYear()}`;
 
   const S = StyleSheet.create({
     overlay: { flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' },
@@ -220,7 +222,7 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
 
           <View style={S.header}>
             <Text style={S.headerTitle}>
-              {isEditing ? 'Редактирование' : 'Операция'}
+              {isEditing ? t('transactions.editing') : t('components.operation')}
             </Text>
             <Pressable style={S.closeBtn} onPress={handleClose}>
               <Ionicons name="close" size={18} color={C.textSec} />
@@ -237,7 +239,7 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
               />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 15, color: C.textMain, fontWeight: '600' }}>
-                  {category?.name || 'Без категории'}
+                  {category?.name || t('transactions.noCategoryFallback')}
                 </Text>
                 <Text style={[S.amountText, { color: amountColor }]}>
                   {isExpense ? '− ' : '+ '}{formatCurrency(localTx.amount, account?.currency)}
@@ -246,7 +248,7 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
               {lifeHours && (
                 <View style={S.lifeCost}>
                   <Text style={S.lifeCostValue}>{lifeHours}</Text>
-                  <Text style={S.lifeCostLabel}>работы</Text>
+                  <Text style={S.lifeCostLabel}>{t('common.workUnit')}</Text>
                 </View>
               )}
             </View>
@@ -255,7 +257,7 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
               <>
                 {/* Edit: Amount */}
                 <View style={S.section}>
-                  <Text style={S.sectionTitle}>Сумма</Text>
+                  <Text style={S.sectionTitle}>{t('transactions.amount')}</Text>
                   <TextInput
                     style={S.input}
                     value={editAmount}
@@ -267,8 +269,7 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
 
                 {/* Edit: Account */}
                 <View style={S.section}>
-                  <Text style={S.sectionTitle}>Счёт</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                  <Text style={S.sectionTitle}>{t('transactions.account')}</Text>                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                     {accounts.map((acc) => (
                       <TouchableOpacity
                         key={acc.id}
@@ -290,7 +291,7 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
 
                 {/* Edit: Date */}
                 <View style={S.section}>
-                  <Text style={S.sectionTitle}>Дата</Text>
+                  <Text style={S.sectionTitle}>{t('transactions.date')}</Text>
                   <TouchableOpacity
                     onPress={() => setShowDatePicker(true)}
                     style={{
@@ -307,12 +308,12 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
 
                 {/* Edit: Description */}
                 <View style={S.section}>
-                  <Text style={S.sectionTitle}>Заметка</Text>
+                  <Text style={S.sectionTitle}>{t('transactions.note')}</Text>
                   <TextInput
                     style={[S.input, { minHeight: 80 }]}
                     value={editDescription}
                     onChangeText={setEditDescription}
-                    placeholder="Добавить заметку..."
+                    placeholder={t('transactions.notePlaceholder')}
                     placeholderTextColor={C.textMuted}
                     multiline
                   />
@@ -320,10 +321,10 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
 
                 <View style={{ paddingHorizontal: 20 }}>
                   <TouchableOpacity style={S.saveBtn} onPress={handleSaveEdit}>
-                    <Text style={S.saveBtnText}>Сохранить</Text>
+                    <Text style={S.saveBtnText}>{t('common.save')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={S.cancelBtn} onPress={() => setIsEditing(false)}>
-                    <Text style={S.cancelBtnText}>Отмена</Text>
+                    <Text style={S.cancelBtnText}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -332,12 +333,12 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
                 {/* View: Meta */}
                 <View style={S.metaSection}>
                   <View style={S.metaRow}>
-                    <Text style={S.metaLabel}>Дата</Text>
+                    <Text style={S.metaLabel}>{t('transactions.date')}</Text>
                     <Text style={S.metaValue}>{formatDate(new Date(localTx.date))}</Text>
                   </View>
                   {account && (
                     <View style={S.metaRow}>
-                      <Text style={S.metaLabel}>Счёт</Text>
+                      <Text style={S.metaLabel}>{t('transactions.account')}</Text>
                       <Text style={S.metaValue}>{account.name}</Text>
                     </View>
                   )}
@@ -346,7 +347,7 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
                 {/* View: Description */}
                 {localTx.description && !isEditing && (
                   <View style={S.descBox}>
-                    <Text style={S.descLabel}>Заметка</Text>
+                    <Text style={S.descLabel}>{t('transactions.note')}</Text>
                     <Text style={S.descText}>{localTx.description}</Text>
                   </View>
                 )}
@@ -355,11 +356,11 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
                 <View style={S.btnRow}>
                   <TouchableOpacity style={S.editBtn} onPress={handleEdit}>
                     <Ionicons name="create-outline" size={16} color={C.primary} />
-                    <Text style={S.editBtnText}>Изменить</Text>
+                    <Text style={S.editBtnText}>{t('common.edit')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={S.deleteBtn} onPress={() => setShowDeleteConfirm(true)}>
                     <Ionicons name="trash-outline" size={16} color={C.red} />
-                    <Text style={S.deleteBtnText}>Удалить</Text>
+                    <Text style={S.deleteBtnText}>{t('common.delete')}</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -378,9 +379,9 @@ export function TransactionActionModal({ visible, transaction, onClose }: Props)
 
     <ConfirmModal
       visible={showDeleteConfirm}
-      title="Удалить операцию?"
-      message={localTx ? `${category?.name || 'Без категории'} — ${formatCurrency(localTx.amount, account?.currency)}` : ''}
-      confirmText="Удалить"
+      title={t('components.confirmDelete')}
+      message={localTx ? `${category?.name || t('transactions.noCategoryFallback')} — ${formatCurrency(localTx.amount, account?.currency)}` : ''}
+      confirmText={t('common.delete')}
       onConfirm={confirmDelete}
       onCancel={() => setShowDeleteConfirm(false)}
     />

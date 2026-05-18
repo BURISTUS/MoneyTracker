@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Text } from '../../../components/ui/text';
 import { formatCurrency, getDaysRemaining } from '../../utils/formatters';
 import type { Goal } from '../../types';
@@ -10,6 +11,7 @@ interface GoalCardProps {
 }
 
 export const GoalCard: React.FC<GoalCardProps> = React.memo(({ goal, style }) => {
+  const { t } = useTranslation();
   const progress = goal.progress ?? (goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0);
   const daysLeft = getDaysRemaining(goal.deadline);
   const clampedProgress = Math.min(100, Math.max(0, progress));
@@ -19,9 +21,9 @@ export const GoalCard: React.FC<GoalCardProps> = React.memo(({ goal, style }) =>
       <View className="flex-row justify-between mb-2">
         <Text className="text-base font-medium flex-1" numberOfLines={1}>{goal.name}</Text>
         {goal.isCompleted ? (
-          <Text className="text-sm font-semibold text-success-400">Достигнута</Text>
+          <Text className="text-sm font-semibold text-success-400">{t('components.achieved')}</Text>
         ) : (
-          <Text className="text-xs text-typography-400">{daysLeft} дн.</Text>
+          <Text className="text-xs text-typography-400">{daysLeft} {t('components.daysShort')}</Text>
         )}
       </View>
       <View className="mb-2">
@@ -37,7 +39,7 @@ export const GoalCard: React.FC<GoalCardProps> = React.memo(({ goal, style }) =>
       </View>
       <View className="flex-row justify-between">
         <Text className="text-xs text-typography-400">{formatCurrency(goal.currentAmount)}</Text>
-        <Text className="text-xs text-typography-400">из {formatCurrency(goal.targetAmount)}</Text>
+        <Text className="text-xs text-typography-400">{t('goalCard.of')} {formatCurrency(goal.targetAmount)}</Text>
       </View>
     </View>
   );

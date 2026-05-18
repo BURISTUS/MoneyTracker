@@ -2,12 +2,13 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
 import authService from '../services/auth';
+import i18n from '../i18n';
 import type { User, UserGamification } from '../types';
 
 const MOCK_USER: User = {
   id: 'mock-user-123',
   email: 'mock@user.com',
-  name: 'Тестовый Пользователь',
+  name: i18n.t('common.defaultUser'),
   hourlyRate: 50000,
   monthlyHours: 160,
   createdAt: new Date().toISOString(),

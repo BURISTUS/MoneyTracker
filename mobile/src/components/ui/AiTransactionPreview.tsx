@@ -8,14 +8,15 @@ import {
   TouchableOpacity,
   Platform,
   StyleSheet,
-  Alert,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useDataStore } from '../../stores/dataStore';
 import { useTheme } from '../../stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from './CategoryIcon';
 import { formatCurrency } from '../../utils/formatters';
 import type { AiTransactionResult, AiReceiptResult } from '../../services/ai';
+import { useToast } from './Toast';
 
 interface AiTransactionPreviewProps {
   visible: boolean;
@@ -51,7 +52,9 @@ export function AiTransactionPreview({
   onComplete,
   result,
 }: AiTransactionPreviewProps) {
+  const { t } = useTranslation();
   const C = useTheme();
+  const toast = useToast();
   const addTransaction = useDataStore((s) => s.addTransaction);
   const addCategory = useDataStore((s) => s.addCategory);
   const categories = useDataStore((s) => s.categories);
@@ -123,7 +126,7 @@ export function AiTransactionPreview({
       }
 
       if (!categoryId) {
-        Alert.alert('Ошибка', 'Не удалось определить категорию');
+        toast.showError(t('aiPreview.categoryNotFound'));
         setIsSaving(false);
         return;
       }
@@ -147,7 +150,7 @@ export function AiTransactionPreview({
     } catch (error) {
       setIsSaving(false);
       console.error('Failed to save AI transaction:', error);
-      Alert.alert('Ошибка', 'Не удалось сохранить транзакцию');
+      toast.showError(t('aiPreview.saveFailed'));
     }
   }, [result, amount, description, selectedAccount, matchedCategory, addTransaction, addCategory, fetchCategories, onClose, onComplete]);
 
@@ -321,10 +324,10 @@ export function AiTransactionPreview({
           <View style={S.header}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={{ fontSize: 20 }}>🤖</Text>
-              <Text style={S.headerTitle}>Распознано</Text>
+              <Text style={S.headerTitle}>{t('aiPreview.recognized')}</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={{ paddingHorizontal: 12, paddingVertical: 4 }}>
-              <Text style={S.closeText}>Закрыть</Text>
+              <Text style={S.closeText}>{t('aiPreview.close')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -336,7 +339,7 @@ export function AiTransactionPreview({
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={S.typeLabel}>
-                  {result.type === 'INCOME' ? 'Доход' : 'Расход'}
+                  {result.type === 'INCOME' ? t('aiPreview.incomeType') : t('aiPreview.expenseType')}
                 </Text>
                 <View style={S.catRow}>
                   <CategoryIcon
@@ -347,7 +350,7 @@ export function AiTransactionPreview({
                   <Text style={S.catLabel}>{result.categoryName}</Text>
                   {isNewCategory && (
                     <View style={S.newBadge}>
-                      <Text style={S.newBadgeText}>новая</Text>
+                      <Text style={S.newBadgeText}>{t('aiPreview.newBadge')}</Text>
                     </View>
                   )}
                 </View>
@@ -355,8 +358,7 @@ export function AiTransactionPreview({
             </View>
 
             {/* Сумма */}
-            <Text style={S.fieldLabel}>Сумма</Text>
-            <View style={S.fieldRow}>
+            <Text style={S.fieldLabel}>{t('aiPreview.amountLabel')}</Text>            <View style={S.fieldRow}>
               <TextInput
                 value={amount}
                 onChangeText={setAmount}
@@ -368,19 +370,19 @@ export function AiTransactionPreview({
             </View>
 
             {/* Описание */}
-            <Text style={S.fieldLabel}>Описание</Text>
+            <Text style={S.fieldLabel}>{t('aiPreview.descriptionLabel')}</Text>
             <TextInput
               value={description}
               onChangeText={setDescription}
               style={S.descInput}
               placeholderTextColor={C.textSec}
-              placeholder="Описание транзакции"
+              placeholder={t('aiPreview.descriptionPlaceholder')}
             />
 
             {/* Магазин (для чеков) */}
             {storeName && (
               <View style={S.infoBox}>
-                <Text style={S.infoLabel}>Магазин</Text>
+                <Text style={S.infoLabel}>{t('aiPreview.storeLabel')}</Text>
                 <Text style={S.infoValue}>{storeName}</Text>
               </View>
             )}
@@ -388,7 +390,7 @@ export function AiTransactionPreview({
             {/* Дата */}
             {result.date && (
               <View style={S.infoBox}>
-                <Text style={S.infoLabel}>Дата</Text>
+                <Text style={S.infoLabel}>{t('aiPreview.dateLabel')}</Text>
                 <Text style={S.infoValue}>
                   {new Date(result.date).toLocaleDateString('ru-RU', {
                     day: 'numeric',
@@ -403,7 +405,7 @@ export function AiTransactionPreview({
             {receiptItems && receiptItems.length > 0 && (
               <View>
                 <TouchableOpacity onPress={() => setShowItems(!showItems)} style={S.itemsToggle}>
-                  <Text style={S.itemsToggleText}>Позиции чека ({receiptItems.length})</Text>
+                  <Text style={S.itemsToggleText}>{t('aiPreview.receiptItems')} ({receiptItems.length})</Text>
                   <Text style={S.itemsToggleArrow}>{showItems ? '▲' : '▼'}</Text>
                 </TouchableOpacity>
 
@@ -433,7 +435,7 @@ export function AiTransactionPreview({
             )}
 
             {/* Счёт */}
-            <Text style={S.fieldLabel}>Счёт</Text>
+            <Text style={S.fieldLabel}>{t('aiPreview.accountLabel')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={S.accountScroll}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {accounts.map((account) => (
@@ -458,7 +460,7 @@ export function AiTransactionPreview({
           {/* Кнопки */}
           <View style={S.bottomRow}>
             <TouchableOpacity onPress={onClose} style={S.cancelBtn}>
-              <Text style={S.cancelBtnText}>Отмена</Text>
+              <Text style={S.cancelBtnText}>{t('aiPreview.cancelBtn')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleSave}
@@ -472,7 +474,7 @@ export function AiTransactionPreview({
               ]}
             >
               <Text style={S.saveBtnText}>
-                {isSaving ? 'Сохранение...' : '✓ Сохранить'}
+                {isSaving ? t('aiPreview.savingBtn') : `✓ ${t('aiPreview.saveBtn')}`}
               </Text>
             </TouchableOpacity>
           </View>

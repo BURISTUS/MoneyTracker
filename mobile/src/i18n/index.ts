@@ -18,6 +18,7 @@ const FALLBACK_TRANSLATIONS: Record<string, any> = {
       cancel: 'Cancel', save: 'Save', delete: 'Delete', edit: 'Edit',
       close: 'Close', loading: 'Loading...', error: 'Error', success: 'Success',
       all: 'All', back: 'Back', done: 'Done',
+      daysAgo: '{{count}} days ago', weeksAgo: '{{count}} weeks ago', monthsAgo: '{{count}} months ago', yearsAgo: '{{count}} years ago',
     },
     home: {
       lifeSpent: 'Life spent', saved: 'Saved', refusals: 'refusals',
@@ -48,6 +49,7 @@ const FALLBACK_TRANSLATIONS: Record<string, any> = {
       cancel: 'Отмена', save: 'Сохранить', delete: 'Удалить', edit: 'Редактировать',
       close: 'Закрыть', loading: 'Загрузка...', error: 'Ошибка', success: 'Успешно',
       all: 'Все', back: 'Назад', done: 'Готово',
+      daysAgo: '{{count}} дней назад', weeksAgo: '{{count}} недель назад', monthsAgo: '{{count}} месяцев назад', yearsAgo: '{{count}} лет назад',
     },
     home: {
       lifeSpent: 'Потрачено жизни', saved: 'Сохранено', refusals: 'отказов',

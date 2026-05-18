@@ -13,12 +13,12 @@ interface WishlistCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-const statusConfig: Record<string, { label: string; bgClass: string; textClass: string }> = {
-  PENDING: { label: 'Охлаждение', bgClass: 'bg-warning-600/20', textClass: 'text-warning-400' },
-  READY: { label: 'Готово', bgClass: 'bg-success-600/20', textClass: 'text-success-400' },
-  REJECTED: { label: 'Отклонено', bgClass: 'bg-error-600/20', textClass: 'text-error-400' },
-  PURCHASED: { label: 'Куплено', bgClass: 'bg-[rgba(255,255,255,0.06)]', textClass: 'text-typography-400' },
-  EXPIRED: { label: 'Истекло', bgClass: 'bg-[rgba(255,255,255,0.06)]', textClass: 'text-typography-400' },
+const statusConfig: Record<string, { labelKey: string; bgClass: string; textClass: string }> = {
+  PENDING: { labelKey: 'wishlist.cooling', bgClass: 'bg-warning-600/20', textClass: 'text-warning-400' },
+  READY: { labelKey: 'wishlist.ready', bgClass: 'bg-success-600/20', textClass: 'text-success-400' },
+  REJECTED: { labelKey: 'wishlist.rejected', bgClass: 'bg-error-600/20', textClass: 'text-error-400' },
+  PURCHASED: { labelKey: 'wishlist.purchased', bgClass: 'bg-[rgba(255,255,255,0.06)]', textClass: 'text-typography-400' },
+  EXPIRED: { labelKey: 'wishlist.expired', bgClass: 'bg-[rgba(255,255,255,0.06)]', textClass: 'text-typography-400' },
 };
 
 export const WishlistCard: React.FC<WishlistCardProps> = React.memo(
@@ -33,13 +33,13 @@ export const WishlistCard: React.FC<WishlistCardProps> = React.memo(
         <View className="flex-row justify-between items-start mb-2">
           <Text className="text-lg font-semibold flex-1 mr-3" numberOfLines={1}>{item.name}</Text>
           <View className={`${sc.bgClass} px-2.5 py-1 rounded-full`}>
-            <Text className={`text-xs font-medium ${sc.textClass}`}>{sc.label}</Text>
+            <Text className={`text-xs font-medium ${sc.textClass}`}>{t(sc.labelKey)}</Text>
           </View>
         </View>
         <Text className="text-xl font-bold mb-2">{formatCurrency(item.price)}</Text>
         {item.status === 'PENDING' && (
           <Text className="text-xs text-warning-400 mb-3">
-            Осталось {daysLeft} дн. до решения
+            {t('wishlist.daysLeft', { days: daysLeft })}
           </Text>
         )}
         {item.status === 'READY' && (

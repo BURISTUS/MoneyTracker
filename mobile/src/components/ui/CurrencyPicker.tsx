@@ -80,10 +80,11 @@ const CurrencyItem = React.memo(
 CurrencyItem.displayName = 'CurrencyItem';
 
 export const CurrencyPicker: React.FC<CurrencyPickerProps> = React.memo(
-  ({ visible, onClose, onSelect, selectedCode, title = 'Выберите валюту', filterType }) => {
+  ({ visible, onClose, onSelect, selectedCode, title, filterType }) => {
     const C = useTheme();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
+    const defaultTitle = t('currencyPicker.selectTitle');
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState<CurrencyTab>(
       filterType || 'POPULAR',
@@ -294,7 +295,7 @@ export const CurrencyPicker: React.FC<CurrencyPickerProps> = React.memo(
                 marginBottom: 8,
               }}
             >
-              <Text style={{ fontSize: 20, fontWeight: '700', color: C.textMain }}>{title}</Text>
+              <Text style={{ fontSize: 20, fontWeight: '700', color: C.textMain }}>{title || defaultTitle}</Text>
               <Pressable onPress={onClose} hitSlop={12}>
                 <Ionicons name="close" size={22} color={C.textSec} />
               </Pressable>

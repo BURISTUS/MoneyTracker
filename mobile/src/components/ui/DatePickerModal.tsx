@@ -21,7 +21,7 @@ interface DatePickerModalProps {
   onClose: () => void;
 }
 
-function getPresetDates() {
+function getPresetDates(t: (key: string) => string) {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterday = new Date(today);
@@ -29,19 +29,16 @@ function getPresetDates() {
   const dayBefore = new Date(today);
   dayBefore.setDate(dayBefore.getDate() - 2);
   return [
-    { label: 'Сегодня', date: today },
-    { label: 'Вчера', date: yesterday },
-    { label: 'Позавчера', date: dayBefore },
+    { label: t('datePicker.today'), date: today },
+    { label: t('datePicker.yesterday'), date: yesterday },
+    { label: t('datePicker.dayBefore'), date: dayBefore },
   ];
 }
 
-const MONTHS_GENITIVE = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-];
+const MONTHS_GEN_KEYS = ['monthsGen.jan','monthsGen.feb','monthsGen.mar','monthsGen.apr','monthsGen.may','monthsGen.jun','monthsGen.jul','monthsGen.aug','monthsGen.sep','monthsGen.oct','monthsGen.nov','monthsGen.dec'] as const;
 
-function formatDayMonth(date: Date): string {
-  return `${date.getDate()} ${MONTHS_GENITIVE[date.getMonth()]}`;
+function formatDayMonth(date: Date, t: (key: string) => string): string {
+  return `${date.getDate()} ${t(MONTHS_GEN_KEYS[date.getMonth()])}`;
 }
 
 export function DatePickerModal({
@@ -61,7 +58,7 @@ export function DatePickerModal({
   const dayRef = useRef<TextInput>(null);
   const monthRef = useRef<TextInput>(null);
 
-  const presets = useMemo(() => getPresetDates(), []);
+  const presets = useMemo(() => getPresetDates(t), [t]);
 
   const handlePreset = useCallback((date: Date) => {
     onSelect(date);
@@ -196,7 +193,7 @@ export function DatePickerModal({
 
           <View style={S.section}>
             <Text style={S.title}>{t("transactions.transactionDate")}</Text>
-            <Text style={S.subtitle}>{formatDayMonth(currentDate)}</Text>
+            <Text style={S.subtitle}>{formatDayMonth(currentDate, t)}</Text>
 
             <View style={S.presetGap}>
               {presets.map((preset) => {
@@ -216,7 +213,7 @@ export function DatePickerModal({
                     <Text style={[S.presetLabel, { color: isSelected ? C.textMain : C.textMain, fontWeight: isSelected ? '700' : '400' }]}>
                       {preset.label}
                     </Text>
-                    <Text style={S.presetDate}>{formatDayMonth(preset.date)}</Text>
+                    <Text style={S.presetDate}>{formatDayMonth(preset.date, t)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -234,7 +231,7 @@ export function DatePickerModal({
                 value={customDay}
                 onChangeText={handleDayChange}
                 onBlur={handleDayBlur}
-                placeholder="ДД"
+                placeholder={t('datePicker.dd')}
                 placeholderTextColor={C.textSec}
                 keyboardType="number-pad"
                 maxLength={2}
@@ -246,7 +243,7 @@ export function DatePickerModal({
                 onChangeText={handleMonthChange}
                 onBlur={handleMonthBlur}
                 onKeyPress={handleMonthKeyPress}
-                placeholder="ММ"
+                placeholder={t('datePicker.mm')}
                 placeholderTextColor={C.textSec}
                 keyboardType="number-pad"
                 maxLength={2}
@@ -255,19 +252,19 @@ export function DatePickerModal({
               <TextInput
                 value={customYear}
                 onChangeText={(txt) => setCustomYear(txt.replace(/[^0-9]/g, '').slice(0, 4))}
-                placeholder="ГГГГ"
+                placeholder={t('datePicker.yyyy')}
                 placeholderTextColor={C.textSec}
                 keyboardType="number-pad"
                 maxLength={4}
                 style={S.customInputWide}
               />
               <TouchableOpacity onPress={handleCustomApply} style={S.okBtn}>
-                <Text style={S.okText}>OK</Text>
+                <Text style={S.okText}>{t('datePicker.ok')}</Text>
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity onPress={onClose} style={S.cancelBtn}>
-              <Text style={S.cancelText}>Отмена</Text>
+              <Text style={S.cancelText}>{t('datePicker.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

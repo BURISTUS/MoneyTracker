@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { api } from '../services/api';
 import { familyService, FamilyInfo, FamilyBudget } from '../services/family';
 import { SubscriptionStatus, FeatureKey, FeatureAccess } from '../types';
+import i18n from '../i18n';
 
 interface SubscriptionState {
   status: SubscriptionStatus | null;
@@ -32,19 +33,19 @@ const DEFAULT_FEATURES: Record<string, FeatureAccess> = {
   AI_CHAT: { allowed: false },
   AI_VOICE: { allowed: false },
   AI_RECEIPT: { allowed: false },
-  ACCOUNTS: { allowed: true, limit: 3, limitUnit: 'шт.' },
+  ACCOUNTS: { allowed: true, limit: 3, limitUnit: i18n.t('subscription.pieces') },
   ACCOUNT_CREDIT: { allowed: false },
   ACCOUNT_INVESTMENT: { allowed: false },
   ACCOUNT_DEBT: { allowed: false },
   GOALS: { allowed: false },
-  WISHLIST_INCUBATOR: { allowed: true, limit: 5, limitUnit: 'желаний' },
-  PERSONAL_CATEGORIES: { allowed: true, limit: 3, limitUnit: 'категорий' },
+  WISHLIST_INCUBATOR: { allowed: true, limit: 5, limitUnit: i18n.t('subscription.wishes') },
+  PERSONAL_CATEGORIES: { allowed: true, limit: 3, limitUnit: i18n.t('subscription.categories') },
   LIFE_COST: { allowed: true },
   ANALYTICS_BASIC: { allowed: true },
   ANALYTICS_COMPARISON: { allowed: false },
   ANALYTICS_TRENDS: { allowed: false },
   EXPORT: { allowed: false },
-  ARTICLES: { allowed: true, limit: 3, limitUnit: 'статей/день' },
+  ARTICLES: { allowed: true, limit: 3, limitUnit: i18n.t('subscription.articlesDay') },
   FAMILY: { allowed: false },
 };
 

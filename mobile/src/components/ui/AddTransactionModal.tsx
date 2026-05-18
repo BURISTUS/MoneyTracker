@@ -47,11 +47,7 @@ const evaluateExpression = (left: string, op: MathOp, right: string): number | n
   }
 };
 
-const MONTHS_GEN = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-];
-const formatDateFull = (d: Date) => `${d.getDate()} ${MONTHS_GEN[d.getMonth()]} ${d.getFullYear()}`;
+const MONTHS_GEN_KEYS = ['monthsGen.jan','monthsGen.feb','monthsGen.mar','monthsGen.apr','monthsGen.may','monthsGen.jun','monthsGen.jul','monthsGen.aug','monthsGen.sep','monthsGen.oct','monthsGen.nov','monthsGen.dec'] as const;
 
 const NUMPAD_KEYS = ['7','8','9','÷','4','5','6','×','1','2','3','−','.','0','⌫','+'];
 
@@ -73,6 +69,7 @@ export function AddTransactionModal({
   const { t } = useTranslation();
   const router = useRouter();
   const C = useTheme();
+  const formatDateFull = (d: Date) => `${d.getDate()} ${t(MONTHS_GEN_KEYS[d.getMonth()])} ${d.getFullYear()}`;
 
   const addTransaction = useDataStore((s) => s.addTransaction);
   const accounts = useDataStore((s) => s.accounts);
@@ -143,9 +140,9 @@ export function AddTransactionModal({
   const lifeHours = useMemo(() => {
     if (!numericAmount || !hourlyRate || numericAmount <= 0) return null;
     const h = numericAmount / hourlyRate;
-    if (h < 1) return `${Math.round(h * 60)} мин`;
-    if (h < 24) return `${h.toFixed(1)} ч`;
-    return `${(h / 24).toFixed(1)} дн`;
+    if (h < 1) return `${Math.round(h * 60)} ${t('common.min')}`;
+    if (h < 24) return `${h.toFixed(1)} ${t('common.hours')}`;
+    return `${(h / 24).toFixed(1)} ${t('components.daysShort')}`;
   }, [numericAmount, hourlyRate]);
 
   // ---- Handlers ----
@@ -251,7 +248,7 @@ export function AddTransactionModal({
     return { percent, remaining, barColor, limit, spent };
   }, [type, selectedCategory, categories, transactions]);
 
-  const S = StyleSheet.create({
+  const S = useMemo(() => StyleSheet.create({
     overlay: { flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' },
     sheet: {
       backgroundColor: C.sheet,
@@ -295,8 +292,6 @@ export function AddTransactionModal({
       marginBottom: 8,
       textTransform: 'uppercase',
     },
-
-    // Type toggle
     typeRow: {
       flexDirection: 'row',
       gap: 8,
@@ -313,8 +308,6 @@ export function AddTransactionModal({
     typeBtnActive: { borderColor: 'transparent' },
     typeLabel: { fontSize: 15, fontWeight: '600', color: C.textSec },
     typeLabelActive: {},
-
-    // Amount display
     amountWrap: {
       alignItems: 'center',
       justifyContent: 'center',
@@ -333,8 +326,6 @@ export function AddTransactionModal({
       borderColor: C.border,
     },
     lifeCostText: { fontSize: 16, color: C.yellow, fontWeight: '700' },
-
-    // Date row
     dateBtn: {
       alignSelf: 'center',
       flexDirection: 'row',
@@ -349,8 +340,6 @@ export function AddTransactionModal({
     },
     dateText: { fontSize: 13, fontWeight: '600', color: C.textMain },
     dateChevron: { fontSize: 12, color: C.textSec },
-
-    // Quick actions row
     actionsRow: {
       flexDirection: 'row',
       justifyContent: 'center',
@@ -369,8 +358,6 @@ export function AddTransactionModal({
     },
     actionIconWrapActive: {},
     actionLabel: { fontSize: 11, color: C.textSec },
-
-    // Budget bar
     budgetBar: {
       backgroundColor: C.inputBg,
       borderRadius: 12,
@@ -394,8 +381,6 @@ export function AddTransactionModal({
       overflow: 'hidden',
     },
     budgetFill: { height: 4, borderRadius: 2 },
-
-    // Note input
     noteInput: {
       backgroundColor: C.inputBg,
       borderRadius: 12,
@@ -406,8 +391,6 @@ export function AddTransactionModal({
       borderWidth: 1,
       borderColor: C.border,
     },
-
-    // Account picker
     accountRow: {
       flexDirection: 'row',
       gap: 8,
@@ -423,8 +406,6 @@ export function AddTransactionModal({
     accountBtnActive: { borderColor: 'transparent' },
     accountLabel: { fontSize: 14, color: C.textMain },
     accountLabelActive: {},
-
-    // Numpad
     numpadGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -452,8 +433,6 @@ export function AddTransactionModal({
     numpadKeyText: { fontSize: 20, fontWeight: '600', color: C.textMain },
     numpadOpText: { color: C.primary },
     numpadDelText: { color: C.red },
-
-    // Bottom row (equals + save)
     bottomRow: {
       flexDirection: 'row',
       paddingHorizontal: 20,
@@ -480,10 +459,10 @@ export function AddTransactionModal({
       backgroundColor: C.primary,
     },
     saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-  });
+  }), [C]);
 
   // Styles for the embedded category picker modal
-  const SC = StyleSheet.create({
+  const SC = useMemo(() => StyleSheet.create({
     overlay: { flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' },
     sheet: {
       backgroundColor: C.sheet,
@@ -550,7 +529,7 @@ export function AddTransactionModal({
       alignItems: 'center',
     },
     newCatText: { fontSize: 15, color: C.textSec },
-  });
+  }), [C]);
 
   // ---- Render ----
 
@@ -568,7 +547,7 @@ export function AddTransactionModal({
           {/* Header */}
           <View style={S.header}>
             <Text style={S.headerTitle}>
-              {type === 'EXPENSE' ? 'Добавить расход' : 'Добавить доход'}
+              {type === 'EXPENSE' ? t('transactions.addExpense') : t('transactions.addIncome')}
             </Text>
             <Pressable style={S.closeBtn} onPress={onClose}>
               <Ionicons name="close" size={18} color={C.textSec} />
@@ -578,11 +557,11 @@ export function AddTransactionModal({
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {/* ──── Тип ──── */}
             <View style={S.section}>
-              <Text style={S.sectionTitle}>Тип</Text>
+              <Text style={S.sectionTitle}>{t('transactions.type')}</Text>
               <View style={S.typeRow}>
                 {[
-                  { k: TransactionTypeEnum.EXPENSE, label: '− Расход' },
-                  { k: TransactionTypeEnum.INCOME, label: '+ Доход' },
+                  { k: TransactionTypeEnum.EXPENSE, label: `− ${t('components.expenseLabel')}` },
+                  { k: TransactionTypeEnum.INCOME, label: `+ ${t('components.incomeLabel')}` },
                 ].map((tab) => (
                   <TouchableOpacity
                     key={tab.k}
@@ -605,7 +584,7 @@ export function AddTransactionModal({
 
             {/* ──── Сумма ──── */}
             <View style={[S.section, { marginBottom: 6 }]}>
-              <Text style={S.sectionTitle}>Сумма</Text>
+              <Text style={S.sectionTitle}>{t('transactions.amount')}</Text>
               <View style={[S.amountWrap, { height: type === 'EXPENSE' ? 100 : 70 }]}>
                 <Text style={[S.amountText, { color: colors.primary }]} numberOfLines={1}>
                   {displayAmount}
@@ -613,7 +592,7 @@ export function AddTransactionModal({
                 {lifeHours && type === 'EXPENSE' && (
                   <View style={S.lifeCostBadge}>
                     <Ionicons name="time-outline" size={16} color={C.yellow} />
-                    <Text style={S.lifeCostText}>{lifeHours} работы</Text>
+                    <Text style={S.lifeCostText}>{lifeHours} {t('common.workUnit')}</Text>
                   </View>
                 )}
               </View>
@@ -630,7 +609,7 @@ export function AddTransactionModal({
 
             {/* ──── Действия ──── */}
             <View style={S.section}>
-              <Text style={S.sectionTitle}>Детали</Text>
+              <Text style={S.sectionTitle}>{t('transactions.details')}</Text>
               <View style={S.actionsRow}>
                 {/* Заметка */}
                 <TouchableOpacity
@@ -640,7 +619,7 @@ export function AddTransactionModal({
                   <View style={[S.actionIconWrap, showNoteInput && { backgroundColor: colors.background, borderColor: colors.primary }]}>
                     <Ionicons name="document-text-outline" size={20} color={showNoteInput ? colors.primary : C.textSec} />
                   </View>
-                  <Text style={S.actionLabel}>{note ? 'Есть' : 'Заметка'}</Text>
+                  <Text style={S.actionLabel}>{note ? t('transactions.hasNote') : t('transactions.note')}</Text>
                 </TouchableOpacity>
 
                 {/* Счёт */}
@@ -651,7 +630,7 @@ export function AddTransactionModal({
                   <View style={S.actionIconWrap}>
                     <Ionicons name="card-outline" size={20} color={C.textSec} />
                   </View>
-                  <Text style={S.actionLabel}>{selectedAccData?.name || 'Счёт'}</Text>
+                  <Text style={S.actionLabel}>{selectedAccData?.name || t('transactions.account')}</Text>
                 </TouchableOpacity>
 
                 {/* Категория */}
@@ -671,7 +650,7 @@ export function AddTransactionModal({
                     </View>
                   )}
                   <Text style={S.actionLabel} numberOfLines={1}>
-                    {selectedCateData?.name || 'Категория'}
+                    {selectedCateData?.name || t('transactions.category')}
                   </Text>
                 </TouchableOpacity>
 
@@ -686,7 +665,7 @@ export function AddTransactionModal({
                     </View>
                     {!checkAccess('AI_VOICE')?.allowed && <PremiumBadge size="sm" style={{ position: 'absolute', top: -6, right: -6 }} />}
                   </View>
-                  <Text style={S.actionLabel}>Голос</Text>
+                  <Text style={S.actionLabel}>{t('transactions.voice')}</Text>
                 </TouchableOpacity>
 
                 {/* Чек */}
@@ -703,7 +682,7 @@ export function AddTransactionModal({
                   style={S.noteInput}
                   value={note}
                   onChangeText={setNote}
-                  placeholder="Добавить заметку..."
+                  placeholder={t('transactions.notePlaceholder')}
                   placeholderTextColor={C.textMuted}
                   autoFocus
                 />
@@ -740,11 +719,11 @@ export function AddTransactionModal({
               <View style={S.section}>
                 <View style={S.budgetBar}>
                   <View style={S.budgetRow}>
-                    <Text style={S.budgetLabel}>Лимит категории</Text>
+                    <Text style={S.budgetLabel}>{t('transactions.categoryLimit')}</Text>
                     <Text style={[S.budgetValue, { color: limitInfo.barColor }]}>
                       {limitInfo.percent > 100
-                        ? `Превышен на ${formatCurrency(Math.abs(limitInfo.remaining))}`
-                        : `Осталось ${formatCurrency(limitInfo.remaining)}`}
+                        ? `${t('transactions.limitExceeded')} ${formatCurrency(Math.abs(limitInfo.remaining))}`
+                        : `${t('transactions.limitRemaining')} ${formatCurrency(limitInfo.remaining)}`}
                     </Text>
                   </View>
                   <View style={S.budgetTrack}>
@@ -833,7 +812,7 @@ export function AddTransactionModal({
                   ]}
                 >
                   <Text style={S.saveText}>
-                    {isSubmitting ? 'Сохранение...' : '✓ Сохранить'}
+                    {isSubmitting ? t('common.saving') : `✓ ${t('common.save')}`}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -861,7 +840,7 @@ export function AddTransactionModal({
             <View style={SC.handle} />
 
             <View style={SC.header}>
-              <Text style={SC.headerTitle}>Категория</Text>
+              <Text style={SC.headerTitle}>{t('transactions.category')}</Text>
               <Pressable style={SC.closeBtn} onPress={() => setShowCategoryPicker(false)}>
                 <Ionicons name="close" size={18} color={C.textSec} />
               </Pressable>
@@ -870,7 +849,7 @@ export function AddTransactionModal({
             <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
               {displayCategories.length === 0 ? (
                 <View style={SC.emptyWrap}>
-                  <Text style={SC.emptyText}>Нет категорий</Text>
+                  <Text style={SC.emptyText}>{t('transactions.noCategories')}</Text>
                   <TouchableOpacity
                     onPress={() => {
                       setShowCategoryPicker(false);
@@ -920,7 +899,7 @@ export function AddTransactionModal({
                     }}
                     style={SC.newCatBtn}
                   >
-                    <Text style={SC.newCatText}>+ Создать новую категорию</Text>
+                    <Text style={SC.newCatText}>{t('transactions.createCategory')}</Text>
                   </TouchableOpacity>
                 </>
               )}

@@ -265,7 +265,7 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
             </View>
             <Text style={S.previewName}>{name || category.name}</Text>
             <Text style={S.previewType}>
-              {category.type === 'INCOME' ? 'Доход' : 'Расход'}
+              {category.type === 'INCOME' ? t('categories.incomeLabel') : t('categories.expenseLabel')}
             </Text>
           </View>
 
@@ -278,18 +278,18 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
 
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <View style={S.section}>
-              <Text style={S.sectionTitle}>Название</Text>
+              <Text style={S.sectionTitle}>{t('categories.nameLabel')}</Text>
               <TextInput
                 style={S.input}
                 value={name}
                 onChangeText={setName}
-                placeholder="Название категории"
+                placeholder={t('categories.nameLabel')}
                 placeholderTextColor={C.textMuted}
               />
             </View>
 
             <View style={S.section}>
-              <Text style={S.sectionTitle}>Цвет</Text>
+              <Text style={S.sectionTitle}>{t('categories.colorLabel')}</Text>
               <View style={S.colorRow}>
                 {COLORS.map((c) => (
                   <Pressable
@@ -315,7 +315,7 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
             {/* ──── Иконка (с группами из ICON_BANK) ──── */}
             <View style={S.section}>
               <Text style={S.sectionTitle}>
-                Иконка ({filteredIconBank.reduce((sum, g) => sum + g.icons.length, 0)})
+                {t('categories.iconCountLabel')} ({filteredIconBank.reduce((sum, g) => sum + g.icons.length, 0)})
               </Text>
 
               {filteredIconBank.map((group, groupIndex) => {
@@ -329,7 +329,7 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
                       {group.icons.length > 8 && (
                         <Pressable onPress={() => setExpandedGroup(isExpanded ? -1 : groupIndex)}>
                           <Text style={S.groupExpand}>
-                            {isExpanded ? 'Свернуть ▲' : `+ ещё ${group.icons.length - 8}`}
+                            {isExpanded ? t('categories.collapseUp') : t('categories.moreCountPlus', { count: group.icons.length - 8 })}
                           </Text>
                         </Pressable>
                       )}
@@ -373,7 +373,7 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
                   style={S.limitInput}
                   value={monthlyLimitText}
                   onChangeText={setMonthlyLimitText}
-                  placeholder="Без лимита"
+                  placeholder={t('categories.noLimitPlaceholder')}
                   placeholderTextColor={C.textMuted}
                   keyboardType="numeric"
                 />
@@ -401,7 +401,7 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
             </View>
 
             <Pressable style={S.saveBtn} onPress={handleSave}>
-              <Text style={S.saveText}>Сохранить</Text>
+              <Text style={S.saveText}>{t('common.save')}</Text>
             </Pressable>
 
             <Pressable

@@ -91,7 +91,7 @@ export default function CategoriesIndexScreen() {
       await fetchCategories();
       setEditingCategory(null);
     } catch (error: any) {
-      toast.showError(error?.message || 'Ошибка сохранения');
+      toast.showError(error?.message || t('categories.saveError'));
     }
   };
 
@@ -99,9 +99,9 @@ export default function CategoriesIndexScreen() {
     try {
       await categoriesService.delete(categoryId);
       await fetchCategories();
-      toast.showSuccess('Категория удалена');
+      toast.showSuccess(t('categories.deletedMsg'));
     } catch (error: any) {
-      toast.showError(error?.message || 'Ошибка удаления');
+      toast.showError(error?.message || t('categories.deleteError'));
     }
   };
 

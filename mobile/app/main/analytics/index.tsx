@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Pressable, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity, Alert,
+  View, Pressable, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -15,18 +15,11 @@ import { useSubscriptionStore } from '../../../src/stores/subscriptionStore';
 import { formatCurrency } from '../../../src/utils/formatters';
 import transactionsService from '../../../src/services/transactions';
 import { exportService } from '../../../src/services/export';
+import { useToast } from '../../../src/components/ui/Toast';
 
 type TabKey = 'overview' | 'comparison' | 'trends' | 'export';
 
-const MONTHS = [
-  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
-];
-const MONTHS_GEN = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-];
-const MONTHS_SHORT = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+const MONTH_KEYS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
 function getMonthBounds(date: Date) {
   const start = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -57,6 +50,11 @@ export default function AnalyticsScreen() {
   const [exporting, setExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx' | 'json'>('csv');
   const [exportType, setExportType] = useState<'transactions' | 'analytics'>('transactions');
+  const toast = useToast();
+
+  const MONTHS = useMemo(() => MONTH_KEYS.map(k => t(`months.${k}`)), [t]);
+  const MONTHS_GEN = useMemo(() => MONTH_KEYS.map(k => t(`monthsGen.${k}`)), [t]);
+  const MONTHS_SHORT = useMemo(() => MONTH_KEYS.map(k => t(`monthsShort.${k}`)), [t]);
 
   const bounds = useMemo(
     () => (mode === 'MONTH' ? getMonthBounds(currentDate) : getYearBounds(currentDate)),
@@ -77,8 +75,8 @@ export default function AnalyticsScreen() {
     try {
       const r = await transactionsService.getAnalytics(bounds.start.toISOString(), bounds.end.toISOString());
       setData(r);
-    } catch (e: any) { setError(e?.message || 'Ошибка загрузки'); } finally { setLoading(false); }
-  }, [bounds, isDemo]);
+    } catch (e: any) { setError(e?.message || t('analytics.loadError')); } finally { setLoading(false); }
+  }, [bounds, isDemo, t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -124,7 +122,7 @@ export default function AnalyticsScreen() {
         await exportService.exportAnalytics(exportFormat, bounds.start.toISOString(), bounds.end.toISOString());
       }
     } catch (e: any) {
-      Alert.alert('Ошибка', e.message || 'Не удалось экспортировать');
+      toast.showError(e.message || t('analytics.exportError'));
     } finally {
       setExporting(false);
     }
@@ -153,7 +151,7 @@ export default function AnalyticsScreen() {
       }
       setTrendData(months);
     } catch { setTrendData([]); } finally { setTrendLoading(false); }
-  }, [checkAccess]);
+  }, [checkAccess, MONTHS_SHORT]);
 
   useEffect(() => { if (tab === 'trends') loadTrends(); }, [tab, loadTrends]);
 
@@ -186,10 +184,10 @@ export default function AnalyticsScreen() {
   });
 
   const tabs: { key: TabKey; label: string; icon: string; feature?: string }[] = [
-    { key: 'overview', label: 'Обзор', icon: 'bar-chart-outline' },
-    { key: 'comparison', label: 'Сравнение', icon: 'swap-vertical-outline', feature: 'ANALYTICS_COMPARISON' },
-    { key: 'trends', label: 'Тренды', icon: 'trending-up-outline', feature: 'ANALYTICS_TRENDS' },
-    { key: 'export', label: 'Экспорт', icon: 'download-outline', feature: 'EXPORT' },
+    { key: 'overview', label: t('analytics.overviewTab'), icon: 'bar-chart-outline' },
+    { key: 'comparison', label: t('analytics.comparisonTab'), icon: 'swap-vertical-outline', feature: 'ANALYTICS_COMPARISON' },
+    { key: 'trends', label: t('analytics.trendsTab'), icon: 'trending-up-outline', feature: 'ANALYTICS_TRENDS' },
+    { key: 'export', label: t('analytics.exportTab'), icon: 'download-outline', feature: 'EXPORT' },
   ];
 
   const renderTabContent = () => {
@@ -203,7 +201,7 @@ export default function AnalyticsScreen() {
   const renderOverview = () => {
     if (loading) return <View style={S.center}><ActivityIndicator color={C.primary} size="large" /></View>;
     if (error) return <View style={S.center}><Ionicons name="warning-outline" size={40} color={C.red} /><Text style={{ color: C.red, marginTop: 8 }}>{error}</Text></View>;
-    if (!data) return <View style={S.center}><Ionicons name="bar-chart-outline" size={48} color="#3F3F46" /><Text style={{ color: C.textSec, marginTop: 12 }}>{isDemo ? 'Недоступно в демо-режиме' : 'Нет данных за период'}</Text></View>;
+    if (!data) return <View style={S.center}><Ionicons name="bar-chart-outline" size={48} color="#3F3F46" /><Text style={{ color: C.textSec, marginTop: 12 }}>{isDemo ? t('analytics.notAvailableDemo') : t('analytics.noDataPeriod')}</Text></View>;
 
     return (
       <View style={{ gap: 12 }}>
@@ -212,13 +210,13 @@ export default function AnalyticsScreen() {
             <View style={[S.kpiIcon, { backgroundColor: C.redBg }]}><Ionicons name="arrow-down" size={14} color={C.red} /></View>
             <Text style={[S.kpiValue, { color: C.red }]} numberOfLines={1} adjustsFontSizeToFit>{formatCurrency(data.totals.expense)}</Text>
             <Text style={S.kpiLabel}>{t('analytics.expenses')}</Text>
-            {data.comparison && <Text style={[S.kpiChange, { color: chg(data.comparison.expenseChange).color }]}>{chg(data.comparison.expenseChange).text} vs пр.</Text>}
+            {data.comparison && <Text style={[S.kpiChange, { color: chg(data.comparison.expenseChange).color }]}>{chg(data.comparison.expenseChange).text} {t('analytics.vsPrev')}</Text>}
           </View>
           <View style={S.kpiCard}>
             <View style={[S.kpiIcon, { backgroundColor: 'rgba(52,211,153,0.1)' }]}><Ionicons name="arrow-up" size={14} color={C.green} /></View>
             <Text style={[S.kpiValue, { color: C.green }]} numberOfLines={1} adjustsFontSizeToFit>{formatCurrency(data.totals.income)}</Text>
             <Text style={S.kpiLabel}>{t('analytics.income')}</Text>
-            {data.comparison && <Text style={[S.kpiChange, { color: chg(data.comparison.incomeChange).color }]}>{chg(data.comparison.incomeChange).text} vs пр.</Text>}
+            {data.comparison && <Text style={[S.kpiChange, { color: chg(data.comparison.incomeChange).color }]}>{chg(data.comparison.incomeChange).text} {t('analytics.vsPrev')}</Text>}
           </View>
           <View style={S.kpiCard}>
             <View style={[S.kpiIcon, { backgroundColor: C.primaryBg }]}><Ionicons name="wallet-outline" size={14} color={C.primary} /></View>
@@ -228,7 +226,7 @@ export default function AnalyticsScreen() {
         </View>
 
         {dayData.length > 1 && (
-          <View style={S.section}><SpendingChart data={dayData} monthLabel="Расходы / Доходы по дням" /></View>
+          <View style={S.section}><SpendingChart data={dayData} monthLabel={t('analytics.expensesIncomeDaily')} /></View>
         )}
 
         {topExpenseCat.length > 0 && (
@@ -265,16 +263,16 @@ export default function AnalyticsScreen() {
       <Text style={{ fontSize: 14, color: C.textSec, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>{desc}</Text>
       <Pressable onPress={() => showPaywall(feature as any)} style={{ backgroundColor: '#F59E0B', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Ionicons name="diamond" size={18} color="#FFF" />
-        <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFF' }}>Разблокировать Premium</Text>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFF' }}>{t('analytics.unlockPremium')}</Text>
       </Pressable>
     </View>
   );
 
   const renderComparison = () => {
     if (!checkAccess('ANALYTICS_COMPARISON')?.allowed) {
-      return renderLocked('ANALYTICS_COMPARISON', 'Сравнение периодов', 'Сравнивай доходы и расходы с предыдущим месяцем. Дельта в % по каждой категории.');
+      return renderLocked('ANALYTICS_COMPARISON', t('analytics.periodComparisonTitle'), t('analytics.periodComparisonDesc'));
     }
-    if (!data?.comparison) return <View style={S.center}><Text style={{ color: C.textSec }}>Нет данных для сравнения</Text></View>;
+    if (!data?.comparison) return <View style={S.center}><Text style={{ color: C.textSec }}>{t('analytics.noDataComparison')}</Text></View>;
 
     const prev = data.comparison;
     const incColor = prev.incomeChange > 0 ? C.green : prev.incomeChange < 0 ? C.red : C.textSec;
@@ -284,24 +282,24 @@ export default function AnalyticsScreen() {
     return (
       <View style={{ gap: 12 }}>
         <View style={S.section}>
-          <Text style={S.sectionTitle}>Сравнение с предыдущим периодом</Text>
+          <Text style={S.sectionTitle}>{t('analytics.vsPrevPeriod')}</Text>
           <Text style={{ fontSize: 12, color: C.textMuted, marginBottom: 12 }}>{prevLabel}</Text>
           <View style={S.comparisonRow}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: C.textMain }}>Доходы</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: C.textMain }}>{t('analytics.incomeLabel')}</Text>
             <Text style={{ fontSize: 14, fontWeight: '600', color: incColor }}>{prev.incomeChange > 0 ? '+' : ''}{prev.incomeChange.toFixed(1)}%</Text>
           </View>
           <View style={S.comparisonRow}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: C.textMain }}>Расходы</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: C.textMain }}>{t('analytics.expensesLabel')}</Text>
             <Text style={{ fontSize: 14, fontWeight: '600', color: expColor }}>{prev.expenseChange > 0 ? '+' : ''}{prev.expenseChange.toFixed(1)}%</Text>
           </View>
           <View style={S.comparisonRow}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: C.textMain }}>Баланс</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: C.textMain }}>{t('analytics.balanceLabel')}</Text>
             <Text style={{ fontSize: 14, fontWeight: '600', color: balColor }}>{prev.balanceChange > 0 ? '+' : ''}{prev.balanceChange.toFixed(1)}%</Text>
           </View>
         </View>
         {topExpenseCat.length > 0 && (
           <View style={S.section}>
-            <Text style={S.sectionTitle}>Топ категории (текущий период)</Text>
+            <Text style={S.sectionTitle}>{t('analytics.topCategoriesCurrent')}</Text>
             {topExpenseCat.slice(0, 5).map((cat: any) => (
               <View key={cat.category.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border }}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: cat.category.color || C.primary, marginRight: 10 }} />
@@ -317,17 +315,17 @@ export default function AnalyticsScreen() {
 
   const renderTrends = () => {
     if (!checkAccess('ANALYTICS_TRENDS')?.allowed) {
-      return renderLocked('ANALYTICS_TRENDS', 'Тренды', 'Отслеживай динамику расходов и доходов за последние 6 месяцев.');
+      return renderLocked('ANALYTICS_TRENDS', t('analytics.trendsTitle'), t('analytics.trendsDesc'));
     }
 
     if (trendLoading) return <View style={S.center}><ActivityIndicator color={C.primary} size="large" /></View>;
-    if (trendData.length === 0) return <View style={S.center}><Text style={{ color: C.textSec }}>Нет данных за 6 месяцев</Text></View>;
+    if (trendData.length === 0) return <View style={S.center}><Text style={{ color: C.textSec }}>{t('analytics.noData6Months')}</Text></View>;
 
     const maxExpense = Math.max(...trendData.map(m => m.expense), 1);
     return (
       <View style={{ gap: 12 }}>
         <View style={S.section}>
-          <Text style={S.sectionTitle}>Динамика за 6 месяцев</Text>
+          <Text style={S.sectionTitle}>{t('analytics.dynamics6Months')}</Text>
           {trendData.map((m, i) => {
             const w = maxExpense > 0 ? (m.expense / maxExpense) * 100 : 0;
             return (
@@ -342,7 +340,7 @@ export default function AnalyticsScreen() {
           })}
         </View>
         <View style={S.section}>
-          <Text style={S.sectionTitle}>Доходы за 6 месяцев</Text>
+          <Text style={S.sectionTitle}>{t('analytics.income6Months')}</Text>
           {trendData.map((m, i) => {
             const maxIncome = Math.max(...trendData.map(m => m.income), 1);
             const w = maxIncome > 0 ? (m.income / maxIncome) * 100 : 0;
@@ -363,7 +361,7 @@ export default function AnalyticsScreen() {
 
   const renderExport = () => {
     if (!checkAccess('EXPORT')?.allowed) {
-      return renderLocked('EXPORT', 'Экспорт данных', 'Скачивай транзакции и аналитику в CSV, XLSX или JSON.');
+      return renderLocked('EXPORT', t('analytics.exportDataTitle'), t('analytics.exportDataDesc'));
     }
 
     const formats: { key: 'csv' | 'xlsx' | 'json'; label: string; icon: string }[] = [
@@ -373,14 +371,14 @@ export default function AnalyticsScreen() {
     ];
 
     const types: { key: 'transactions' | 'analytics'; label: string; icon: string }[] = [
-      { key: 'transactions', label: 'Транзакции', icon: 'list-outline' },
-      { key: 'analytics', label: 'Аналитика', icon: 'pie-chart-outline' },
+      { key: 'transactions', label: t('analytics.transactionsLabel'), icon: 'list-outline' },
+      { key: 'analytics', label: t('analytics.analyticsLabel'), icon: 'pie-chart-outline' },
     ];
 
     return (
       <View style={{ gap: 16 }}>
         <View style={S.section}>
-          <Text style={S.sectionTitle}>Что экспортируем?</Text>
+          <Text style={S.sectionTitle}>{t('analytics.whatExport')}</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {types.map(t => (
               <Pressable key={t.key} onPress={() => setExportType(t.key)} style={[S.kpiCard, exportType === t.key && { borderColor: C.primary, backgroundColor: C.primaryBg }]}>
@@ -392,7 +390,7 @@ export default function AnalyticsScreen() {
         </View>
 
         <View style={S.section}>
-          <Text style={S.sectionTitle}>Формат</Text>
+          <Text style={S.sectionTitle}>{t('analytics.formatLabel')}</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {formats.map(f => (
               <Pressable key={f.key} onPress={() => setExportFormat(f.key)} style={[S.kpiCard, exportFormat === f.key && { borderColor: C.primary, backgroundColor: C.primaryBg }]}>
@@ -404,7 +402,7 @@ export default function AnalyticsScreen() {
         </View>
 
         <View style={S.section}>
-          <Text style={S.sectionTitle}>Период</Text>
+          <Text style={S.sectionTitle}>{t('analytics.periodLabel')}</Text>
           <View style={S.periodRow}>
             <Pressable onPress={() => navigate(-1)} style={S.periodBtn}><Ionicons name="chevron-back" size={18} color={C.textSec} /></Pressable>
             <Text style={S.periodText}>{periodLabel}</Text>
@@ -418,7 +416,7 @@ export default function AnalyticsScreen() {
           style={{ backgroundColor: C.primary, borderRadius: 14, paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: exporting ? 0.6 : 1 }}
         >
           <Ionicons name="download-outline" size={20} color="#FFF" />
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFF' }}>{exporting ? 'Экспорт...' : 'Скачать'}</Text>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFF' }}>{exporting ? t('analytics.exporting') : t('analytics.downloadBtn')}</Text>
         </Pressable>
       </View>
     );
@@ -433,13 +431,13 @@ export default function AnalyticsScreen() {
       </View>
 
       <View style={S.tabRow}>
-        {tabs.map(t => {
-          const locked = t.feature && !checkAccess(t.feature as any)?.allowed;
+        {tabs.map(tp => {
+          const locked = tp.feature && !checkAccess(tp.feature as any)?.allowed;
           return (
-            <Pressable key={t.key} onPress={() => setTab(t.key as any)} style={[S.tab, tab === t.key && S.tabActive]}>
+            <Pressable key={tp.key} onPress={() => setTab(tp.key as any)} style={[S.tab, tab === tp.key && S.tabActive]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Ionicons name={t.icon as any} size={14} color={tab === t.key ? C.primary : locked ? C.textMuted : C.textSec} />
-                <Text style={[S.tabText, { color: tab === t.key ? C.primary : locked ? C.textMuted : C.textSec }]}>{t.label}</Text>
+                <Ionicons name={tp.icon as any} size={14} color={tab === tp.key ? C.primary : locked ? C.textMuted : C.textSec} />
+                <Text style={[S.tabText, { color: tab === tp.key ? C.primary : locked ? C.textMuted : C.textSec }]}>{tp.label}</Text>
               </View>
             </Pressable>
           );
@@ -453,7 +451,7 @@ export default function AnalyticsScreen() {
             <Text style={S.periodText}>{periodLabel}</Text>
             <Pressable onPress={() => navigate(1)} style={S.periodBtn}><Ionicons name="chevron-forward" size={18} color={C.textSec} /></Pressable>
             <Pressable onPress={() => { setMode(mode === 'MONTH' ? 'YEAR' : 'MONTH'); setCurrentDate(new Date()); }} style={[S.periodBtn, { backgroundColor: C.primaryBg }]}>
-              <Text style={{ fontSize: 10, fontWeight: '800', color: C.primary }}>{mode === 'MONTH' ? 'ГОД' : 'МЕС'}</Text>
+              <Text style={{ fontSize: 10, fontWeight: '800', color: C.primary }}>{mode === 'MONTH' ? t('analytics.yearUc') : t('analytics.monthUc')}</Text>
             </Pressable>
           </View>
         )}

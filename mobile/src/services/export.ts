@@ -2,6 +2,8 @@ import * as Sharing from 'expo-sharing';
 import { cacheDirectory, documentDirectory, writeAsStringAsync } from 'expo-file-system/legacy';
 import { EncodingType } from 'expo-file-system/legacy';
 import { api } from './api';
+import i18n from '../i18n';
+import { showGlobalSuccess } from '../components/ui/Toast';
 
 const BASE = '/export';
 
@@ -35,7 +37,7 @@ export const exportService = {
     const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Ошибка экспорта');
+      throw new Error(err.message || i18n.t('exportSection.exportError'));
     }
 
     await saveAndShare(response, format, 'transactions');
@@ -54,7 +56,7 @@ export const exportService = {
     const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Ошибка экспорта');
+      throw new Error(err.message || i18n.t('exportSection.exportError'));
     }
 
     await saveAndShare(response, format, 'analytics');
@@ -84,13 +86,13 @@ async function saveAndShare(response: Response, format: string, name: string): P
   }
 
   if (!(await Sharing.isAvailableAsync())) {
-    alert('Экспорт сохранён: ' + filePath);
+    showGlobalSuccess(i18n.t('exportSection.exportSaved', { path: filePath }));
     return;
   }
 
   await Sharing.shareAsync(filePath, {
     mimeType: mime,
-    dialogTitle: `Экспорт ${name}`,
+    dialogTitle: i18n.t('exportSection.exportName', { name }),
     UTI: format === 'xlsx' ? 'com.microsoft.excel.xlsx' : format === 'json' ? 'public.json' : 'public.comma-separated-values-text',
   });
 }

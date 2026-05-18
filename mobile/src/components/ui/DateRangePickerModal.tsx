@@ -11,6 +11,7 @@ import {
   LayoutAnimation,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Text } from '../../../components/ui/text';
 import { useTheme } from '../../stores/themeStore';
 
@@ -26,17 +27,9 @@ interface DateRangePickerModalProps {
   onClose: () => void;
 }
 
-const MONTH_NAMES = [
-  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
-];
+const MONTH_NAMES_KEYS = ['monthsGen.jan','monthsGen.feb','monthsGen.mar','monthsGen.apr','monthsGen.may','monthsGen.jun','monthsGen.jul','monthsGen.aug','monthsGen.sep','monthsGen.oct','monthsGen.nov','monthsGen.dec'] as const;
 
-const MONTHS_GENITIVE = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-];
-
-const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const WEEKDAY_KEYS = ['weekdays.mon','weekdays.tue','weekdays.wed','weekdays.thu','weekdays.fri','weekdays.sat','weekdays.sun'] as const;
 
 function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear()
@@ -66,8 +59,8 @@ function getCalendarDays(year: number, month: number): (number | null)[] {
   return cells;
 }
 
-function formatShort(date: Date): string {
-  return `${date.getDate()} ${MONTHS_GENITIVE[date.getMonth()]} ${date.getFullYear()}`;
+function formatShort(date: Date, t: (key: string) => string): string {
+  return `${date.getDate()} ${t(MONTH_NAMES_KEYS[date.getMonth()])} ${date.getFullYear()}`;
 }
 
 export type { DateRange };
@@ -77,6 +70,7 @@ export function DateRangePickerModal({
   onSelect,
   onClose,
 }: DateRangePickerModalProps) {
+  const { t } = useTranslation();
   const C = useTheme();
   const now = new Date();
   const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -177,10 +171,10 @@ export function DateRangePickerModal({
     const last30 = new Date(today);
     last30.setDate(last30.getDate() - 29);
     return [
-      { label: 'Этот месяц', start: monthStart, end: monthEnd },
-      { label: 'Прошлый месяц', start: prevMonthStart, end: prevMonthEnd },
-      { label: 'Эта неделя', start: weekStart, end: weekEnd },
-      { label: 'Последние 30 дней', start: last30, end: today },
+      { label: t('dateRangePicker.thisMonth'), start: monthStart, end: monthEnd },
+      { label: t('dateRangePicker.lastMonth'), start: prevMonthStart, end: prevMonthEnd },
+      { label: t('dateRangePicker.thisWeek'), start: weekStart, end: weekEnd },
+      { label: t('dateRangePicker.last30Days'), start: last30, end: today },
     ];
   }, [todayDate]);
 
@@ -209,7 +203,7 @@ export function DateRangePickerModal({
 
           <View className="px-5">
             <View className="flex-row items-center justify-between mb-3">
-              <Text bold className="text-lg" style={{ color: C.textMain }}>Выбрать период</Text>
+               <Text bold className="text-lg" style={{ color: C.textMain }}>{t('dateRangePicker.selectPeriod')}</Text>
               <Pressable onPress={handleClose} hitSlop={12}>
                 <Ionicons name="close" size={22} color={C.textSec} />
               </Pressable>
@@ -232,7 +226,7 @@ export function DateRangePickerModal({
             {start && !end && (
               <View className="mb-2 py-2 px-3 rounded-lg bg-primary-500/10">
                 <Text className="text-xs text-primary-400">
-                  Выберите конечную дату
+                  {t('dateRangePicker.selectEndDate')}
                 </Text>
               </View>
             )}
@@ -242,7 +236,7 @@ export function DateRangePickerModal({
                 <Ionicons name="chevron-back" size={20} color={C.textMain} />
               </TouchableOpacity>
               <Text bold className="text-base" style={{ color: C.textMain }}>
-                {MONTH_NAMES[viewMonth]} {viewYear}
+                {t(MONTH_NAMES_KEYS[viewMonth])} {viewYear}
               </Text>
               <TouchableOpacity
                 onPress={() => !isFutureMonth && switchMonth(1)}
@@ -255,9 +249,9 @@ export function DateRangePickerModal({
 
             <Animated.View style={{ opacity: fadeAnim }}>
               <View className="flex-row mb-1">
-                {WEEKDAYS.map((d) => (
-                  <View key={d} className="flex-1 items-center py-1.5">
-                    <Text className="text-[10px]" style={{ color: C.textSec }}>{d}</Text>
+                {WEEKDAY_KEYS.map((key) => (
+                  <View key={key} className="flex-1 items-center py-1.5">
+                    <Text className="text-[10px]" style={{ color: C.textSec }}>{t(key)}</Text>
                   </View>
                 ))}
               </View>
@@ -320,13 +314,13 @@ export function DateRangePickerModal({
                   style={{ backgroundColor: C.tabActive }}
                 >
                   <Text bold className="text-base" style={{ color: '#FFF' }}>
-                    {formatShort(start)} — {formatShort(end)}
+                    {formatShort(start, t)} — {formatShort(end, t)}
                   </Text>
                 </TouchableOpacity>
               ) : (
                 <View style={{ borderRadius: 12, paddingVertical: 14, alignItems: 'center', backgroundColor: C.inputBg }}>
                   <Text className="text-sm" style={{ color: C.textSec }}>
-                    {start ? `Начало: ${formatShort(start)}` : 'Нажмите на начальную дату'}
+                    {start ? `${t('dateRangePicker.startDate')} ${formatShort(start, t)}` : t('dateRangePicker.pressStartDate')}
                   </Text>
                 </View>
               )}

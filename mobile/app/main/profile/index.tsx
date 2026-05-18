@@ -44,8 +44,8 @@ export default function ProfileScreen() {
   const isFamily = useSubscriptionStore((s) => s.isFamily());
   const fetchStatus = useSubscriptionStore((s) => s.fetchStatus);
   const togglePlan = useSubscriptionStore((s) => s.togglePlan);
-  const planLabel = isFamily ? 'Premium Family ✦' : isPremium ? 'Premium ✦' : 'Free';
-  const planDesc = isFamily ? '2 члена семьи, все фичи' : isPremium ? 'Все фичи разблокированы' : 'Нажми для переключения';
+  const planLabel = isFamily ? t('profile.planToggle', 'Premium Family ✦') : isPremium ? t('profile.premiumLabel', 'Premium ✦') : 'Free';
+  const planDesc = isFamily ? t('profile.planDesc2members') : isPremium ? t('profile.planDescAll') : t('profile.planToggle');
 
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
@@ -100,7 +100,7 @@ export default function ProfileScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 18, fontWeight: '700', color: C.textMain }}>
-                  {user?.name || 'Пользователь'}
+                  {user?.name || t('profile.user', 'User')}
                 </Text>
                 <Text style={{ fontSize: 13, color: C.textSec, marginTop: 2 }}>
                   {user?.email}
@@ -159,10 +159,10 @@ export default function ProfileScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: C.textMain }}>Семейный доступ</Text>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: C.textMain }}>{t('profile.familyAccess')}</Text>
               </View>
               <Text style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>
-                {isFamily ? 'Управление семьёй и инвайт-код' : 'Введи код от владельца или создай семью'}
+                {isFamily ? t('profile.familyManage') : t('profile.familyEnterCode')}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
@@ -177,8 +177,8 @@ export default function ProfileScreen() {
               <Ionicons name="diamond" size={18} color="#F59E0B" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#F59E0B' }}>{isPremium ? 'Premium ✦' : 'Разблокировать Premium'}</Text>
-              <Text style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>{isPremium ? 'Все фичи разблокированы' : 'AI, цели, кредитки, аналитика'}</Text>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: '#F59E0B' }}>{isPremium ? t('profile.premiumLabel', 'Premium ✦') : t('profile.unlockPremium')}</Text>
+              <Text style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>{isPremium ? t('profile.premiumDescAll') : t('profile.premiumDescList')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#F59E0B" />
           </Pressable>

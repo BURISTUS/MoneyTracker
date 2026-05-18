@@ -19,13 +19,6 @@ import { useToast } from '../../../src/components/ui/Toast';
 
 type SalaryPeriod = 'hour' | 'week' | 'month' | 'year';
 
-const PERIOD_LABELS: Record<SalaryPeriod, string> = {
-  hour: 'В час',
-  week: 'В неделю',
-  month: 'В месяц',
-  year: 'В год',
-};
-
 const HOURS_IN_PERIOD: Record<SalaryPeriod, number> = {
   hour: 1,
   week: 40,
@@ -82,6 +75,13 @@ export default function LifeCostScreen() {
   const setHourlyRate = useDataStore((s) => s.setHourlyRate);
   const { showSuccess } = useToast();
   const hourlyRate = getHourlyRate();
+
+  const PERIOD_LABELS: Record<SalaryPeriod, string> = useMemo(() => ({
+    hour: t('lifeCost.perHour'),
+    week: t('lifeCost.perWeek'),
+    month: t('lifeCost.perMonth'),
+    year: t('lifeCost.perYear'),
+  }), [t]);
 
   const [salaryPeriod, setSalaryPeriod] = useState<SalaryPeriod>('month');
   const [salaryInput, setSalaryInput] = useState('');
@@ -153,7 +153,7 @@ export default function LifeCostScreen() {
             <Pressable onPress={() => router.back()} hitSlop={12} style={s.backBtn}>
               <Ionicons name="chevron-back" size={28} color="#A1A1AA" />
             </Pressable>
-            <Text style={s.headerTitle}>Life Cost</Text>
+            <Text style={s.headerTitle}>{t('lifeCost.title', 'Life Cost')}</Text>
           </View>
         </View>
         <Animated.View style={[s.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
@@ -212,7 +212,7 @@ export default function LifeCostScreen() {
             <TextInput
               value={salaryInput}
               onChangeText={(t) => setSalaryInput(t.replace(/[^0-9]/g, ''))}
-              placeholder={`Зарплата ${PERIOD_LABELS[salaryPeriod].toLowerCase()}`}
+              placeholder={t('lifeCost.salaryPlaceholder', { period: PERIOD_LABELS[salaryPeriod].toLowerCase() })}
               placeholderTextColor="#52525B"
               keyboardType="decimal-pad"
               style={s.input}

@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 const CURRENCY_SYMBOLS: Record<string, string> = {
   RUB: '₽', USD: '$', EUR: '€', GBP: '£', JPY: '¥', CNY: '¥',
   BRL: 'R$', MXN: 'MX$', INR: '₹', KRW: '₩', TRY: '₺',
@@ -92,12 +94,12 @@ export function getRelativeTime(date: string | Date): string {
   const diffMs = now.getTime() - d.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return 'Сегодня';
-  if (diffDays === 1) return 'Вчера';
-  if (diffDays < 7) return `${diffDays} дней назад`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} недель назад`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} месяцев назад`;
-  return `${Math.floor(diffDays / 365)} лет назад`;
+  if (diffDays === 0) return i18n.t('common.today');
+  if (diffDays === 1) return i18n.t('common.yesterday');
+  if (diffDays < 7) return i18n.t('common.daysAgo', { count: diffDays });
+  if (diffDays < 30) return i18n.t('common.weeksAgo', { count: Math.floor(diffDays / 7) });
+  if (diffDays < 365) return i18n.t('common.monthsAgo', { count: Math.floor(diffDays / 30) });
+  return i18n.t('common.yearsAgo', { count: Math.floor(diffDays / 365) });
 }
 
 /**

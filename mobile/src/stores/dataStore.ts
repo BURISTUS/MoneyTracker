@@ -16,6 +16,8 @@ import articlesService from '../services/articles';
 import { useSubscriptionStore } from './subscriptionStore';
 import type { ExchangeRate } from '../services/currency';
 import { setCurrencyConfig } from '../utils/formatters';
+import { getTransactionCurrency } from '../utils/transactionUtils';
+import i18n from '../i18n';
 
 // Initial empty state - data will be loaded from API
 const INITIAL_ACCOUNTS: Account[] = [];
@@ -215,7 +217,7 @@ export const useDataStore = create<DataState>()(
         set({ isLoadingTransactions: true });
         try {
           const raw = await transactionsService.getAll(filters);
-          const transactions = (raw.items ?? raw).map((t: any) => ({
+          const transactions = ((raw as any).items ?? raw).map((t: any) => ({
             ...t,
             amount: Number(t.amount),
           }));
@@ -263,7 +265,7 @@ export const useDataStore = create<DataState>()(
         try {
           const categories = await categoriesService.getAll();
           set({ categories });
-          console.log(`✅ Loaded ${categories.length} categories`);
+          if (__DEV__) console.log(`✅ Loaded ${categories.length} categories`);
         } catch (error) {
           console.error('Failed to fetch categories:', error);
         }
@@ -465,7 +467,7 @@ export const useDataStore = create<DataState>()(
           .filter((t) => t.type === 'INCOME' && new Date(t.date) >= startOfMonth)
           .filter((t) => !excludedIds.has(t.categoryId))
           .reduce((sum, t) => {
-            const accCurrency = (t as any).account?.currency || 'RUB';
+            const accCurrency = getTransactionCurrency(t);
             return sum + convertToUserCurrency(Number(t.amount), accCurrency);
           }, 0);
       },
@@ -479,7 +481,7 @@ export const useDataStore = create<DataState>()(
           .filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= startOfMonth)
           .filter((t) => !excludedIds.has(t.categoryId))
           .reduce((sum, t) => {
-            const accCurrency = (t as any).account?.currency || 'RUB';
+            const accCurrency = getTransactionCurrency(t);
             return sum + convertToUserCurrency(Number(t.amount), accCurrency);
           }, 0);
       },
@@ -523,15 +525,15 @@ export const useDataStore = create<DataState>()(
 
           let message = '';
           if (days >= 20) {
-            message = `Это ${Math.round(days)} рабочих дней. Ты готов провести месяц в офисе ради этого?`;
+            message = i18n.t('lifeCost.workDaysMonth', { days: Math.round(days) });
           } else if (days >= 10) {
-            message = `Это ${Math.round(days)} рабочих дней. Две недели твоей жизни.`;
+            message = i18n.t('lifeCost.workDaysTwoWeeks', { days: Math.round(days) });
           } else if (days >= 5) {
-            message = `Это ${Math.round(days)} рабочих дней. Целая неделя.`;
+            message = i18n.t('lifeCost.workDaysWeek', { days: Math.round(days) });
           } else if (days >= 1) {
-            message = `Это ${Math.round(hours)} часов твоей жизни.`;
+            message = i18n.t('lifeCost.hoursLife', { hours: Math.round(hours) });
           } else {
-            message = `Это ${Math.round(hours * 60)} минут твоей жизни.`;
+            message = i18n.t('lifeCost.minutesLife', { minutes: Math.round(hours * 60) });
           }
 
           return { hours, days, message };
@@ -556,7 +558,7 @@ export const useDataStore = create<DataState>()(
       initializeData: async () => {
         const isDemoMode = useAuthStore.getState().isDemoMode;
         if (isDemoMode) {
-          console.log('🎮 Demo mode — skipping API calls');
+          if (__DEV__) console.log('🎮 Demo mode — skipping API calls');
           return;
         }
 

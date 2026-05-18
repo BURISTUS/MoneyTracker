@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Pressable, ScrollView, TextInput, Alert, StyleSheet,
+  View, Pressable, ScrollView, TextInput, StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../../../src/stores/themeStore';
+import { useTranslation } from 'react-i18next';
 import { useSubscriptionStore } from '../../../src/stores/subscriptionStore';
 import { formatCurrency } from '../../../src/utils/formatters';
 import { Text } from '../../../components/ui/text';
 import { useRouter } from 'expo-router';
+import { useToast } from '../../../src/components/ui/Toast';
+import { ConfirmModal } from '../../../src/components/ui/ConfirmModal';
 
 export default function FamilyScreen() {
   const C = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const status = useSubscriptionStore((s) => s.status);
@@ -30,6 +34,8 @@ export default function FamilyScreen() {
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const toast = useToast();
 
   const isInFamily = !!status?.familyId;
 
@@ -51,7 +57,7 @@ export default function FamilyScreen() {
       await createFamily(familyName.trim());
       await fetchStatus();
     } catch (e: any) {
-      Alert.alert('Ошибка', e.message || 'Не удалось создать семью');
+      toast.showError(e.message || t('family.createFailed'));
     } finally {
       setLoading(false);
     }
@@ -64,7 +70,7 @@ export default function FamilyScreen() {
       await joinFamily(inviteCode.trim());
       await fetchStatus();
     } catch (e: any) {
-      Alert.alert('Ошибка', e.message || 'Не удалось присоединиться');
+      toast.showError(e.message || t('family.joinFailed'));
     } finally {
       setLoading(false);
     }
@@ -100,7 +106,7 @@ export default function FamilyScreen() {
 
   // In family — show details
   if (isInFamily || family) {
-    const familyName = status?.familyName || family?.name || 'Наша семья';
+    const familyName = status?.familyName || family?.name || t('family.defaultName');
     const inviteCode = status?.familyCode || family?.inviteCode || '';
     const members = family?.members || [];
 
@@ -110,7 +116,7 @@ export default function FamilyScreen() {
           <Pressable onPress={() => router.back()} hitSlop={12} style={S.backBtn}>
             <Ionicons name="chevron-back" size={28} color={C.textSec} />
           </Pressable>
-          <Text style={S.headerTitle}>Семейный доступ</Text>
+          <Text style={S.headerTitle}>{t('family.title')}</Text>
           <View style={{ width: 36 }} />
         </View>
 
@@ -120,29 +126,29 @@ export default function FamilyScreen() {
             <Text style={S.sectionTitle}>{familyName}</Text>
             <View style={S.inviteBox}>
               <Ionicons name="link-outline" size={20} color="#F59E0B" />
-              <Text style={{ fontSize: 11, color: C.textSec }}>Инвайт-код</Text>
+              <Text style={{ fontSize: 11, color: C.textSec }}>{t('family.inviteCode')}</Text>
               <Text style={{ fontSize: 22, fontWeight: '800', color: C.textMain, letterSpacing: 2 }}>{inviteCode}</Text>
               <Pressable onPress={copyCode} style={[S.btn, { backgroundColor: copied ? '#10B981' : '#F59E0B', paddingHorizontal: 20, paddingVertical: 8 }]}>
                 <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={16} color="#FFF" />
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#FFF' }}>{copied ? 'Скопировано!' : 'Скопировать'}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#FFF' }}>{copied ? t('family.copied') : t('family.copy')}</Text>
               </Pressable>
             </View>
-            <Text style={{ fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 8 }}>
-              Отправь код второму участнику — он введёт его на этом экране
+                <Text style={{ fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 8 }}>
+              {t('family.sendCodeDesc')}
             </Text>
           </View>
 
           {/* Members */}
           <View style={S.section}>
-            <Text style={S.sectionTitle}>Участники ({members.length}/2)</Text>
+            <Text style={S.sectionTitle}>{t('family.membersCount', { count: members.length })}</Text>
             {members.map((m: any) => (
               <View key={m.id} style={S.memberRow}>
                 <View style={S.avatar}>
                   <Ionicons name="person" size={18} color={C.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: C.textMain }}>{m.user?.name || m.user?.email || 'Участник'}</Text>
-                  {m.role === 'OWNER' && <Text style={{ fontSize: 11, color: C.textMuted }}>Владелец</Text>}
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: C.textMain }}>{m.user?.name || m.user?.email || t('family.member')}</Text>
+                  {m.role === 'OWNER' && <Text style={{ fontSize: 11, color: C.textMuted }}>{t('family.owner')}</Text>}
                 </View>
                 <View style={S.roleBadge}>
                   <Text style={{ fontSize: 11, fontWeight: '600', color: m.role === 'OWNER' ? '#F59E0B' : C.textSec }}>
@@ -156,7 +162,7 @@ export default function FamilyScreen() {
                 <View style={S.avatar}>
                   <Ionicons name="person-outline" size={18} color={C.textMuted} />
                 </View>
-                <Text style={{ fontSize: 14, color: C.textMuted }}>Ожидание участника…</Text>
+                <Text style={{ fontSize: 14, color: C.textMuted }}>{t('family.waiting')}</Text>
               </View>
             )}
           </View>
@@ -164,9 +170,9 @@ export default function FamilyScreen() {
           {/* Budget */}
           {familyBudget && (
             <View style={S.section}>
-              <Text style={S.sectionTitle}>Общий бюджет за месяц</Text>
+              <Text style={S.sectionTitle}>{t('family.sharedBudget')}</Text>
               <View style={[S.budgetRow, { paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.border }]}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: C.textMain }}>Всего расходов</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: C.textMain }}>{t('family.totalExpenses')}</Text>
                 <Text style={{ fontSize: 16, fontWeight: '700', color: '#EF4444' }}>{formatCurrency(familyBudget.totalSpent * 100)}</Text>
               </View>
               {familyBudget.memberSpending?.map((ms: any) => (
@@ -182,16 +188,23 @@ export default function FamilyScreen() {
           {status?.familyRole === 'MEMBER' && (
             <Pressable
               style={[S.btn, S.btnDanger, { marginTop: 8 }]}
-              onPress={() => Alert.alert('Покинуть семью?', 'Ты потеряешь доступ к общему бюджету.', [
-                { text: 'Отмена', style: 'cancel' },
-                { text: 'Покинуть', style: 'destructive', onPress: () => {} },
-              ])}
+              onPress={() => setShowLeaveModal(true)}
             >
               <Ionicons name="log-out-outline" size={18} color="#EF4444" />
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#EF4444' }}>Покинуть семью</Text>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: '#EF4444' }}>{t('family.leaveBtn')}</Text>
             </Pressable>
           )}
         </ScrollView>
+
+        <ConfirmModal
+          visible={showLeaveModal}
+          title={t('family.leaveTitle')}
+          message={t('family.leaveDesc')}
+          confirmText={t('family.leaveBtn')}
+          variant="destructive"
+          onConfirm={() => { setShowLeaveModal(false); }}
+          onCancel={() => setShowLeaveModal(false)}
+        />
       </View>
     );
   }
@@ -205,20 +218,19 @@ export default function FamilyScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={S.backBtn}>
           <Ionicons name="chevron-back" size={28} color={C.textSec} />
         </Pressable>
-        <Text style={S.headerTitle}>Семейный доступ</Text>
+        <Text style={S.headerTitle}>{t('family.title')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }} showsVerticalScrollIndicator={false}>
-        {/* Join family — always available */}
         <View style={S.section}>
-          <Text style={S.sectionTitle}>Вступить в семью</Text>
+          <Text style={S.sectionTitle}>{t('family.joinFamily')}</Text>
           <Text style={{ fontSize: 13, color: C.textSec, marginBottom: 12 }}>
-            Введи инвайт-код, который дал владелец семьи
+            {t('family.enterCodeDesc')}
           </Text>
           <TextInput
             style={S.input}
-            placeholder="Инвайт-код"
+            placeholder={t('family.codePlaceholder')}
             placeholderTextColor={C.textMuted}
             value={inviteCode}
             onChangeText={setInviteCode}
@@ -231,7 +243,7 @@ export default function FamilyScreen() {
             disabled={loading || !inviteCode.trim()}
           >
             <Ionicons name="enter-outline" size={18} color="#FFF" />
-            <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFF' }}>Вступить</Text>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFF' }}>{t('family.joinBtn')}</Text>
           </Pressable>
         </View>
 
@@ -239,19 +251,17 @@ export default function FamilyScreen() {
           <>
             <View style={{ alignItems: 'center', paddingVertical: 8 }}>
               <View style={{ width: 40, height: 1, backgroundColor: C.border }} />
-              <Text style={{ fontSize: 12, color: C.textMuted, marginVertical: 4 }}>или</Text>
-              <View style={{ width: 40, height: 1, backgroundColor: C.border }} />
+              <Text style={{ fontSize: 12, color: C.textMuted, marginVertical: 4 }}>{t('common.or', 'or')}</Text>              <View style={{ width: 40, height: 1, backgroundColor: C.border }} />
             </View>
 
-            {/* Create family — only for family plan */}
             <View style={S.section}>
-              <Text style={S.sectionTitle}>Создать семью</Text>
+              <Text style={S.sectionTitle}>{t('family.createFamily')}</Text>
               <Text style={{ fontSize: 13, color: C.textSec, marginBottom: 12 }}>
-                Создай семью и отправь инвайт-код второму участнику
+                {t('family.createDesc')}
               </Text>
               <TextInput
                 style={S.input}
-                placeholder="Название семьи"
+                placeholder={t('family.namePlaceholder')}
                 placeholderTextColor={C.textMuted}
                 value={familyName}
                 onChangeText={setFamilyName}
@@ -263,7 +273,7 @@ export default function FamilyScreen() {
                 disabled={loading || !familyName.trim()}
               >
                 <Ionicons name="add-circle-outline" size={18} color="#FFF" />
-                <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFF' }}>Создать</Text>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFF' }}>{t('family.createBtn')}</Text>
               </Pressable>
             </View>
           </>

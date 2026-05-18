@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import i18n from '../i18n';
 import { showGlobalError } from '../components/ui/Toast';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3001/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || (__DEV__ ? 'http://10.0.2.2:3001/api' : '');
 
 let isRedirecting = false;
 
@@ -30,9 +30,8 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     updateLanguageHeader(config);
-    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+    if (__DEV__) console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
       baseURL: config.baseURL,
-      hasToken: !!token,
       lang: config.headers['Accept-Language'],
     });
     return config;
@@ -46,7 +45,7 @@ api.interceptors.request.use(
 // Response interceptor - handle errors
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ API Response: ${response.config.url}`, response.status);
+    if (__DEV__) console.log(`✅ API Response: ${response.config.url}`, response.status);
     return response;
   },
   async (error: AxiosError) => {
@@ -59,7 +58,7 @@ api.interceptors.response.use(
       message = data.error;
     }
 
-    console.error('❌ API Error:', {
+      if (__DEV__) console.error('❌ API Error:', {
       url: error.config?.url,
       status: error.response?.status,
       message,
@@ -73,10 +72,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !isRedirecting) {
       isRedirecting = true;
       await SecureStore.deleteItemAsync('authToken');
-      console.log('🔄 Token expired, redirecting to login');
+      if (__DEV__) console.log('🔄 Token expired, redirecting to login');
       router.replace('/auth/login');
       setTimeout(() => { isRedirecting = false; }, 2000);
-      showGlobalError('Сессия истекла. Войдите заново.');
+      showGlobalError(i18n.t('session.expired'));
     }
 
     // Enrich error with parsed message — so catch(e) blocks see readable text

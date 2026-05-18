@@ -77,7 +77,7 @@ export default function CreateTransactionScreen() {
 
   const handleSubmit = useCallback(async () => {
     if (!amount || !selectedCategory || !selectedAccount) {
-      showError('Заполните все поля');
+      showError(t('transactions.fillFields'));
       return;
     }
 
@@ -101,7 +101,7 @@ export default function CreateTransactionScreen() {
       showSuccess(t("transactions.transactionAdded"));
       setTimeout(() => router.back(), 600);
     } catch {
-      showError('Не удалось добавить транзакцию');
+      showError(t('transactions.createFailedMsg'));
       setIsSubmitting(false);
     }
   }, [amount, type, selectedCategory, selectedAccount, note, date, addTransaction, router]);
@@ -207,7 +207,7 @@ export default function CreateTransactionScreen() {
             <TextInput
               value={note}
               onChangeText={setNote}
-              placeholder="Добавить заметку..."
+              placeholder={t('transactions.addNotePlaceholder')}
               placeholderTextColor={C.textSec}
               multiline
               numberOfLines={3}
@@ -277,7 +277,7 @@ export default function CreateTransactionScreen() {
             }}
           >
             <Text className="text-lg font-bold" style={{ color: C.textMain }}>
-              {isSubmitting ? 'Сохранение...' : 'Сохранить'}
+              {isSubmitting ? t('transactions.savingBtn') : t('transactions.saveBtn')}
             </Text>
           </TouchableOpacity>
         </View>

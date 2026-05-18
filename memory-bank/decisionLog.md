@@ -48,7 +48,25 @@
 - **Причина**: Бэкенд — multi-language API (20 языков). Russian хардкоды ломают UX для non-Russian пользователей. English — universal, AI модели понимают English лучше. System prompt на English + "respond in user's language" — работает корректно для любого языка.
 - **Альтернатива**: Backend i18n service (отклонено — over-engineering для текущего масштаба, translations уже на фронте)
 
-### D-13: KNOWN_SYMBOLS export из currency.service
+### D-14: i18n мобильного приложения — EN+RU полные переводы
+- **Решение**: Заменить 200+ захардкоженных строк на t() вызовы, добавить 14 новых секций в backend common.json, полностью переписать RU переводы, EN fallback для остальных 18 языков
+- **Причина**: ~36 файлов содержали Russian/English хардкод вместо i18n. Месяцы, дни недели, лейблы форм, кнопки, ошибки, премиум-фичи — всё было захардкожено. Существующие переводы в de/fr/pt/it содержали испанский текст вместо целевого языка.
+- **Альтернатива**: Только EN fallback для всех языков (отклонено по запросу PM — нужны полные EN+RU)
+
+### D-15: Node.js скрипт для генерации переводов
+- **Решение**: Создан /tmp/kilo/fix-i18n.js — скрипт глубокого слияния новых ключей в существующие файлы
+- **Причина**: 20 файлов × 556+ строк = 11K+ строк JSON. Ручное редактирование нецелесообразно. Скрипт с deepMerge позволяет добавить новые ключи не затирая существующие переводы.
+
+### D-16: Jest + jest-expo для unit тестов mobile
+- **Решение**: Jest 29 + jest-expo preset + jest.setup.js для RN module mocks
+- **Причина**: jest-expo обеспечивает совместимость с Expo SDK 54 и React Native трансформациями. Jest 30 несовместим с jest-expo (peer dep конфликт).
+- **Альтернатива**: Vitest (отклонено — хуже интеграция с React Native)
+- **Сложность**: i18n mock требует `__esModule: true` в factory из-за babel `interopRequireDefault` трансформации. Dynamic `import()` не поддерживается в Jest без `--experimental-vm-modules`.
+
+### D-17: Unit тесты — мок authStore в dataStore тестах
+- **Решение**: Мокать `../authStore` целиком вместо мокания отдельных сервисов
+- **Причина**: dataStore → authStore → services/auth → services/api → Toast → gluestack-ui — длинная цепочка импортов достигает ESM-only пакетов. Мокание authStore разрывает цепь и изолирует dataStore.
+- **Альтернатива**: Добавлять все ESM-пакеты в transformIgnorePatterns (отклонено — хрупкое решение, растущий список)
 - **Решение**: Экспортировать `KNOWN_SYMBOLS` из currency.service.ts и импортировать в chat.service.ts
 - **Причина**: Карта символов валют дублировалась (5 валют в chat vs 60+ в currency). DRY принцип.
 - **Решение**: Оставить `POST /subscription/toggle` для dev/test/demo

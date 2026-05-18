@@ -34,9 +34,9 @@ const COLORS = [
 
 function filterIconBank(type: CategoryType, t: (key: string) => string) {
   if (type === 'INCOME') {
-    return ICON_BANK.filter((g) => g.label === t('categories.income') || g.label === 'Доходы');
+    return ICON_BANK.filter((g) => g.label === t('categories.incomeLabel') || g.label === t('categories.income'));
   }
-  return ICON_BANK.filter((g) => g.label !== t('categories.income') && g.label !== 'Доходы');
+  return ICON_BANK.filter((g) => g.label !== t('categories.incomeLabel') && g.label !== t('categories.income'));
 }
 
 // ============================================================
@@ -148,7 +148,7 @@ export default function CreateCategoryScreen() {
     <View style={S.screen}>
       {/* Header */}
       <View style={[S.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={S.headerTitle}>Новая категория</Text>
+        <Text style={S.headerTitle}>{t('categories.newCategory')}</Text>
         <TouchableOpacity style={S.closeBtn} onPress={() => router.back()}>
           <Ionicons name="close" size={18} color={C.textSec} />
         </TouchableOpacity>
@@ -168,31 +168,31 @@ export default function CreateCategoryScreen() {
               <Ionicons name="grid-outline" size={40} color="#8E8E93" />
             )}
           </View>
-          <Text style={S.previewName}>{name || 'Название категории'}</Text>
+          <Text style={S.previewName}>{name || t('categories.categoryNamePlaceholder')}</Text>
           <Text style={S.previewType}>
-            {type === 'EXPENSE' ? 'Расход' : 'Доход'}
+            {type === 'EXPENSE' ? t('categories.expenseLabel') : t('categories.incomeLabel')}
           </Text>
         </View>
 
         {/* ──── Название ──── */}
         <View style={[S.section, { marginTop: 20 }]}>
-          <Text style={S.sectionTitle}>Название</Text>
+          <Text style={S.sectionTitle}>{t('categories.nameLabel')}</Text>
           <TextInput
             style={S.input}
             value={name}
             onChangeText={setName}
-            placeholder="Название категории"
+            placeholder={t('categories.categoryNamePlaceholder')}
             placeholderTextColor="#52525B"
           />
         </View>
 
         {/* ──── Тип ──── */}
         <View style={S.section}>
-          <Text style={S.sectionTitle}>Тип</Text>
+          <Text style={S.sectionTitle}>{t('categories.typeLabel')}</Text>
           <View style={S.typeRow}>
             {[
-              { k: CategoryTypeEnum.EXPENSE, label: 'Расход' },
-              { k: CategoryTypeEnum.INCOME, label: 'Доход' },
+              { k: CategoryTypeEnum.EXPENSE, label: t('categories.expenseLabel') },
+              { k: CategoryTypeEnum.INCOME, label: t('categories.incomeLabel') },
             ].map((tab) => (
               <TouchableOpacity
                 key={tab.k}
@@ -215,7 +215,7 @@ export default function CreateCategoryScreen() {
 
         {/* ──── Цвет ──── */}
         <View style={S.section}>
-          <Text style={S.sectionTitle}>Цвет</Text>
+          <Text style={S.sectionTitle}>{t('categories.colorLabel')}</Text>
           <View style={S.colorRow}>
             {COLORS.map((c) => (
               <TouchableOpacity
@@ -238,7 +238,7 @@ export default function CreateCategoryScreen() {
         {/* ──── Иконка ──── */}
         <View style={S.section}>
           <Text style={S.sectionTitle}>
-            Иконка ({filteredIconBank.reduce((sum, g) => sum + g.icons.length, 0)})
+            {t('categories.iconCountLabel', { count: filteredIconBank.reduce((sum, g) => sum + g.icons.length, 0) })}
           </Text>
 
           {filteredIconBank.map((group, groupIndex) => {
@@ -252,7 +252,7 @@ export default function CreateCategoryScreen() {
                   {group.icons.length > 8 && (
                     <TouchableOpacity onPress={() => setExpandedGroup(isExpanded ? -1 : groupIndex)}>
                       <Text style={S.groupExpand}>
-                        {isExpanded ? 'Свернуть ▲' : `+ ещё ${group.icons.length - 8}`}
+                        {isExpanded ? t('categories.collapseUp') : t('categories.moreCountPlus', { count: group.icons.length - 8 })}
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -291,13 +291,13 @@ export default function CreateCategoryScreen() {
 
         {/* ──── Лимит ──── */}
         <View style={S.section}>
-          <Text style={S.sectionTitle}>Лимит в месяц</Text>
+          <Text style={S.sectionTitle}>{t('categories.monthlyLimitLabel')}</Text>
           <View style={S.limitRow}>
             <TextInput
               style={S.limitInput}
               value={monthlyLimitText}
               onChangeText={setMonthlyLimitText}
-              placeholder="Без лимита"
+              placeholder={t('categories.noLimitPlaceholder')}
               placeholderTextColor="#52525B"
               keyboardType="numeric"
             />
@@ -313,8 +313,8 @@ export default function CreateCategoryScreen() {
         <View style={S.section}>
           <View style={S.toggleRow}>
             <View style={{ flex: 1, marginRight: 12 }}>
-              <Text style={S.toggleLabel}>Исключить из расчётов</Text>
-              <Text style={S.toggleDesc}>Транзакции не будут влиять на общий баланс</Text>
+              <Text style={S.toggleLabel}>{t('categories.excludeFromCalc')}</Text>
+              <Text style={S.toggleDesc}>{t('categories.excludeCalcDesc')}</Text>
             </View>
             <Switch
               value={excludeFromTotal}
@@ -345,7 +345,7 @@ export default function CreateCategoryScreen() {
           ]}
         >
           <Text style={S.saveText}>
-            {isSubmitting ? 'Создание...' : 'Создать категорию'}
+            {isSubmitting ? t('categories.creatingBtn') : t('categories.createCategoryBtn')}
           </Text>
         </TouchableOpacity>
       </View>

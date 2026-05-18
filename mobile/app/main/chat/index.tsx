@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { format, isToday, isYesterday } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { chatService, type ChatMessage } from '../../../src/services/chat';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useSubscriptionStore } from '../../../src/stores/subscriptionStore';
@@ -15,17 +16,17 @@ import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 
 const PRESETS = [
-  { key: 'SPENDING_REPORT', label: 'Отчёт по тратам', icon: 'receipt-outline', msg: 'Сделай отчёт по тратам за период' },
-  { key: 'BUDGET_ANALYSIS', label: 'Анализ бюджета', icon: 'pie-chart-outline', msg: 'Проанализируй мой бюджет' },
-  { key: 'SAVINGS_TIPS', label: 'Как сохранить', icon: 'wallet-outline', msg: 'Дай совет, как сохранить больше' },
-  { key: 'DYNAMICS', label: 'Динамика', icon: 'trending-up-outline', msg: 'Отследи динамику моих расходов' },
+  { key: 'SPENDING_REPORT', icon: 'receipt-outline', labelKey: 'chat.spendingReport', msgKey: 'chat.spendingReportMsg' },
+  { key: 'BUDGET_ANALYSIS', icon: 'pie-chart-outline', labelKey: 'chat.budgetAnalysis', msgKey: 'chat.budgetAnalysisMsg' },
+  { key: 'SAVINGS_TIPS', icon: 'wallet-outline', labelKey: 'chat.howToSave', msgKey: 'chat.howToSaveMsg' },
+  { key: 'DYNAMICS', icon: 'trending-up-outline', labelKey: 'chat.dynamicsPreset', msgKey: 'chat.dynamicsMsg' },
 ];
 
-function formatTime(dateStr: string): string {
+function formatTime(dateStr: string, t: (key: string, opts?: any) => string): string {
   const d = new Date(dateStr);
   const time = format(d, 'HH:mm');
   if (isToday(d)) return time;
-  if (isYesterday(d)) return `Вчера, ${time}`;
+  if (isYesterday(d)) return t('chat.yesterdayAt', { time });
   return format(d, 'd MMM, HH:mm', { locale: ru });
 }
 
@@ -42,10 +43,6 @@ function Spinner({ size = 20, color = '#FFF' }: { size?: number; color?: string 
     </Animated.View>
   );
 }
-
-// ============================================================
-// Components using useTheme()
-// ============================================================
 
 function TypingIndicator() {
   const C = useTheme();
@@ -83,6 +80,7 @@ function TypingIndicator() {
 
 const Bubble = memo(({ item }: { item: ChatMessage }) => {
   const C = useTheme();
+  const { t } = useTranslation();
   const isUser = item.role === 'USER';
 
   const renderMd = (text: string) => {
@@ -122,7 +120,7 @@ const Bubble = memo(({ item }: { item: ChatMessage }) => {
         borderWidth: 1, borderColor: isUser ? 'transparent' : C.border,
       }}>
         {renderMd(item.content)}
-        <Text style={{ fontSize: 10, color: isUser ? 'rgba(255,255,255,0.6)' : C.textSec, marginTop: 4, textAlign: isUser ? 'right' : 'left' }}>{formatTime(item.createdAt)}</Text>
+        <Text style={{ fontSize: 10, color: isUser ? 'rgba(255,255,255,0.6)' : C.textSec, marginTop: 4, textAlign: isUser ? 'right' : 'left' }}>{formatTime(item.createdAt, t)}</Text>
       </View>
     </View>
   );
@@ -141,12 +139,9 @@ function inlineBold(text: string, C: any): React.ReactNode[] {
   return parts.length ? parts : [text];
 }
 
-// ============================================================
-// Main screen
-// ============================================================
-
 export default function ChatScreen() {
   const C = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const { isDemoMode } = useAuthStore();
   const showPaywall = useSubscriptionStore((s) => s.showPaywall);
@@ -160,7 +155,6 @@ export default function ChatScreen() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [showClear, setShowClear] = useState(false);
 
-  // Check AI_CHAT access — react to subscription changes
   useEffect(() => {
     const access = useSubscriptionStore.getState().checkAccess('AI_CHAT');
     if (!access?.allowed) {
@@ -175,29 +169,29 @@ export default function ChatScreen() {
     if (isDemoMode) { setIsInitialized(true); return; }
     (async () => {
       try { setMessages(await chatService.getMessages()); }
-      catch { toast.showError('Не удалось загрузить историю'); }
+      catch { toast.showError(t('chat.loadHistoryFailed')); }
       finally { setIsInitialized(true); }
     })();
   }, []);
 
   const send = async (content: string, presetType?: string) => {
     if (!content.trim() || isLoading) return;
-    if (isDemoMode) { toast.showError('В демо-режиме чат недоступен'); return; }
+    if (isDemoMode) { toast.showError(t('chat.demoNotAvailable')); return; }
     if (showPaywall('AI_CHAT')) return;
     setIsLoading(true);
     try {
       const res = await chatService.sendMessage({ content: content.trim(), presetType });
       setMessages(prev => [...prev, res.userMessage, res.assistantMessage]);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
-    } catch { toast.showError('Не удалось отправить'); }
+    } catch { toast.showError(t('chat.sendFailed')); }
     finally { setIsLoading(false); }
   };
 
   const clearHistory = useCallback(async () => {
-    try { await chatService.clearMessages(); setMessages([]); toast.showSuccess('Чат очищен'); }
-    catch { toast.showError('Ошибка'); }
+    try { await chatService.clearMessages(); setMessages([]); toast.showSuccess(t('chat.chatCleared')); }
+    catch { toast.showError(t('chat.sendFailed')); }
     setShowClear(false);
-  }, [toast]);
+  }, [toast, t]);
 
   if (chatBlocked) {
     return (
@@ -206,10 +200,10 @@ export default function ChatScreen() {
           <Ionicons name="lock-closed" size={32} color="#F59E0B" />
         </View>
         <Text style={{ fontSize: 22, fontWeight: '800', color: C.textMain, textAlign: 'center', marginBottom: 8 }}>
-          AI-ассистент
+          {t('chat.aiAssistant')}
         </Text>
         <Text style={{ fontSize: 15, color: C.textSec, textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
-          Доступен только на Premium-подписке. Задавай вопросы о финансах, проси отчёты и советы.
+          {t('chat.premiumOnly')}
         </Text>
         <Pressable
           onPress={() => {
@@ -218,7 +212,7 @@ export default function ChatScreen() {
           style={{ backgroundColor: '#F59E0B', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 32, flexDirection: 'row', alignItems: 'center', gap: 8 }}
         >
           <Ionicons name="diamond" size={18} color="#FFF" />
-          <Text style={{ fontSize: 17, fontWeight: '700', color: '#FFF' }}>Разблокировать Premium</Text>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: '#FFF' }}>{t('chat.unlockPremium')}</Text>
         </Pressable>
       </View>
     );
@@ -234,15 +228,14 @@ export default function ChatScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      {/* Header */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.primaryBg, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="sparkles" size={20} color={C.primary} />
           </View>
           <View>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: C.textMain }}>Чат</Text>
-            <Text style={{ fontSize: 13, color: C.textSec }}>{isLoading ? 'Печатает...' : 'AI Ассистент'}</Text>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: C.textMain }}>{t('chat.chatTitle')}</Text>
+            <Text style={{ fontSize: 13, color: C.textSec }}>{isLoading ? t('chat.typing') : t('chat.aiAssistant')}</Text>
           </View>
         </View>
         {messages.length > 0 && (
@@ -252,13 +245,14 @@ export default function ChatScreen() {
         )}
       </View>
 
-      {/* Messages */}
       <FlatList
         ref={flatListRef}
         data={messages}
         keyExtractor={item => item.id}
         style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
+        maxToRenderPerBatch={10}
+        windowSize={5}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, flexGrow: 1 }}
         onContentSizeChange={() => messages.length > 0 && flatListRef.current?.scrollToEnd({ animated: false })}
         renderItem={({ item }) => <Bubble item={item} />}
@@ -268,24 +262,22 @@ export default function ChatScreen() {
             <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.primaryBg, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="sparkles" size={28} color={C.primary} />
             </View>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: C.textMain, textAlign: 'center', marginTop: 20 }}>Привет! 👋</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: C.textMain, textAlign: 'center', marginTop: 20 }}>{t('chat.welcomeHeading')}</Text>
             <Text style={{ fontSize: 14, color: C.textSec, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
-              Я ваш финансовый ассистент.{'\n'}Выберите тему или задайте вопрос.
+              {t('chat.welcomeBody')}
             </Text>
           </View>
         }
       />
 
-      {/* Bottom: Presets + Input */}
       <View style={{ backgroundColor: C.bg, borderTopWidth: 1, borderTopColor: C.border, paddingBottom: 8 }}>
-        {/* Presets 2x2 */}
         <View style={{ paddingTop: 10, paddingBottom: 4 }}>
           <View style={{ flexDirection: 'row', paddingHorizontal: 12, marginBottom: 8 }}>
             {PRESETS.slice(0, 2).map(p => (
               <TouchableOpacity
                 key={p.key}
                 activeOpacity={0.7}
-                onPress={() => send(p.msg, p.key)}
+                onPress={() => send(t(p.msgKey), p.key)}
                 disabled={isLoading}
                 style={{
                   flex: 1,
@@ -301,7 +293,7 @@ export default function ChatScreen() {
                 }}
               >
                 <Ionicons name={p.icon as any} size={18} color={C.primary} />
-                <Text style={{ fontSize: 13, fontWeight: '700', color: C.textMain, marginLeft: 6 }}>{p.label}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: C.textMain, marginLeft: 6 }}>{t(p.labelKey)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -310,7 +302,7 @@ export default function ChatScreen() {
               <TouchableOpacity
                 key={p.key}
                 activeOpacity={0.7}
-                onPress={() => send(p.msg, p.key)}
+                onPress={() => send(t(p.msgKey), p.key)}
                 disabled={isLoading}
                 style={{
                   flex: 1,
@@ -326,18 +318,17 @@ export default function ChatScreen() {
                 }}
               >
                 <Ionicons name={p.icon as any} size={18} color={C.primary} />
-                <Text style={{ fontSize: 13, fontWeight: '700', color: C.textMain, marginLeft: 6 }}>{p.label}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: C.textMain, marginLeft: 6 }}>{t(p.labelKey)}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Input */}
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 16, paddingTop: 6 }}>
           <TextInput
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Спросите о финансах..."
+            placeholder={t('chat.askPlaceholder')}
             placeholderTextColor={C.textMuted}
             multiline
             maxLength={1000}
@@ -373,9 +364,9 @@ export default function ChatScreen() {
 
       <ConfirmModal
         visible={showClear}
-        title="Очистить чат"
-        message="Вся история будет удалена."
-        confirmText="Очистить"
+        title={t('chat.clearChatTitle')}
+        message={t('chat.allHistoryDeleted')}
+        confirmText={t('chat.clearBtn')}
         variant="destructive"
         onConfirm={clearHistory}
         onCancel={() => setShowClear(false)}

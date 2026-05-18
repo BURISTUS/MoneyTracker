@@ -7,23 +7,15 @@ const AUTH_TOKEN_KEY = 'authToken';
 export const authService = {
   // Login
   async login(data: LoginDto): Promise<AuthResponse> {
-    console.log('🔐 API login request:', data);
     const response = await apiPost<AuthResponse>('/auth/login', data);
-    console.log('✅ API login response:', response);
-    console.log('💾 Saving token to SecureStore');
     await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.token);
-    console.log('✅ Token saved');
     return response;
   },
 
   // Register
   async register(data: RegisterDto): Promise<AuthResponse> {
-    console.log('🔐 API register request:', data);
     const response = await apiPost<AuthResponse>('/auth/register', data);
-    console.log('✅ API register response:', response);
-    console.log('💾 Saving token to SecureStore');
     await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.token);
-    console.log('✅ Token saved');
     return response;
   },
 
@@ -38,23 +30,19 @@ export const authService = {
 
   // Get current user
   async getCurrentUser(): Promise<User> {
-    console.log('👤 API get current user request');
     const user = await apiGet<User>('/auth/me');
-    console.log('✅ API get current user response:', user);
     return user;
   },
 
   // Check if logged in
   async isLoggedIn(): Promise<boolean> {
     const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-    console.log('🔑 Token exists:', !!token);
     return !!token;
   },
 
   // Get token
   async getToken(): Promise<string | null> {
     const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-    console.log('🔑 Retrieved token:', !!token);
     return token;
   },
 

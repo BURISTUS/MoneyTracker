@@ -11,49 +11,50 @@ import { PremiumBadge } from '../../../src/components/ui/PremiumBadge';
 
 const SECTIONS = [
   {
-    title: 'AI и умный ассистент',
+    titleKey: 'premium.aiSectionTitle',
     items: [
-      { key: 'AI_CHAT', icon: 'sparkles' as const, title: 'AI-ассистент', desc: 'Задавай вопросы о финансах, проси отчёты', limit: { free: '—', premium: '50/день' } },
-      { key: 'AI_VOICE', icon: 'mic' as const, title: 'Голосовой ввод', desc: 'Говори «Купил кофе за 200» — трата добавится', limit: { free: '—', premium: '20/день' } },
-      { key: 'AI_RECEIPT', icon: 'camera' as const, title: 'Сканирование чеков', desc: 'Фотографируй чек — позиции добавятся', limit: { free: '—', premium: '10/день' } },
+      { key: 'AI_CHAT', icon: 'sparkles' as const, titleKey: 'premium.aiAssistant', descKey: 'premium.aiDesc' },
+      { key: 'AI_VOICE', icon: 'mic' as const, titleKey: 'premium.voiceInput', descKey: 'premium.voiceDesc' },
+      { key: 'AI_RECEIPT', icon: 'camera' as const, titleKey: 'premium.receiptScan', descKey: 'premium.receiptDesc' },
     ],
   },
   {
-    title: 'Счета и финансы',
+    titleKey: 'premium.accountsSectionTitle',
     items: [
-      { key: 'ACCOUNTS', icon: 'wallet' as const, title: 'Счета', desc: 'Наличные и банковские карты (до 3 на Free)', limit: { free: '3 шт.', premium: '∞' } },
-      { key: 'ACCOUNT_CREDIT', icon: 'card' as const, title: 'Кредитные карты', desc: 'Учитывай кредитный лимит и долг', limit: { free: '—', premium: '✓' } },
-      { key: 'ACCOUNT_INVESTMENT', icon: 'trending-up' as const, title: 'Инвестиции', desc: 'Брокерские счета, крипто-портфели', limit: { free: '—', premium: '✓' } },
-      { key: 'ACCOUNT_DEBT', icon: 'people' as const, title: 'Долги', desc: '«Я должен» / «Мне должны»', limit: { free: '—', premium: '✓' } },
-      { key: 'GOALS', icon: 'flag' as const, title: 'Финансовые цели', desc: 'Ставь цели, отслеживай прогресс', limit: { free: '—', premium: '✓' } },
-      { key: 'LIFE_COST', icon: 'hourglass' as const, title: 'Стоимость жизни', desc: 'Сколько часов ты работаешь за покупку', limit: { free: '—', premium: '✓' } },
+      { key: 'ACCOUNTS', icon: 'wallet' as const, titleKey: 'premium.accountsTitle', descKey: 'premium.accountsDesc' },
+      { key: 'ACCOUNT_CREDIT', icon: 'card' as const, titleKey: 'premium.creditCards', descKey: 'premium.creditDesc' },
+      { key: 'ACCOUNT_INVESTMENT', icon: 'trending-up' as const, titleKey: 'premium.investments', descKey: 'premium.investDesc' },
+      { key: 'ACCOUNT_DEBT', icon: 'people' as const, titleKey: 'premium.debts', descKey: 'premium.debtsDesc' },
+      { key: 'GOALS', icon: 'flag' as const, titleKey: 'premium.financialGoals', descKey: 'premium.goalsDesc' },
+      { key: 'LIFE_COST', icon: 'hourglass' as const, titleKey: 'premium.lifeCost', descKey: 'premium.lifeCostDesc' },
     ],
   },
   {
-    title: 'Вишлист',
+    titleKey: 'premium.wishlistSection',
     items: [
-      { key: 'WISHLIST_INCUBATOR', icon: 'heart' as const, title: 'Инкубатор желаний', desc: 'Заморозь покупку на 7 дней', limit: { free: '5 желаний', premium: '∞' } },
+      { key: 'WISHLIST_INCUBATOR', icon: 'heart' as const, titleKey: 'premium.incubator', descKey: 'premium.incubatorDesc' },
     ],
   },
   {
-    title: 'Аналитика',
+    titleKey: 'premium.analyticsSection',
     items: [
-      { key: 'ANALYTICS_BASIC', icon: 'bar-chart' as const, title: 'Базовая аналитика', desc: 'Сводка за месяц, топ категорий', limit: { free: '✓', premium: '✓' } },
-      { key: 'ANALYTICS_COMPARISON', icon: 'swap-vertical' as const, title: 'Сравнение периодов', desc: 'MoM / YoY: дельта в % и рублях', limit: { free: '—', premium: '✓' } },
-      { key: 'ANALYTICS_TRENDS', icon: 'trending-up' as const, title: 'Тренды', desc: 'Графики расходов по категориям', limit: { free: '—', premium: '✓' } },
-      { key: 'EXPORT', icon: 'download' as const, title: 'Экспорт данных', desc: 'Скачивай транзакции в CSV/PDF', limit: { free: '—', premium: '✓' } },
+      { key: 'ANALYTICS_BASIC', icon: 'bar-chart' as const, titleKey: 'premium.basicAnalytics', descKey: 'premium.basicDesc' },
+      { key: 'ANALYTICS_COMPARISON', icon: 'swap-vertical' as const, titleKey: 'premium.periodComparison', descKey: 'premium.comparisonDesc' },
+      { key: 'ANALYTICS_TRENDS', icon: 'trending-up' as const, titleKey: 'premium.trends', descKey: 'premium.trendsDesc' },
+      { key: 'EXPORT', icon: 'download' as const, titleKey: 'premium.dataExport', descKey: 'premium.exportDesc' },
     ],
   },
   {
-    title: 'Контент',
+    titleKey: 'premium.contentSection',
     items: [
-      { key: 'ARTICLES', icon: 'book' as const, title: 'Статьи', desc: 'Читай финансовые статьи', limit: { free: '3/день', premium: '∞' } },
+      { key: 'ARTICLES', icon: 'book' as const, titleKey: 'premium.articles', descKey: 'premium.articlesDesc' },
     ],
   },
 ];
 
 export default function PremiumScreen() {
   const C = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const isPremium = useSubscriptionStore(s => s.isPremium());
   const togglePlan = useSubscriptionStore(s => s.togglePlan);
@@ -66,7 +67,7 @@ export default function PremiumScreen() {
         <Pressable onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={C.textMain} />
         </Pressable>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: C.textMain }}>Premium ✦</Text>
+        <Text style={{ fontSize: 22, fontWeight: '800', color: C.textMain }}>{t('premium.premiumTitle')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 100, gap: 24 }}>
@@ -76,14 +77,14 @@ export default function PremiumScreen() {
             <Ionicons name="diamond" size={32} color="#F59E0B" />
           </View>
           <Text style={{ fontSize: 20, fontWeight: '800', color: C.textMain, textAlign: 'center' }}>
-            {isPremium ? 'У тебя Premium ✦' : 'Разблокируй все фичи'}
+            {isPremium ? t('premium.youHavePremium') : t('premium.unlockFeatures')}
           </Text>
           <Text style={{ fontSize: 14, color: C.textSec, textAlign: 'center', lineHeight: 20 }}>
-            {isPremium ? 'Все возможности без ограничений' : 'AI-ассистент, цели, кредитки, аналитика и больше'}
+            {isPremium ? t('premium.allFeaturesUnlocked') : t('premium.premiumDescription')}
           </Text>
           {!isPremium && (
             <Pressable onPress={togglePlan} style={{ backgroundColor: '#F59E0B', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32, marginTop: 4 }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFF' }}>Попробовать</Text>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFF' }}>{t('premium.tryButton')}</Text>
             </Pressable>
           )}
         </View>
@@ -98,18 +99,18 @@ export default function PremiumScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: C.textMain }}>Семейный доступ</Text>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: C.textMain }}>{t('premium.familyAccess')}</Text>
               <PremiumBadge />
             </View>
-            <Text style={{ fontSize: 12, color: C.textSec, marginTop: 2 }}>Поделись Premium с ещё одним человеком</Text>
+            <Text style={{ fontSize: 12, color: C.textSec, marginTop: 2 }}>{t('premium.familyShareDesc')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={C.textMuted} />
         </Pressable>
 
         {/* Feature sections */}
         {SECTIONS.map((section) => (
-          <View key={section.title} style={{ gap: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSec, marginBottom: 4 }}>{section.title}</Text>
+          <View key={section.titleKey} style={{ gap: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSec, marginBottom: 4 }}>{t(section.titleKey)}</Text>
             {section.items.map((item) => {
               const access = checkAccess(item.key as any);
               const locked = !access?.allowed;
@@ -120,14 +121,13 @@ export default function PremiumScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: locked ? C.textMuted : C.textMain }}>{item.title}</Text>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: locked ? C.textMuted : C.textMain }}>{t(item.titleKey)}</Text>
                       {locked && <PremiumBadge />}
                     </View>
-                    <Text style={{ fontSize: 12, color: C.textSec, marginTop: 2 }}>{item.desc}</Text>
+                    <Text style={{ fontSize: 12, color: C.textSec, marginTop: 2 }}>{t(item.descKey)}</Text>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={{ fontSize: 11, fontWeight: '600', color: locked ? C.textMuted : '#F59E0B' }}>{item.limit.free}</Text>
-                    <Text style={{ fontSize: 9, color: C.textMuted }}>Free</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: locked ? C.textMuted : '#F59E0B' }}>{t('premium.freePlan')}</Text>
                   </View>
                 </View>
               );

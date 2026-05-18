@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Pressable,
@@ -26,26 +26,19 @@ import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import { formatCurrency, formatDate } from '../../../src/utils/formatters';
 import type { TransactionType, Transaction } from '../../../src/types';
 import { TransactionType as TransactionTypeEnum } from '../../../src/types';
+import { getTransactionCurrency } from '../../../src/utils/transactionUtils';
 
 type TimePeriod = 'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'CUSTOM';
 
-const MONTHS_NOMINATIVE = [
-  'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
-  'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
-];
+const MONTH_KEYS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
-const MONTHS_GENITIVE = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-];
-
-function formatLifeHours(amountKopecks: number, hourlyRateRubles: number): string | null {
+function formatLifeHours(amountKopecks: number, hourlyRateRubles: number, t: (key: string, opts?: any) => string): string | null {
   if (hourlyRateRubles <= 0) return null;
   const rubles = amountKopecks / 100;
   const hours = rubles / hourlyRateRubles;
-  if (hours < 1) return `${Math.round(hours * 60)} мин`;
-  if (hours < 100) return `${hours.toFixed(1)} ч`;
-  return `${Math.round(hours)} ч`;
+  if (hours < 1) return `${Math.round(hours * 60)} ${t('common.min')}`;
+  if (hours < 100) return `${hours.toFixed(1)} ${t('common.workUnit')}`;
+  return `${Math.round(hours)} ${t('common.workUnit')}`;
 }
 
 function getRange(period: TimePeriod, offset: number, customRange: DateRange | null): { startDate: Date; endDate: Date } {
@@ -88,26 +81,26 @@ function getRange(period: TimePeriod, offset: number, customRange: DateRange | n
   }
 }
 
-function getRangeLabel(period: TimePeriod, offset: number, customRange: DateRange | null): string {
+function getRangeLabel(period: TimePeriod, offset: number, customRange: DateRange | null, t: (key: string, opts?: any) => string, monthsGen: string[], monthsNom: string[]): string {
   const now = new Date();
 
   switch (period) {
     case 'DAY': {
       const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
-      if (offset === 0) return 'Сегодня';
-      if (offset === -1) return 'Вчера';
-      if (offset === -2) return 'Позавчера';
-      return `${d.getDate()} ${MONTHS_GENITIVE[d.getMonth()]}`;
+      if (offset === 0) return t('transactions.todayLabel');
+      if (offset === -1) return t('transactions.yesterdayLabel');
+      if (offset === -2) return t('transactions.dayBeforeYesterday');
+      return `${d.getDate()} ${monthsGen[d.getMonth()]}`;
     }
     case 'WEEK': {
-      if (offset === 0) return 'Эта неделя';
-      if (offset === -1) return 'Прошлая неделя';
+      if (offset === 0) return t('transactions.thisWeek');
+      if (offset === -1) return t('transactions.lastWeek');
       const range = getRange('WEEK', offset, null);
-      return `${range.startDate.getDate()} ${MONTHS_GENITIVE[range.startDate.getMonth()]} — ${range.endDate.getDate()} ${MONTHS_GENITIVE[range.endDate.getMonth()]}`;
+      return `${range.startDate.getDate()} ${monthsGen[range.startDate.getMonth()]} — ${range.endDate.getDate()} ${monthsGen[range.endDate.getMonth()]}`;
     }
     case 'MONTH': {
       const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
-      return `${MONTHS_NOMINATIVE[d.getMonth()]} ${d.getFullYear()}`;
+      return `${monthsNom[d.getMonth()]} ${d.getFullYear()}`;
     }
     case 'YEAR': {
       return `${now.getFullYear() + offset}`;
@@ -116,9 +109,9 @@ function getRangeLabel(period: TimePeriod, offset: number, customRange: DateRang
       if (customRange) {
         const s = customRange.startDate;
         const e = customRange.endDate;
-        return `${s.getDate()} ${MONTHS_GENITIVE[s.getMonth()]} — ${e.getDate()} ${MONTHS_GENITIVE[e.getMonth()]}`;
+        return `${s.getDate()} ${monthsGen[s.getMonth()]} — ${e.getDate()} ${monthsGen[e.getMonth()]}`;
       }
-      return 'Период';
+      return t('transactions.periodLabel');
     }
   }
 }
@@ -147,6 +140,9 @@ export default function TransactionsDashboardScreen() {
   const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [currentAccountId, setCurrentAccountId] = useState<string | null>(accounts.length > 0 ? accounts[0].id : null);
 
+  const monthsNom = useMemo(() => MONTH_KEYS.map(k => t(`months.${k}`)), [t]);
+  const monthsGen = useMemo(() => MONTH_KEYS.map(k => t(`monthsGen.${k}`)), [t]);
+
   const range = useMemo(() => getRange(period, offset, customRange), [period, offset, customRange]);
 
   const convertToUserCurrency = useDataStore((s) => s.convertToUserCurrency);
@@ -163,12 +159,12 @@ export default function TransactionsDashboardScreen() {
       .filter((t) => t.type === 'INCOME')
       .filter((t) => !currentAccountId || t.accountId === currentAccountId)
       .filter((t) => !excludedCategoryIds.has(t.categoryId))
-      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), (t as any).account?.currency || 'RUB'), 0);
+      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), getTransactionCurrency(t)), 0);
     const expense = inRange
       .filter((t) => t.type === 'EXPENSE')
       .filter((t) => !currentAccountId || t.accountId === currentAccountId)
       .filter((t) => !excludedCategoryIds.has(t.categoryId))
-      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), (t as any).account?.currency || 'RUB'), 0);
+      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), getTransactionCurrency(t)), 0);
     return { income, expense, balance: income - expense };
   }, [transactions, range, currentAccountId, categories, convertToUserCurrency]);
 
@@ -198,8 +194,8 @@ export default function TransactionsDashboardScreen() {
   }, [filteredTransactions]);
 
   const totalLifeHours = useMemo(() => {
-    return formatLifeHours(totalAmount, getHourlyRate());
-  }, [totalAmount, getHourlyRate]);
+    return formatLifeHours(totalAmount, getHourlyRate(), t);
+  }, [totalAmount, getHourlyRate, t]);
 
   const categoryData = useMemo(() => {
     const categoryTotals = new Map<string, number>();
@@ -275,6 +271,13 @@ export default function TransactionsDashboardScreen() {
     });
   }, [contentOpacity]);
 
+  useEffect(() => {
+    return () => {
+      contentOpacity.stopAnimation();
+      isAnimatingOffset.current = false;
+    };
+  }, []);
+
   const panResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > 30 && Math.abs(gs.dx) > Math.abs(gs.dy) * 2,
     onPanResponderRelease: (_, gs) => {
@@ -284,7 +287,12 @@ export default function TransactionsDashboardScreen() {
     },
   }), [animateOffset]);
 
-  const rangeLabel = getRangeLabel(period, offset, customRange);
+  const rangeLabel = useMemo(() => getRangeLabel(period, offset, customRange, t, monthsGen, monthsNom), [period, offset, customRange, t, monthsGen, monthsNom]);
+
+  const totalAccountsBalance = useMemo(
+    () => accounts.reduce((sum, a) => sum + convertToUserCurrency(Number(a.balance), a.currency), 0),
+    [accounts, convertToUserCurrency],
+  );
 
   return (
     <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
@@ -298,8 +306,8 @@ export default function TransactionsDashboardScreen() {
           >
             <Text className="text-sm font-medium text-[#F5F5F5]">
               {currentAccountId
-                ? accounts.find((a) => a.id === currentAccountId)?.name || 'Счёт'
-                : 'Все счета'}
+                ? accounts.find((a) => a.id === currentAccountId)?.name || t('transactions.noAccountFallback')
+                : t('transactions.allAccountsLabel')}
             </Text>
             {currentAccountId && (
               <Text className="text-sm text-[#F5F5F5]">
@@ -327,11 +335,11 @@ export default function TransactionsDashboardScreen() {
             className="flex-1"
           >
             {[
-              { key: 'DAY', label: 'День' },
-              { key: 'WEEK', label: 'Неделя' },
-              { key: 'MONTH', label: 'Месяц' },
-              { key: 'YEAR', label: 'Год' },
-              { key: 'CUSTOM', label: 'Период' },
+              { key: 'DAY', label: t('transactions.dayTab', 'Day') },
+              { key: 'WEEK', label: t('transactions.weekTab', 'Week') },
+              { key: 'MONTH', label: t('transactions.monthTab', 'Month') },
+              { key: 'YEAR', label: t('transactions.yearTab', 'Year') },
+              { key: 'CUSTOM', label: t('transactions.periodLabel') },
             ].map((item) => (
               <TouchableOpacity
                 key={item.key}
@@ -503,7 +511,7 @@ export default function TransactionsDashboardScreen() {
                            <View className="flex-1">
                              <View className="flex-row items-center gap-2">
                                <Text className="text-sm text-typography-400">
-                                 {category?.name || 'Без категории'}
+                                 {category?.name || t('transactions.noCategoryFallback')}
                                </Text>
                              </View>
                             {transaction.description && (
@@ -520,7 +528,7 @@ export default function TransactionsDashboardScreen() {
 
                       <View className="items-end" style={{ gap: 2 }}>
                             {transaction.type !== 'TRANSFER' && (() => {
-                              const hours = transaction.type === 'EXPENSE' ? formatLifeHours(transaction.amount, getHourlyRate()) : null;
+                              const hours = transaction.type === 'EXPENSE' ? formatLifeHours(transaction.amount, getHourlyRate(), t) : null;
                               return hours ? (
                                 <Text style={{ fontSize: 16, fontWeight: '700', color: '#FF9500' }}>
                                   {hours}
@@ -539,7 +547,7 @@ export default function TransactionsDashboardScreen() {
                               {transaction.type === 'TRANSFER' ? '⇄ '
                                 : transaction.type === 'EXPENSE' ? '− '
                                 : '+ '}
-                              {formatCurrency(transaction.amount, (transaction as any).account?.currency)}
+                              {formatCurrency(transaction.amount, getTransactionCurrency(transaction))}
                             </Text>
                           </View>
                         </TouchableOpacity>
@@ -641,7 +649,7 @@ export default function TransactionsDashboardScreen() {
                   </View>
                   <View>
                     <Text bold className="text-base" style={{ color: C.textMain }}>{t("transactions.allAccounts")}</Text>
-                    <Text className="text-sm text-typography-400">{formatCurrency(accounts.reduce((sum, a) => sum + convertToUserCurrency(Number(a.balance), a.currency), 0))}</Text>
+                    <Text className="text-sm text-typography-400">{formatCurrency(totalAccountsBalance)}</Text>
                   </View>
                 </View>
                 {!currentAccountId && <Ionicons name="checkmark" size={20} color="#818CF8" />}

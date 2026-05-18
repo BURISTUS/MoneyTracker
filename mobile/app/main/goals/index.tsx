@@ -10,6 +10,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { useTheme } from '../../../src/stores/themeStore';
@@ -18,6 +19,7 @@ import { formatCurrency } from '../../../src/utils/formatters';
 import type { Goal } from '../../../src/types';
 
 function CreateGoalModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
   const C = useTheme();
   const MS = StyleSheet.create({
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
@@ -73,31 +75,31 @@ function CreateGoalModal({ visible, onClose }: { visible: boolean; onClose: () =
         <View style={MS.sheet}>
           <View style={MS.handle} />
           <View style={MS.header}>
-            <Text style={MS.headerTitle}>Новая цель</Text>
+            <Text style={MS.headerTitle}>{t('goals.newGoalTitle')}</Text>
             <Pressable style={MS.closeBtn} onPress={onClose}><Ionicons name="close" size={18} color={C.textSec} /></Pressable>
           </View>
           <ScrollView>
             <View style={MS.field}>
-              <Text style={MS.label}>Название</Text>
-              <TextInput style={MS.input} value={name} onChangeText={setName} placeholder="Например: Отпуск" placeholderTextColor={C.textMuted} />
+              <Text style={MS.label}>{t('goals.nameLabel')}</Text>
+              <TextInput style={MS.input} value={name} onChangeText={setName} placeholder={t('goals.namePlaceholder')} placeholderTextColor={C.textMuted} />
             </View>
             <View style={MS.field}>
-              <Text style={MS.label}>Сумма</Text>
+              <Text style={MS.label}>{t('goals.amountLabel')}</Text>
               <TextInput style={MS.input} value={target} onChangeText={setTarget} placeholder="100000" placeholderTextColor={C.textMuted} keyboardType="decimal-pad" />
             </View>
             <View style={MS.field}>
-              <Text style={MS.label}>Дедлайн (опционально)</Text>
+              <Text style={MS.label}>{t('goals.deadlineOptional')}</Text>
               <TextInput style={MS.input} value={deadline} onChangeText={setDeadline} placeholder="2026-12-31" placeholderTextColor={C.textMuted} />
             </View>
             {monthNeed !== null && (
               <View style={MS.monthInfo}>
                 <Ionicons name="calendar-outline" size={14} color={C.textSec} />
-                <Text style={MS.monthInfoText}>Нужно откладывать</Text>
-                <Text style={MS.monthInfoValue}>{formatCurrency(monthNeed * 100, userCurrency)} / мес</Text>
+                <Text style={MS.monthInfoText}>{t('goals.needToSave')}</Text>
+                <Text style={MS.monthInfoValue}>{formatCurrency(monthNeed * 100, userCurrency)} / {t('goals.perMonthSuffix')}</Text>
               </View>
             )}
             <TouchableOpacity style={[MS.saveBtn, { opacity: canSave && !saving ? 1 : 0.5 }]} onPress={handleSave} disabled={!canSave || saving}>
-              <Text style={MS.saveText}>{saving ? 'Создание...' : 'Создать цель'}</Text>
+              <Text style={MS.saveText}>{saving ? t('goals.creatingBtn') : t('goals.createGoalBtn')}</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -107,6 +109,7 @@ function CreateGoalModal({ visible, onClose }: { visible: boolean; onClose: () =
 }
 
 function ContributionModal({ goal, visible, onClose }: { goal: Goal | null; visible: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
   const C = useTheme();
   const CS = StyleSheet.create({
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
@@ -167,27 +170,27 @@ function ContributionModal({ goal, visible, onClose }: { goal: Goal | null; visi
           </View>
           <View style={CS.goalInfo}>
             <Text style={CS.goalMeta}>
-              {formatCurrency(goal.currentAmount, goal.currency)} из {formatCurrency(goal.targetAmount, goal.currency)} · {Math.round(percent)}%
+              {formatCurrency(goal.currentAmount, goal.currency)} {t('goals.ofLabel')} {formatCurrency(goal.targetAmount, goal.currency)} · {Math.round(percent)}%
             </Text>
             <View style={{ height: 6, borderRadius: 3, backgroundColor: C.divider, marginTop: 8, overflow: 'hidden' }}>
               <View style={{ height: 6, borderRadius: 3, width: `${Math.min(percent, 100)}%`, backgroundColor: barColor }} />
             </View>
           </View>
           <View style={CS.field}>
-            <Text style={CS.label}>Сумма взноса</Text>
+            <Text style={CS.label}>{t('goals.contributionAmount')}</Text>
             <TextInput style={CS.input} value={amount} onChangeText={setAmount} placeholder="0" placeholderTextColor={C.textMuted} keyboardType="decimal-pad" />
           </View>
           <View style={CS.field}>
-            <TextInput style={[CS.input, { fontSize: 14 }]} value={note} onChangeText={setNote} placeholder="Заметка (опционально)" placeholderTextColor={C.textMuted} />
+            <TextInput style={[CS.input, { fontSize: 14 }]} value={note} onChangeText={setNote} placeholder={t('goals.noteOptionalPlaceholder')} placeholderTextColor={C.textMuted} />
           </View>
           <TouchableOpacity style={[CS.saveBtn, { opacity: canSave && !saving ? 1 : 0.5 }]} onPress={handleSave} disabled={!canSave || saving}>
-            <Text style={CS.saveText}>{saving ? '...' : '➕ Добавить'}</Text>
+              <Text style={CS.saveText}>{saving ? '...' : `➕ ${t('goals.addBtn')}`}</Text>
           </TouchableOpacity>
 
           {/* Contribution history */}
           {goal.contributions && goal.contributions.length > 0 && (
             <>
-              <Text style={CS.historyTitle}>История ({goal._count?.contributions || goal.contributions.length})</Text>
+              <Text style={CS.historyTitle}>{t('goals.historyTitle')} ({goal._count?.contributions || goal.contributions.length})</Text>
               {goal.contributions.slice(0, 10).map((c, i) => (
                 <View key={c.id} style={CS.contribItem}>
                   <View style={{ flex: 1 }}>
@@ -208,6 +211,7 @@ function ContributionModal({ goal, visible, onClose }: { goal: Goal | null; visi
 // ---- Main Screen ----
 
 export default function GoalsScreen() {
+  const { t } = useTranslation();
   const C = useTheme();
   const S = StyleSheet.create({
     screen: { flex: 1, backgroundColor: C.bg },
@@ -267,7 +271,7 @@ export default function GoalsScreen() {
           <Text style={S.cardName} numberOfLines={1}>{g.name}</Text>
           <View style={[S.cardBadge, { backgroundColor: g.isCompleted ? `${C.green}18` : `${barColor}18` }]}>
             <Text style={[S.cardBadgeText, { color: g.isCompleted ? C.green : barColor }]}>
-              {g.isCompleted ? '✓ Готово' : `${Math.round(percent)}%`}
+              {g.isCompleted ? `✓ ${t('goals.completedLabel')}` : `${Math.round(percent)}%`}
             </Text>
           </View>
         </View>
@@ -279,24 +283,24 @@ export default function GoalsScreen() {
         <View style={S.stats}>
           <View style={S.statItem}>
             <Text style={S.statValue}>{formatCurrency(g.currentAmount, g.currency)}</Text>
-            <Text style={S.statLabel}>Собрано</Text>
+            <Text style={S.statLabel}>{t('goals.collectedLabel')}</Text>
           </View>
           <View style={S.statDivider} />
           <View style={S.statItem}>
             <Text style={S.statValue}>{formatCurrency(g.targetAmount, g.currency)}</Text>
-            <Text style={S.statLabel}>Цель</Text>
+            <Text style={S.statLabel}>{t('goals.targetLabel')}</Text>
           </View>
           <View style={S.statDivider} />
           <View style={S.statItem}>
             <Text style={S.statValue}>{ml > 0 ? ml : '—'}</Text>
-            <Text style={S.statLabel}>Месяцев</Text>
+            <Text style={S.statLabel}>{t('goals.monthsLabel')}</Text>
           </View>
         </View>
 
         {ml > 0 && monthlyNeed > 0 && (
           <View style={S.monthNeed}>
             <Ionicons name="trending-up" size={14} color={C.primary} />
-            <Text style={S.monthNeedText}>Нужно в месяц:</Text>
+            <Text style={S.monthNeedText}>{t('goals.needPerMonth')}</Text>
             <Text style={S.monthNeedValue}>{formatCurrency(monthlyNeed, g.currency)}</Text>
           </View>
         )}
@@ -307,7 +311,7 @@ export default function GoalsScreen() {
   return (
     <View style={[S.screen, { paddingTop: insets.top }]}>
       <View style={S.header}>
-        <Text style={S.title}>Цели</Text>
+        <Text style={S.title}>{t('goals.title')}</Text>
         <TouchableOpacity style={S.addBtn} onPress={() => setShowCreate(true)}>
           <Ionicons name="add" size={22} color="#FFF" />
         </TouchableOpacity>
@@ -318,11 +322,11 @@ export default function GoalsScreen() {
           <View style={S.emptyIcon}>
             <Ionicons name="flag" size={36} color={C.primary} />
           </View>
-          <Text style={S.emptyTitle}>Нет целей</Text>
-          <Text style={S.emptySub}>Ставьте финансовые цели и отслеживайте прогресс</Text>
+          <Text style={S.emptyTitle}>{t('goals.noGoalsTitle')}</Text>
+          <Text style={S.emptySub}>{t('goals.noGoalsDesc')}</Text>
           <TouchableOpacity style={S.emptyCta} onPress={() => setShowCreate(true)}>
             <Ionicons name="add-circle" size={18} color="#FFF" />
-            <Text style={S.emptyCtaText}>Создать цель</Text>
+            <Text style={S.emptyCtaText}>{t('goals.createGoalCta')}</Text>
           </TouchableOpacity>
         </View>
       ) : (

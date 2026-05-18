@@ -15,12 +15,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useTheme } from '../../src/stores/themeStore';
 import { Text } from '../../components/ui/text';
+import { useToast } from '../../src/components/ui/Toast';
 
 export default function RegisterScreen() {
   const { t } = useTranslation();
   const C = useTheme();
   const router = useRouter();
   const { register, loginMock, isLoading } = useAuthStore();
+  const toast = useToast();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -39,7 +41,7 @@ export default function RegisterScreen() {
     } catch (error: unknown) {
       console.error('❌ Registration failed:', error);
       const err = error as { response?: { data?: { message?: string } }; message?: string };
-      alert(t('auth.registrationError') + ': ' + (err.response?.data?.message || err.message || t('common.unknownError')));
+      toast.showError(t('auth.registrationError') + ': ' + (err.response?.data?.message || err.message || t('common.unknownError')));
     }
   }, [name, email, password, hourlyRate, register, router]);
 

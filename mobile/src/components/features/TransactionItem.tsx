@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, type StyleProp, type ViewStyle, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Text } from '../../../components/ui/text';
 import { formatCurrency, getRelativeTime } from '../../utils/formatters';
 import type { Transaction, TransactionType } from '../../types';
@@ -42,6 +43,7 @@ const categoryIcons: Record<string, string> = {
 
 export const TransactionItem: React.FC<TransactionItemProps> = React.memo(
   ({ transaction, onPress, style }) => {
+    const { t } = useTranslation();
     const color = typeColors[transaction.type];
     const sign = typeSigns[transaction.type];
     const iconName = (transaction.category?.name && categoryIcons[transaction.category.name]) || 'ellipsis-horizontal';
@@ -60,7 +62,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = React.memo(
         </View>
         <View className="flex-1 gap-0.5">
           <Text className="text-base font-medium" numberOfLines={1}>
-            {transaction.description || transaction.category?.name || 'Операция'}
+            {transaction.description || transaction.category?.name || t('transactions.noCategoryFallback')}
           </Text>
           <Text className="text-xs text-typography-400">
             {transaction.category?.name} · {getRelativeTime(transaction.date)}

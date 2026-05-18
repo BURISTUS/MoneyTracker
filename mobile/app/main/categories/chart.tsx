@@ -7,6 +7,7 @@ import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import { formatCurrency } from '../../../src/utils/formatters';
+import { formatLifeHours } from '../../../src/utils/transactionUtils';
 
 type ViewMode = 'EXPENSE' | 'INCOME';
 
@@ -46,21 +47,13 @@ export default function CategoriesChartScreen() {
   );
 
   const totalLifeHours = useMemo(() => {
-    if (mode !== 'EXPENSE' || hourlyRate <= 0 || totalAmount <= 0) return null;
-    const rubles = totalAmount / 100;
-    const hours = rubles / hourlyRate;
-    if (hours < 1) return `${Math.round(hours * 60)} мин`;
-    if (hours < 24) return `${hours.toFixed(1)} ч`;
-    return `${(hours / 24).toFixed(1)} дн`;
+    if (mode !== 'EXPENSE' || totalAmount <= 0) return null;
+    return formatLifeHours(totalAmount / 100, hourlyRate) || null;
   }, [mode, totalAmount, hourlyRate]);
 
   const formatItemLifeHours = (amountKopecks: number): string | null => {
-    if (mode !== 'EXPENSE' || hourlyRate <= 0) return null;
-    const rubles = amountKopecks / 100;
-    const hours = rubles / hourlyRate;
-    if (hours < 1) return `${Math.round(hours * 60)} мин`;
-    if (hours < 24) return `${hours.toFixed(1)} ч`;
-    return `${(hours / 24).toFixed(1)} дн`;
+    if (mode !== 'EXPENSE') return null;
+    return formatLifeHours(amountKopecks / 100, hourlyRate) || null;
   };
 
   const tabColors = mode === 'EXPENSE' ? { color: C.red, bg: C.redBg } : { color: C.green, bg: C.greenBg };

@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -22,19 +21,21 @@ import { Loading } from '../../src/components/ui/Loading';
 import { formatCurrency } from '../../src/utils/formatters';
 import { AddTransactionModal } from '../../src/components/ui/AddTransactionModal';
 import { TransactionType as TransactionTypeEnum } from '../../src/types';
+import { getTransactionCurrency } from '../../src/utils/transactionUtils';
 import { useSubscriptionStore } from '../../src/stores/subscriptionStore';
 import { PremiumBadge } from '../../src/components/ui/PremiumBadge';
+import { useToast } from '../../src/components/ui/Toast';
 import type { FeatureKey } from '../../src/types';
 
-function formatHours(hours: number): string {
-  if (hours < 1) return `${Math.round(hours * 60)} мин`;
-  if (hours < 100) return `${hours.toFixed(1)} ч`;
-  return `${Math.round(hours)} ч`;
+function formatHours(hours: number, t: (key: string, opts?: any) => string): string {
+  if (hours < 1) return `${Math.round(hours * 60)} ${t('common.min')}`;
+  if (hours < 100) return `${hours.toFixed(1)} ${t('common.workUnit')}`;
+  return `${Math.round(hours)} ${t('common.workUnit')}`;
 }
 
 export default function HomeScreen() {
   const C = useTheme();
-  const S = {
+  const S = useMemo(() => ({
     flex: { flex: 1 },
     screen: { backgroundColor: C.bg },
     scroll: { paddingHorizontal: 16, paddingBottom: 120 },
@@ -64,8 +65,6 @@ export default function HomeScreen() {
     actionsRow: { flexDirection: 'row' as const, gap: 10, marginTop: 2 },
     actionBtn: { flex: 1, borderRadius: 18, paddingVertical: 16, alignItems: 'center' as const, borderWidth: 1 },
     actionText: { fontSize: 12, fontWeight: '600' as const, marginTop: 6 },
-
-    // Month summary
     monthCard: { backgroundColor: C.card, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 18 },
     monthTitle: { fontSize: 15, fontWeight: '700' as const, color: C.textMain, marginBottom: 12 },
     monthRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const, marginBottom: 8 },
@@ -73,8 +72,6 @@ export default function HomeScreen() {
     monthValue: { fontSize: 14, fontWeight: '700' as const, color: C.textMain },
     barTrack: { height: 6, borderRadius: 3, backgroundColor: C.divider, marginBottom: 4 },
     barFill: { height: 6, borderRadius: 3 },
-
-    // Articles
     articleCard: { backgroundColor: C.card, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 18, marginBottom: 10 },
     articleTag: { alignSelf: 'flex-start' as const, backgroundColor: C.primaryBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 10 },
     articleTagText: { fontSize: 11, fontWeight: '700' as const, color: C.primary },
@@ -84,13 +81,11 @@ export default function HomeScreen() {
     articleTime: { fontSize: 11, color: C.textSec },
     articleViews: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 },
     articleViewsText: { fontSize: 11, color: C.textSec },
-
-    // Empty state
     emptyState: { alignItems: 'center' as const, paddingVertical: 40 },
     emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.inputBg, alignItems: 'center' as const, justifyContent: 'center' as const, marginBottom: 16 },
     emptyTitle: { fontSize: 15, fontWeight: '600' as const, color: C.textSec },
     emptySub: { fontSize: 13, color: C.textMuted, marginTop: 4 },
-  };
+  }), [C]);
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -115,6 +110,7 @@ export default function HomeScreen() {
   const [aiResult, setAiResult] = useState<AiTransactionResult | AiReceiptResult | null>(null);
   const showPaywallFn = useSubscriptionStore((s) => s.showPaywall);
   const checkAccess = useSubscriptionStore((s) => s.checkAccess);
+  const toast = useToast();
 
   useEffect(() => {
     initializeData();
@@ -146,7 +142,7 @@ export default function HomeScreen() {
     () => transactions
       .filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= today && !excludedIds.has(t.categoryId))
       .reduce((sum, t) => {
-        const accCur = (t as any).account?.currency || 'RUB';
+        const accCur = getTransactionCurrency(t);
         return sum + convertToUserCurrency(Number(t.amount), accCur);
       }, 0),
     [transactions, excludedIds, convertToUserCurrency],
@@ -188,8 +184,8 @@ export default function HomeScreen() {
     const todayTx = transactions.filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= today);
     if (todayTx.length === 0) return null;
     return todayTx.reduce((max, t) => {
-      const a = convertToUserCurrency(Number(t.amount), (t as any).account?.currency || 'RUB');
-      const maxA = convertToUserCurrency(Number(max.amount), (max as any).account?.currency || 'RUB');
+      const a = convertToUserCurrency(Number(t.amount), getTransactionCurrency(t));
+      const maxA = convertToUserCurrency(Number(max.amount), getTransactionCurrency(max));
       return a > maxA ? t : max;
     }, todayTx[0]);
   }, [transactions, convertToUserCurrency]);
@@ -206,10 +202,10 @@ export default function HomeScreen() {
     const monthTx = transactions.filter((t) => new Date(t.date) >= startOfMonth && !excludedIds.has(t.categoryId));
     const income = monthTx
       .filter((t) => t.type === 'INCOME')
-      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), (t as any).account?.currency || 'RUB'), 0);
+      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), getTransactionCurrency(t)), 0);
     const expense = monthTx
       .filter((t) => t.type === 'EXPENSE')
-      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), (t as any).account?.currency || 'RUB'), 0);
+      .reduce((s, t) => s + convertToUserCurrency(Number(t.amount), getTransactionCurrency(t)), 0);
     const balance = income - expense;
     return { income, expense, balance };
   }, [transactions, excludedIds, convertToUserCurrency]);
@@ -245,12 +241,12 @@ export default function HomeScreen() {
             {/* Life-Cost Hero */}
             <View style={S.heroCard}>
               <Text style={S.heroLabel}>{t('home.spentToday')}</Text>
-              <Text style={S.heroValue}>{todayHours > 0 ? formatHours(todayHours) : '—'}</Text>
+              <Text style={S.heroValue}>{todayHours > 0 ? formatHours(todayHours, t) : '—'}</Text>
               <Text style={S.heroSub}>
                 {todayExpenses > 0 ? formatCurrency(todayExpenses) : t('home.noExpenses')}
               </Text>
               {hourlyRate > 0 && (
-                <Text style={S.heroRate}>{currencySymbol}{hourlyRate.toFixed(0)}/ч</Text>
+                <Text style={S.heroRate}>{currencySymbol}{hourlyRate.toFixed(0)}/{t('common.workUnit')}</Text>
               )}
             </View>
 
@@ -278,7 +274,7 @@ export default function HomeScreen() {
                   <Ionicons name="trending-up" size={18} color={C.green} />
                 </View>
                 <Text style={[S.statValue, { color: C.green }]}>
-                  {savedHours > 0 ? formatHours(savedHours) : '—'}
+                  {savedHours > 0 ? formatHours(savedHours, t) : '—'}
                 </Text>
                 <Text style={S.statLabel}>{t("home.saved")}</Text>
               </View>
@@ -332,7 +328,7 @@ export default function HomeScreen() {
               <View style={S.pulseRow}>
                 <Text style={S.pulseLabel}>{t("home.biggestExpense")}</Text>
                 <Text style={S.pulseValue}>
-                  {biggestToday ? formatCurrency(convertToUserCurrency(biggestToday.amount, (biggestToday as any).account?.currency || 'RUB')) : '—'}
+                  {biggestToday ? formatCurrency(convertToUserCurrency(biggestToday.amount, getTransactionCurrency(biggestToday))) : '—'}
                 </Text>
               </View>
               <View style={S.pulseRow}>
@@ -381,7 +377,7 @@ export default function HomeScreen() {
                     const ImagePicker = require('expo-image-picker');
                     const { status } = await ImagePicker.requestCameraPermissionsAsync();
                     if (status !== 'granted') {
-                      Alert.alert('Нет доступа', 'Разрешите доступ к камере');
+                      toast.showError(`${t('home.noCameraAccess')} ${t('home.allowCamera')}`);
                       return;
                     }
                     const result = await ImagePicker.launchCameraAsync({
@@ -402,7 +398,7 @@ export default function HomeScreen() {
                     }
                   } catch (error) {
                     console.error('Receipt scan error:', error);
-                    Alert.alert('Ошибка', 'Не удалось распознать чек');
+                    toast.showError(`${t('home.receiptError')} ${t('home.receiptNotRecognized')}`);
                   }
                 }}
                 style={[S.actionBtn, { backgroundColor: 'rgba(99,102,241,0.08)', borderColor: 'rgba(99,102,241,0.15)' }]}

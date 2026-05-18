@@ -241,6 +241,32 @@
 - [x] 86 E2E тестов покрывают: Auth, Accounts, Categories, Transactions, Users, Life-Cost, Wishlist, Goals, Subscription, Full User Flow
 - [x] Полный флоу-тест: регистрация → счета → категории → транзакции → summary → premium → goals → wishlist → logout
 
+### Фронтенд-аудит — исправление проблем (2026-05-18)
+- [x] **Security**: удалены все console.log с email/паролем/токеном (auth.ts 9 логов, login.tsx 3 лога, api.ts 3 лога → __DEV__ guards)
+- [x] **Security**: API URL fallback `http://10.0.2.2:3001/api` → `__DEV__` guarded (нет HTTP в production)
+- [x] **Security**: пакеты-призраки `"i"` и `"npm"` удалены из package.json dependencies
+- [x] **Security**: `react-native-web` перенесён из dependencies → devDependencies
+- [x] **Code**: создан `src/utils/transactionUtils.ts` — `getTransactionCurrency()` и `formatLifeHours()`
+- [x] **Code**: 13 `(x as any).account?.currency` casts заменены на типобезопасную утилиту (5 файлов)
+- [x] **Code**: `formatLifeHours` дублирование убрано — общая утилита из transactionUtils.ts
+- [x] **Performance**: StyleSheet.create() в AddTransactionModal (2 вызова) и HomeScreen обёрнуты в `useMemo`
+- [x] **Performance**: expensive computations в transactions/index.tsx → useMemo (rangeLabel, totalAccountsBalance)
+- [x] **Performance**: FlatList оптимизации в chat/index.tsx (maxToRenderPerBatch=10, windowSize=5)
+- [x] **Performance**: animation cleanup при unmount в transactions/index.tsx (stopAnimation + isAnimatingOffset reset)
+- [x] **UX**: alert() в login.tsx → toast.showError() (3 вызова)
+- [x] **UX**: Alert.alert в home/index.tsx → toast.showError() (2 вызова: camera permission, receipt error)
+- [x] **Tooling**: ESLint + Prettier добавлены (eslintrc.js, prettierrc, 8 devDeps, scripts: lint, lint:fix, format)
+
+### i18n полная интеграция мобильного приложения (2026-05-18)
+- [x] **Аудит**: 200+ захардкоженных строк найдено в 36 мобильных файлах (TSX экраны, компоненты, сервисы, stores, utils)
+- [x] **Backend EN common.json**: добавлены 14 новых секций — months, monthsGen, monthsShort, weekdays, family, premium, receiptScanner, aiPreview, datePicker, dateRangePicker, transferModal, currencyPicker, components, lifeCost additions, subscription, exportSection, session, voiceInput, paywall + 20+ новых ключей в существующих секциях
+- [x] **Backend RU common.json**: полностью переписан — исправлены все некорректные переводы (испанский в немецком файле и т.д.), добавлены все новые ключи с русскими переводами
+- [x] **18 языков**: новые ключи добавлены с EN fallback (ar, bn, de, es, fr, hi, id, it, ja, ko, nl, pl, pt, th, tr, uk, vi, zh)
+- [x] **Mobile local fallbacks**: en.json и ru.json обновлены до ~35 секций (~988 строк), были ~413
+- [x] **Месяцы/дни недели**: вынесены из хардкода (6+ файлов) в i18n ключи (months.*, monthsGen.*, monthsShort.*, weekdays.*)
+- [x] **Исправлено 36 мобильных файлов**: экраны (categories, goals, accounts, wishlist, chat, analytics, profile, family, premium, transactions, life-cost, home), компоненты (AddTransactionModal, TransactionActionModal, ReceiptScanner, AiTransactionPreview, DateRangePickerModal, DatePickerModal, CategoryEditModal, ConfirmModal, TransferModal, CurrencyPicker, PaywallModal, PremiumBadge, WishlistCard, BalanceHero, GoalCard, TransactionItem, XPBar), сервисы (api.ts, export.ts), stores (authStore, dataStore, subscriptionStore), utils (formatters.ts), hooks (useLifeCost.ts)
+- [x] **Фронтенд-аудит**: FRONTEND_REVIEW.md — оценка 6/10, приоритизированные рекомендации по коду, безопасности, быстродействию, актуальности
+
 ### Устранение хардкодов — English + language-aware (2026-05-16)
 - [x] **currencySymbol** в chat.service.ts → импорт `KNOWN_SYMBOLS` из currency.service.ts (убран дубликат карты валют)
 - [x] **FEATURES descriptions/limitUnits** → English вместо Russian (16 фич)
@@ -265,6 +291,31 @@
 - [x] **WishlistService**: `reject()/purchase()` возвращали старые данные (до обновления БД) — исправлено на возврат обновлённой записи
 - [x] **CategoriesService**: `create()` бросал raw `Error` вместо `AppException` — исправлено
 - [x] **TransactionsService**: убраны `console.log` из продакшн-кода
+
+### ESLint + Prettier для mobile (2026-05-18)
+- [x] `.eslintrc.js` — eslint:recommended + @typescript-eslint + react + react-hooks + import/order
+- [x] `.prettierrc` — single quotes, trailing comma all, 120 print width
+- [x] `package.json` — 8 devDependencies (eslint, typescript-eslint, plugins, prettier)
+- [x] `package.json` — 3 scripts (lint, lint:fix, format)
+
+### Alert/Alert.alert → Toast полная замена (2026-05-18)
+- [x] 10 вызовов `Alert.alert()` и `alert()` заменены в 6 файлах
+- [x] family.tsx — 3 ошибки → `toast.showError()`, 1 confirm → `ConfirmModal`
+- [x] analytics/index.tsx — 1 ошибка → `toast.showError()`
+- [x] AiTransactionPreview.tsx — 2 ошибки → `toast.showError()`
+- [x] ReceiptScanner.tsx — 3 ошибки → `toast.showError()`
+- [x] export.ts — 1 success → `showGlobalSuccess()` (service file, non-React)
+- [x] register.tsx — 1 ошибка → `toast.showError()`
+- [x] 0 активных `Alert.alert`/`alert()` осталось в коде
+
+### Unit-тесты mobile (2026-05-18)
+- [x] **Инфраструктура**: Jest 29 + jest-expo preset, jest.config.js, jest.setup.js (моки RN модулей)
+- [x] **formatters.test.ts** (18 тестов): formatCurrency, formatNumber, formatPercent, calculatePercent, getDaysRemaining, getInitials, truncateText, XP/level system
+- [x] **transactionUtils.test.ts** (11 тестов): getTransactionCurrency (account/no-account), formatLifeHours (min/hours/days boundaries, zero/negative rate)
+- [x] **authStore.test.ts** (17 тестов): login, register, loginMock, logout, checkAuth (demo/API/expired), updateHourlyRate, setUser, setGamification, setLoading
+- [x] **dataStore.test.ts** (23 тестов): accounts CRUD, transactions, categories, goals, helpers (getTotalBalance, getMonthlyIncome/Expenses, getHourlyRate), wishlist, gamification, currency, achievements
+- [x] **subscriptionStore.test.ts** (29 тестов): checkAccess (default/status features), isPremium, plan, showPaywall, closePaywall, fetchStatus, accountLimit, allowedAccountTypes, clearFamily
+- [x] **98 тестов, все проходят** (`npm run test`)
 
 ## Бэклог
 

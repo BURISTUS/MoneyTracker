@@ -57,9 +57,9 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
   const lifeHours = useMemo(() => {
     if (!hourlyRate || hourlyRate <= 0 || amountNum <= 0) return null;
     const hours = amountNum / hourlyRate;
-    if (hours < 1) return `${Math.round(hours * 60)} мин`;
-    if (hours < 100) return `${hours.toFixed(1)} ч`;
-    return `${Math.round(hours)} ч`;
+    if (hours < 1) return `${Math.round(hours * 60)} ${t('common.min')}`;
+    if (hours < 100) return `${hours.toFixed(1)} ${t('common.hours')}`;
+    return `${Math.round(hours)} ${t('common.hours')}`;
   }, [amountNum, hourlyRate]);
 
   const handleTransfer = async () => {
@@ -79,7 +79,7 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
       setNote('');
       onComplete();
     } catch (e: any) {
-      setError(e?.message || 'Ошибка перевода');
+      setError(e?.message || t('transferModal.transferError'));
     } finally {
       setLoading(false);
     }
@@ -252,7 +252,7 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
                 keyboardType="decimal-pad"
               />
               {lifeHours && (
-                <Text style={S.hoursHint}>⏱ {lifeHours} работы</Text>
+                <Text style={S.hoursHint}>⏱ {lifeHours} {t('transferModal.lifeHoursWork')}</Text>
               )}
             </View>
 
@@ -262,7 +262,7 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
                 style={[S.input, { minHeight: 48 }]}
                 value={note}
                 onChangeText={setNote}
-                placeholder="Например: перевод на карту"
+                placeholder={t('transferModal.noteExample')}
                 placeholderTextColor={C.textMuted}
               />
             </View>
@@ -282,7 +282,7 @@ export function TransferModal({ visible, accounts, hourlyRate, onClose, onComple
                 <ActivityIndicator color="#FFF" />
               ) : (
                 <Text style={S.submitText}>
-                  Перевести {amount ? formatCurrency(Math.round(amountNum * 100)) : ''}
+                  {t('transferModal.transferBtn')} {amount ? formatCurrency(Math.round(amountNum * 100)) : ''}
                 </Text>
               )}
             </Pressable>

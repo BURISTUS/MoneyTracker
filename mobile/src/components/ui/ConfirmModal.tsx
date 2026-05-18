@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, Modal, Pressable, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Text } from '../../../components/ui/text';
 import { useTheme } from '../../stores/themeStore';
 
@@ -23,10 +24,11 @@ export function ConfirmModal({
   message,
   variant = 'destructive',
   confirmText,
-  cancelText = 'Отмена',
+  cancelText,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const { t } = useTranslation();
   const C = useTheme();
 
   const VARIANT_CONFIG = {
@@ -47,7 +49,7 @@ export function ConfirmModal({
   };
 
   const cfg = VARIANT_CONFIG[variant];
-  const actionText = confirmText ?? (variant === 'destructive' ? 'Удалить' : 'Подтвердить');
+  const actionText = confirmText ?? (variant === 'destructive' ? t('common.delete') : t('common.confirmAction'));
 
   const S = StyleSheet.create({
     overlay: {
@@ -133,7 +135,7 @@ export function ConfirmModal({
             <Text style={S.message}>{message}</Text>
             <View style={S.btnRow}>
               <TouchableOpacity onPress={onCancel} style={S.cancelBtn}>
-                <Text style={S.cancelText}>{cancelText}</Text>
+                <Text style={S.cancelText}>{cancelText || t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleConfirm}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../stores/themeStore';
 import { Text } from '../../../components/ui/text';
 
@@ -10,6 +11,7 @@ interface PremiumBadgeProps {
 }
 
 export function PremiumBadge({ size = 'sm', style }: PremiumBadgeProps) {
+  const { t } = useTranslation();
   const C = useTheme();
   const isSm = size === 'sm';
 
@@ -26,7 +28,7 @@ export function PremiumBadge({ size = 'sm', style }: PremiumBadgeProps) {
       borderColor: '#F59E0B40',
     }, style]}>
       <Ionicons name="diamond" size={isSm ? 10 : 13} color="#F59E0B" />
-      <Text style={{ fontSize: isSm ? 9 : 11, fontWeight: '700', color: '#F59E0B' }}>PRO</Text>
+      <Text style={{ fontSize: isSm ? 9 : 11, fontWeight: '700', color: '#F59E0B' }}>{t('components.pro')}</Text>
     </View>
   );
 }

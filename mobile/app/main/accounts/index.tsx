@@ -131,11 +131,11 @@ export default function AccountsScreen() {
   const allowedTypes = useSubscriptionStore((s) => s.allowedAccountTypes());
   const showPaywall = useSubscriptionStore((s) => s.showPaywall);
   const allAccountTypes: { value: AccountType; label: string; premiumKey?: string }[] = [
-    { value: AccountTypeEnum.CASH, label: 'Наличные' },
-    { value: AccountTypeEnum.BANK, label: 'Банковский' },
-    { value: AccountTypeEnum.CREDIT, label: 'Кредитная карта', premiumKey: 'ACCOUNT_CREDIT' },
-    { value: AccountTypeEnum.INVESTMENT, label: 'Инвестиции', premiumKey: 'ACCOUNT_INVESTMENT' },
-    { value: AccountTypeEnum.DEBT, label: 'Долг', premiumKey: 'ACCOUNT_DEBT' },
+    { value: AccountTypeEnum.CASH, label: t('accounts.cashLabel') },
+    { value: AccountTypeEnum.BANK, label: t('accounts.bankLabel') },
+    { value: AccountTypeEnum.CREDIT, label: t('accounts.creditCardLabel'), premiumKey: 'ACCOUNT_CREDIT' },
+    { value: AccountTypeEnum.INVESTMENT, label: t('accounts.investmentLabel'), premiumKey: 'ACCOUNT_INVESTMENT' },
+    { value: AccountTypeEnum.DEBT, label: t('accounts.debtLabel'), premiumKey: 'ACCOUNT_DEBT' },
   ];
   const accountTypes = allAccountTypes;
 
@@ -202,7 +202,7 @@ export default function AccountsScreen() {
   const handleAddTransaction = useCallback(async () => {
     if (!transactionModal.accountId || !transactionModal.amount) return;
 
-    const adjustmentCategory = categories.find((c) => c.name === 'Корректировка');
+    const adjustmentCategory = categories.find((c) => c.name === t('accounts.adjustmentCategory'));
     const categoryId = adjustmentCategory ? adjustmentCategory.id : (categories.length > 0 ? categories[0].id : '');
 
     const amountKopecks = Math.round(Number(transactionModal.amount) * 100);
@@ -349,7 +349,7 @@ export default function AccountsScreen() {
                 style={s.input}
                 value={name}
                 onChangeText={setName}
-                placeholder="Мой счёт"
+                placeholder={t('accounts.myAccountPlaceholder')}
                 placeholderTextColor="#52525B"
               />
 
@@ -514,7 +514,7 @@ export default function AccountsScreen() {
                   color={transactionModal.type === TransactionTypeEnum.INCOME ? C.green : C.red}
                 />
                 <Text style={s.transactionInfoText}>
-                  {transactionModal.type === TransactionTypeEnum.INCOME ? 'Доход' : 'Расход'}:{' '}
+                  {transactionModal.type === TransactionTypeEnum.INCOME ? t('accounts.incomeType') : t('accounts.expenseType')}:{' '}
                   <Text style={s.transactionAmount}>{transactionModal.amount} {userCurrency}</Text>
                 </Text>
               </View>
@@ -553,7 +553,7 @@ export default function AccountsScreen() {
         onClose={() => setShowCurrencyPicker(false)}
         onSelect={(c: ExchangeRate) => setCurrency(c.code)}
         selectedCode={currency}
-        title="Валюта счёта"
+        title={t('accounts.accountCurrencyTitle')}
         filterType="FIAT"
       />
 

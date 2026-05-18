@@ -1,29 +1,31 @@
 import React from 'react';
 import { View, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { useSubscriptionStore } from '../../stores/subscriptionStore';
 import type { FeatureKey } from '../../types';
 
-const FEATURE_INFO: Record<string, { icon: string; title: string; desc: string }> = {
-  AI_CHAT: { icon: 'sparkles', title: 'AI-ассистент', desc: 'Задавай вопросы о финансах, проси отчёты и советы' },
-  AI_VOICE: { icon: 'mic', title: 'Голосовой ввод', desc: 'Говори «Купил кофе за 200» — трата добавится автоматически' },
-  AI_RECEIPT: { icon: 'camera', title: 'Сканирование чеков', desc: 'Фотографируй чек — позиции добавятся как транзакции' },
-  GOALS: { icon: 'flag', title: 'Финансовые цели', desc: 'Ставьте цели, отслеживайте прогресс, делайте накопления' },
-  LIFE_COST: { icon: 'hourglass', title: 'Стоимость жизни', desc: 'Считайте покупки в часах работы, симулируйте инвестиции' },
-  ANALYTICS_COMPARISON: { icon: 'swap-vertical', title: 'Сравнение периодов', desc: 'MoM и YoY дельты, детальный разбор по категориям' },
-  ANALYTICS_TRENDS: { icon: 'trending-up', title: 'Тренды', desc: 'Графики расходов по категориям за полгода-год' },
-  EXPORT: { icon: 'download', title: 'Экспорт данных', desc: 'Скачивайте транзакции в CSV и PDF' },
-  ACCOUNT_CREDIT: { icon: 'card', title: 'Кредитные карты', desc: 'Учитывайте кредитные карты с лимитами и долгами' },
-  ACCOUNT_INVESTMENT: { icon: 'trending-up', title: 'Инвестиции', desc: 'Брокерские счета, крипто-портфели, переоценка активов' },
-  ACCOUNT_DEBT: { icon: 'people', title: 'Долги', desc: '«Я должен» / «Мне должны» — полный контроль долгов' },
-  WISHLIST_INCUBATOR: { icon: 'heart', title: 'Инкубатор желаний', desc: 'Замораживай покупки на 7 дней, чтобы избежать импульсов' },
-  FAMILY: { icon: 'people', title: 'Семейный бюджет', desc: 'Общий доступ для двоих, двойные AI-лимиты' },
-  PERSONAL_CATEGORIES: { icon: 'pricetag', title: 'Персональные категории', desc: 'Создайте больше 3 категорий для точного учёта расходов' },
+const FEATURE_INFO: Record<string, { icon: string; titleKey: string; descKey: string }> = {
+  AI_CHAT: { icon: 'sparkles', titleKey: 'paywall.aiAssistant', descKey: 'paywall.aiDesc' },
+  AI_VOICE: { icon: 'mic', titleKey: 'paywall.voiceInput', descKey: 'paywall.voiceDesc' },
+  AI_RECEIPT: { icon: 'camera', titleKey: 'paywall.receiptScan', descKey: 'paywall.receiptDesc' },
+  GOALS: { icon: 'flag', titleKey: 'paywall.financialGoals', descKey: 'paywall.goalsDesc' },
+  LIFE_COST: { icon: 'hourglass', titleKey: 'paywall.lifeCost', descKey: 'paywall.lifeCostDesc' },
+  ANALYTICS_COMPARISON: { icon: 'swap-vertical', titleKey: 'paywall.periodComparison', descKey: 'paywall.comparisonDesc' },
+  ANALYTICS_TRENDS: { icon: 'trending-up', titleKey: 'paywall.trends', descKey: 'paywall.trendsDesc' },
+  EXPORT: { icon: 'download', titleKey: 'paywall.dataExport', descKey: 'paywall.exportDesc' },
+  ACCOUNT_CREDIT: { icon: 'card', titleKey: 'paywall.creditCards', descKey: 'paywall.creditDesc' },
+  ACCOUNT_INVESTMENT: { icon: 'trending-up', titleKey: 'paywall.investments', descKey: 'paywall.investDesc' },
+  ACCOUNT_DEBT: { icon: 'people', titleKey: 'paywall.debts', descKey: 'paywall.debtsDesc' },
+  WISHLIST_INCUBATOR: { icon: 'heart', titleKey: 'paywall.incubator', descKey: 'paywall.incubatorDesc' },
+  FAMILY: { icon: 'people', titleKey: 'paywall.familyBudget', descKey: 'paywall.familyDesc' },
+  PERSONAL_CATEGORIES: { icon: 'pricetag', titleKey: 'paywall.customCategories', descKey: 'paywall.customDesc' },
 };
 
 export function PaywallModal() {
+  const { t } = useTranslation();
   const C = useTheme();
   const paywallFeature = useSubscriptionStore(s => s.paywallFeature);
   const closePaywall = useSubscriptionStore(s => s.closePaywall);
@@ -52,15 +54,15 @@ export function PaywallModal() {
           {/* Badge */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
             <View style={{ backgroundColor: '#F59E0B', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFF' }}>PRO</Text>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFF' }}>{t('components.pro')}</Text>
             </View>
           </View>
 
           {/* Title */}
-          <Text style={{ fontSize: 20, fontWeight: '800', color: C.textMain, marginBottom: 8 }}>{info.title}</Text>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: C.textMain, marginBottom: 8 }}>{t(info.titleKey)}</Text>
 
           {/* Description */}
-          <Text style={{ fontSize: 14, lineHeight: 20, color: C.textSec, marginBottom: 24 }}>{info.desc}</Text>
+          <Text style={{ fontSize: 14, lineHeight: 20, color: C.textSec, marginBottom: 24 }}>{t(info.descKey)}</Text>
 
           {/* Upgrade button */}
           <Pressable
@@ -69,13 +71,13 @@ export function PaywallModal() {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="diamond" size={18} color="#FFF" />
-              <Text style={{ fontSize: 17, fontWeight: '700', color: '#FFF' }}>Разблокировать Premium</Text>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: '#FFF' }}>{t('paywall.unlockPremium')}</Text>
             </View>
           </Pressable>
 
           {/* Skip */}
           <Pressable onPress={closePaywall} style={{ paddingVertical: 8, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, color: C.textMuted }}>Не сейчас</Text>
+            <Text style={{ fontSize: 14, color: C.textMuted }}>{t('paywall.notNow')}</Text>
           </Pressable>
         </Pressable>
       </Pressable>

@@ -15,40 +15,39 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useTheme } from '../../src/stores/themeStore';
 import { Text } from '../../components/ui/text';
+import { useToast } from '../../src/components/ui/Toast';
 
 export default function LoginScreen() {
   const C = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const { login, loginMock, isLoading } = useAuthStore();
+  const toast = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = useCallback(async () => {
     if (!email || !password) {
-      alert('Пожалуйста, заполните все поля');
+      toast.showError('Пожалуйста, заполните все поля');
       return;
     }
     try {
-      console.log('📝 Logging in:', { email });
       const result = await login(email, password);
-      console.log('✅ Login successful:', result);
       router.replace('/main');
     } catch (error: unknown) {
       console.error('❌ Login failed:', error);
       const err = error as { response?: { data?: { message?: string }; status?: number }; message?: string };
       if (err.response?.data?.message?.includes('not found') ||
           err.response?.status === 401) {
-        alert('Пользователь не найден. Пожалуйста, зарегистрируйтесь.');
+        toast.showError('Пользователь не найден. Пожалуйста, зарегистрируйтесь.');
       } else {
-        alert('Ошибка входа: ' + (err.response?.data?.message || err.message || t("common.unknownError")));
+        toast.showError('Ошибка входа: ' + (err.response?.data?.message || err.message || t("common.unknownError")));
       }
     }
   }, [email, password, login, router]);
 
   const handleDemo = useCallback(async () => {
-    console.log('🎮 Starting demo mode');
     await loginMock();
     router.replace('/main');
   }, [loginMock, router]);

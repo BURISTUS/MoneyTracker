@@ -59,10 +59,10 @@ function getDaysPassed(createdAt: string, cooldownDays: number): number {
 
 /* ─── Status Config (takes theme colors) ─── */
 
-function getStatusConfig(status: string, C: ThemeColors) {
+function getStatusConfig(status: string, C: ThemeColors, t: (key: string) => string) {
   const map = {
     PENDING: {
-      label: 'В процессе',
+      label: t('wishlist.inProgress'),
       icon: 'snow' as const,
       color: C.primary,
       bg: C.primaryBg,
@@ -70,7 +70,7 @@ function getStatusConfig(status: string, C: ThemeColors) {
       border: C.primaryBorder,
     },
     READY: {
-      label: 'Готово',
+      label: t('wishlist.readyLabel'),
       icon: 'flame' as const,
       color: C.orange,
       bg: C.orangeBg,
@@ -78,7 +78,7 @@ function getStatusConfig(status: string, C: ThemeColors) {
       border: C.orangeBorder,
     },
     REJECTED: {
-      label: 'Отказ',
+      label: t('wishlist.rejectedLabel'),
       icon: 'trending-up' as const,
       color: C.green,
       bg: C.greenBg,
@@ -86,7 +86,7 @@ function getStatusConfig(status: string, C: ThemeColors) {
       border: C.greenBorder,
     },
     PURCHASED: {
-      label: 'Куплено',
+      label: t('wishlist.purchasedLabel'),
       icon: 'cart' as const,
       color: C.red,
       bg: C.redBg,
@@ -94,7 +94,7 @@ function getStatusConfig(status: string, C: ThemeColors) {
       border: C.redBorder,
     },
     EXPIRED: {
-      label: 'Просрочено',
+      label: t('wishlist.overdueLabel'),
       icon: 'time' as const,
       color: C.textSec,
       bg: C.divider,
@@ -111,7 +111,8 @@ type FilterTab = 'all' | 'PENDING' | 'READY' | 'REJECTED' | 'PURCHASED';
 
 function StatusIcon({ status, size = 22 }: { status: string; size?: number }) {
   const C = useTheme();
-  const cfg = getStatusConfig(status, C);
+  const { t } = useTranslation();
+  const cfg = getStatusConfig(status, C, t);
   return (
     <View style={{ width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: cfg.bg }}>
       <Ionicons name={cfg.icon as any} size={size} color={cfg.color} />
@@ -168,12 +169,13 @@ function FilterChips({
   onChange: (f: FilterTab) => void;
 }) {
   const C = useTheme();
+  const { t } = useTranslation();
   const tabs: { key: FilterTab; label: string; icon: string; color: string }[] = [
-    { key: 'all', label: 'Все', icon: 'grid-outline', color: C.textSec },
-    { key: 'PENDING', label: 'В процессе', icon: 'snow', color: C.primary },
-    { key: 'READY', label: 'Готово', icon: 'flame', color: C.orange },
-    { key: 'REJECTED', label: 'Отказы', icon: 'trending-up', color: C.green },
-    { key: 'PURCHASED', label: 'Куплено', icon: 'cart', color: C.red },
+    { key: 'all', label: t('wishlist.allLabel'), icon: 'grid-outline', color: C.textSec },
+    { key: 'PENDING', label: t('wishlist.inProgress'), icon: 'snow', color: C.primary },
+    { key: 'READY', label: t('wishlist.readyLabel'), icon: 'flame', color: C.orange },
+    { key: 'REJECTED', label: t('wishlist.rejectedLabel'), icon: 'trending-up', color: C.green },
+    { key: 'PURCHASED', label: t('wishlist.purchasedLabel'), icon: 'cart', color: C.red },
   ];
 
   return (
@@ -256,7 +258,7 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
 
     const priceNum = Math.round(parseFloat(price) * 100);
     if (isNaN(priceNum) || priceNum <= 0) {
-      showError('Введите корректную цену');
+      showError(t('wishlist.enterValidPrice'));
       return;
     }
 
@@ -360,7 +362,7 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
               ref={nameRef}
               value={name}
               onChangeText={setName}
-              placeholder="Например: AirPods Pro"
+              placeholder={t('wishlist.namePlaceholder')}
               placeholderTextColor={C.textMuted}
               returnKeyType="next"
               style={MS.input}
@@ -396,7 +398,7 @@ function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: A
             <TextInput
               value={description}
               onChangeText={setDescription}
-              placeholder="Объясни, почему эта покупка важна. Через 7 дней ты перечитаешь это..."
+              placeholder={t('wishlist.descriptionPlaceholder')}
               placeholderTextColor={C.textMuted}
               multiline
               numberOfLines={4}
@@ -505,7 +507,7 @@ export default function WishlistScreen() {
           decidedAt: new Date().toISOString(),
         });
       } catch {
-        showError('Не удалось отметить покупку');
+        showError(t('wishlist.markFailed'));
       }
     },
     [updateWishlistItem, showError],
@@ -525,7 +527,7 @@ export default function WishlistScreen() {
           });
         }, 400);
       } catch {
-        showError('Не удалось обновить');
+        showError(t('wishlist.updateFailed'));
       }
     },
     [updateWishlistItem, runRewardAnimation, showError],
@@ -633,7 +635,7 @@ export default function WishlistScreen() {
       const isPurchased = item.status === 'PURCHASED';
       const daysPassed = getDaysPassed(item.createdAt, item.cooldownDays);
 
-      const cfg = getStatusConfig(isReady && isPending ? 'READY' : item.status, C);
+      const cfg = getStatusConfig(isReady && isPending ? 'READY' : item.status, C, t);
       const isActive = item.status === 'PENDING' || item.status === 'READY';
 
       return (
@@ -1023,10 +1025,10 @@ export default function WishlistScreen() {
       <RewardModal />
       <ConfirmModal
         visible={rejectConfirm !== null}
-        title="Отказаться от покупки?"
+        title={t('wishlist.rejectPurchaseTitle')}
         message={rejectConfirm ? `${rejectConfirm.name} — ${formatCurrency(rejectConfirm.price)}` : ''}
         variant="confirm"
-        confirmText="Отказаться"
+        confirmText={t('wishlist.rejectBtn')}
         onConfirm={() => rejectConfirm && handleReject(rejectConfirm)}
         onCancel={() => setRejectConfirm(null)}
       />
