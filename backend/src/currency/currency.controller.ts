@@ -77,7 +77,7 @@ export class CurrencyController {
 
   @UseGuards(JwtAuthGuard)
   @Get('fetch')
-  @ApiOperation({ summary: 'Force refresh rates from API' })
+  @ApiOperation({ summary: 'Force refresh rates from API (authenticated)' })
   async fetchExternal() {
     const updated = await this.currencyService.fetchFromExternal();
     return { updated, message: `Updated ${updated} rates from exchange-api` };

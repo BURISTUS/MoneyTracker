@@ -1,8 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { REQUIRE_PREMIUM_KEY } from '../common/require-premium.decorator';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { FEATURES, FeatureKey } from '../common/features.config';
+import { AppException } from '../common/app-exception';
 
 @Injectable()
 export class PremiumGuard implements CanActivate {
@@ -16,25 +17,18 @@ export class PremiumGuard implements CanActivate {
     if (!feature) return true;
 
     const request = context.switchToHttp().getRequest();
-    const userId: string = request.user?.id;
-    if (!userId) return true;
+    const userId: string | undefined = request.user?.id;
+    if (!userId) {
+      throw new AppException('errors.authenticationRequired', 401);
+    }
 
     const plan = await this.subscriptionService.getPlan(userId);
     const planConfig = FEATURES[feature][plan];
-    const description = FEATURES[feature].description;
 
     if (!planConfig.allowed) {
-      throw new HttpException(
-        {
-          statusCode: 403,
-          message: `${description} доступна на Premium-подписке`,
-          error: 'Forbidden',
-          feature: description,
-          featureKey: feature,
-          premiumOnly: true,
-        },
-        HttpStatus.FORBIDDEN,
-      );
+      throw new AppException('errors.featureNotAvailable', 403, {
+        feature: FEATURES[feature].description,
+      });
     }
 
     return true;

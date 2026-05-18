@@ -2,6 +2,52 @@
 
 ## Выполненные задачи
 
+### Backend Code Quality Refactoring (2026-05-16)
+- [x] **61 проблема из аудита исправлена** (7 CRITICAL, 14 HIGH, 26 MEDIUM, 14 LOW)
+- [x] DTOs созданы для ВСЕХ endpoints (20+ DTO файлов):
+  - `accounts/dto/`: CreateAccountDto, UpdateAccountDto
+  - `transactions/dto/`: CreateTransactionDto, UpdateTransactionDto, TransferTransactionDto
+  - `users/dto/`: UpdateProfileDto, UpdateHourlyRateDto
+  - `wishlist/dto/`: CreateWishlistDto
+  - `categories/dto/`: CreateCategoryDto, UpdateCategoryDto
+  - `goals/dto/`: CreateGoalDto, UpdateGoalDto, UpdateGoalProgressDto (подключены к контроллеру)
+  - `chat/dto/`: SendMessageDto
+  - `ai/dto/`: ParseVoiceDto, ParseReceiptDto
+  - `family/dto/`: CreateFamilyDto, JoinFamilyDto
+  - `articles/dto/`: CreateArticleDto, UpdateArticleDto
+  - `subscription/dto/`: ActivateSubscriptionDto
+  - `life-cost/dto/`: CalculateLifeCostDto, SimulateInvestmentDto
+- [x] **CRITICAL**: Transaction create/update/delete обёрнуты в `prisma.$transaction()`
+- [x] **CRITICAL**: Account update теперь через DTO с whitelist (balance валидируется)
+- [x] **CRITICAL**: Subscription activate/toggle — toggle оставлен для dev, activate требует DTO
+- [x] **HIGH**: Auth registration ловит Prisma P2002 (race condition email uniqueness)
+- [x] **HIGH**: PremiumGuard добавлен на chat/AI/family endpoints
+- [x] **HIGH**: Все raw Error/HttpException/BadRequestException → AppException с i18n
+- [x] **HIGH**: Chat/AI controllers throw errors instead of `{ error: msg }` with HTTP 200
+- [x] **HIGH**: Redis service — все методы обёрнуты в try/catch с graceful degradation
+- [x] **HIGH**: OpenAI/DeepSeek API calls — try/catch с AppException
+- [x] **HIGH**: PremiumGuard reject при отсутствии userId (вместо allow)
+- [x] **MEDIUM**: `process.env` → ConfigService везде (main.ts, redis.service, chat.service, ai.service)
+- [x] **MEDIUM**: JWT strategy возвращает `{ id, email, name, currency }` — `req.user.currency` работает
+- [x] **MEDIUM**: Account creation race condition — count+create в `$transaction()`
+- [x] **MEDIUM**: Goal deadline default = +6 месяцев (не `new Date()`)
+- [x] **MEDIUM**: Goal contribution — валидация `amount > 0`
+- [x] **MEDIUM**: Transactions pagination: `{ items, total, page, limit, totalPages }`
+- [x] **MEDIUM**: `getSummary` через Prisma `groupBy` (не загрузка всех транзакций)
+- [x] **MEDIUM**: CORS configurable через `CORS_ORIGINS` env variable
+- [x] **MEDIUM**: i18n controller — async `fs/promises` вместо sync
+- [x] **MEDIUM**: Currency service — error logging для failed upserts, AppException для not found
+- [x] **MEDIUM**: `isPremium = true` для PREMIUM_FAMILY (не только PREMIUM)
+- [x] **MEDIUM**: RateLimitGuard использует AppException с i18n (не hardcoded strings)
+- [x] **LOW**: Все `console.log` → NestJS Logger (main.ts, articles.service, prisma.service)
+- [x] **LOW**: Убран дубликат `game-controller` из AVAILABLE_ICONS
+- [x] **LOW**: Magic numbers → константы (INVESTMENT_YEARS, ANNUAL_RATE)
+- [x] **LOW**: `as any` удалены — используются Prisma enum типы
+- [x] **LOW**: Chat history pagination (page/limit)
+- [x] **LOW**: Account dead code (unused `findAll` call in `getTotalBalance`) удалён
+- [x] **LOW**: Subscription toggle endpoint оставлен для dev/test
+- [x] E2E тесты обновлены для paginated response (GET /transactions)
+
 ### Spec-Driven Development (OpenSpec)
 - [x] OpenSpec структура создана (`openspec/config.yaml` + `openspec/specs/`)
 - [x] Project context и conventions перенесены в `config.yaml`
@@ -194,6 +240,24 @@
 - [x] Jest E2E конфиг: `backend/test/jest-e2e.json`, скрипт `npm run test:e2e`
 - [x] 86 E2E тестов покрывают: Auth, Accounts, Categories, Transactions, Users, Life-Cost, Wishlist, Goals, Subscription, Full User Flow
 - [x] Полный флоу-тест: регистрация → счета → категории → транзакции → summary → premium → goals → wishlist → logout
+
+### Устранение хардкодов — English + language-aware (2026-05-16)
+- [x] **currencySymbol** в chat.service.ts → импорт `KNOWN_SYMBOLS` из currency.service.ts (убран дубликат карты валют)
+- [x] **FEATURES descriptions/limitUnits** → English вместо Russian (16 фич)
+- [x] **ACCOUNT_TYPE_NAMES** → English (Cash, Bank, Credit Card, Investment, Debt)
+- [x] **Account type labels** в categories.controller.ts → English
+- [x] **Default account names** в accounts.service.ts → English (Cash, Bank Account)
+- [x] **Default category names** в categories.service.ts → English (16 категорий)
+- [x] **Export headers** в export.service.ts → English (Date, Type, Amount, etc.)
+- [x] **Chat system prompt** → English (работает для любого языка, AI отвечает на языке пользователя)
+- [x] **Chat context** (buildUserContext) → English labels
+- [x] **Preset prompts** → bilingual map (en/ru), язык берётся из user.language
+- [x] **AI voice/receipt system prompts** → English
+- [x] **AI context builders** → English labels
+- [x] **Receipt user text** → language-aware (en/ru map)
+- [x] **Wishlist cooldown message** → i18n key
+- [x] **DTO Swagger examples** → English
+- [x] 0 ошибок TypeScript
 
 ### Багфиксы при написании тестов (2026-05-16)
 - [x] **AccountsController**: добавлен `@UseGuards(JwtAuthGuard)` на `GET :id`, `POST`, `DELETE` — без них `req.user` был undefined

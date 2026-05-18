@@ -20,6 +20,7 @@ const FEATURE_INFO: Record<string, { icon: string; title: string; desc: string }
   ACCOUNT_DEBT: { icon: 'people', title: 'Долги', desc: '«Я должен» / «Мне должны» — полный контроль долгов' },
   WISHLIST_INCUBATOR: { icon: 'heart', title: 'Инкубатор желаний', desc: 'Замораживай покупки на 7 дней, чтобы избежать импульсов' },
   FAMILY: { icon: 'people', title: 'Семейный бюджет', desc: 'Общий доступ для двоих, двойные AI-лимиты' },
+  PERSONAL_CATEGORIES: { icon: 'pricetag', title: 'Персональные категории', desc: 'Создайте больше 3 категорий для точного учёта расходов' },
 };
 
 export function PaywallModal() {

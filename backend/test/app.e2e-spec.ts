@@ -598,8 +598,9 @@ describe('MoneyTracker E2E', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBeGreaterThanOrEqual(2);
+      expect(res.body).toHaveProperty('items');
+      expect(Array.isArray(res.body.items)).toBe(true);
+      expect(res.body.items.length).toBeGreaterThanOrEqual(2);
     });
 
     it('GET /transactions — filters by type', async () => {
@@ -608,7 +609,7 @@ describe('MoneyTracker E2E', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      expect(res.body.every((t: any) => t.type === 'INCOME')).toBe(true);
+      expect(res.body.items.every((t: any) => t.type === 'INCOME')).toBe(true);
     });
 
     it('GET /transactions/:id — returns single transaction', async () => {

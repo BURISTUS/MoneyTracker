@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AppException } from '../common/app-exception';
+import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 
 export interface ParsedTransaction {
@@ -21,65 +23,73 @@ export interface ParsedReceipt extends ParsedTransaction {
   }>;
 }
 
-const VOICE_SYSTEM_PROMPT = `Ты — парсер финансовых транзакций. Твоя единственная задача — извлечь из текста пользователя данные о транзакции и вернуть их в формате JSON.
+const VOICE_SYSTEM_PROMPT = `You are a financial transaction parser. Your only task is to extract transaction data from the user's text and return it in JSON format.
 
-## Правила извлечения
-1. **Сумма**: извлекай числовое значение в основных единицах валюты (рубли, а не копейки; доллары, а не центы). «Полторашка пива за 150» → amount: 150. «Тысяча двести рублей» → amount: 1200.
-2. **Тип**: EXPENSE по умолчанию. INCOME только если явно указано: «зарплата», «доход», «получил», «перевод на счёт», «премия».
-3. **Описание**: краткое, 2–5 слов. «Купил кофе в старбаксе» → «Кофе Starbucks». «Заправил машину на 3000» → «АЗС заправка».
-4. **Категория**: сопоставляй с существующими категориями пользователя. Если подходящей нет — предложи новую, названием которой будет 1–2 слова.
-5. **Дата**: если указана («вчера», «в прошлую пятницу», «27 мая») — преобразуй в ISO-8601. Если не указана — не добавляй поле date.
-6. **Валюта**: не включай в ответ, валюта определяется профилем пользователя.
+## Extraction rules
+1. **Amount**: extract the numeric value in main currency units (rubles, not kopecks; dollars, not cents). "A beer for 150" → amount: 150. "One thousand two hundred rubles" → amount: 1200.
+2. **Type**: EXPENSE by default. INCOME only if explicitly stated: "salary", "income", "received", "transfer to account", "bonus".
+3. **Description**: brief, 2–5 words. "Bought coffee at Starbucks" → "Coffee Starbucks". "Filled up the car for 3000" → "Gas station".
+4. **Category**: match with existing user categories. If none fits — suggest a new one with a 1–2 word name.
+5. **Date**: if specified ("yesterday", "last Friday", "May 27") — convert to ISO-8601. If not specified — do not include the date field.
+6. **Currency**: do not include in the response, currency is determined by the user's profile.
 
-## Формат ответа
-Верни ТОЛЬКО валидный JSON. Без markdown, без комментариев, без пояснений.
+## Response format
+Return ONLY valid JSON. No markdown, no comments, no explanations.
 
-Успешный парсинг:
-{"type":"EXPENSE","amount":150,"description":"Кофе Starbucks","categoryName":"Кафе","categoryType":"EXPENSE"}
+Successful parse:
+{"type":"EXPENSE","amount":150,"description":"Coffee Starbucks","categoryName":"Cafe","categoryType":"EXPENSE"}
 
-Не удалось распознать:
-{"error":"Не удалось распознать транзакцию","detail":"причина"}`;
+Failed to parse:
+{"error":"Failed to recognize transaction","detail":"reason"}`;
 
-const RECEIPT_SYSTEM_PROMPT = `Ты — сканер чеков. Проанализируй фото чека и извлеки данные о покупках.
+const RECEIPT_SYSTEM_PROMPT = `You are a receipt scanner. Analyze the receipt photo and extract purchase data.
 
-## Правила
-1. Определи **магазин** (название, адрес если есть).
-2. Извлеки **каждую позицию** чека: название товара, цена, категория.
-3. Сопоставляй товары с категориями пользователя. Если подходящей категории нет — предложи новую.
-4. **totalAmount** — итоговая сумма чека.
-5. **amount** — итого для главной записи (равно totalAmount).
-6. Суммы — в основных единицах валюты (рубли, не копейки).
-7. Дата чека — в ISO-8601, если распознана.
-8. Если чек не удалось распознать (размытое фото, не чек) — верни ошибку.
+## Rules
+1. Identify the **store** (name, address if available).
+2. Extract **each line item**: product name, price, category.
+3. Match products with user categories. If no suitable category exists — suggest a new one.
+4. **totalAmount** — total receipt amount.
+5. **amount** — total for the main record (equals totalAmount).
+6. Amounts — in main currency units (rubles, not kopecks).
+7. Receipt date — in ISO-8601, if recognized.
+8. If the receipt cannot be recognized (blurry photo, not a receipt) — return an error.
 
-## Формат ответа
-Верни ТОЛЬКО валидный JSON. Без markdown, без комментариев.
+## Response format
+Return ONLY valid JSON. No markdown, no comments.
 
-Успешно:
-{"type":"EXPENSE","amount":1250,"description":"Пятёрочка","categoryName":"Продукты","categoryType":"EXPENSE","date":"2025-01-15","store":"Пятёрочка, ул. Ленина 42","totalAmount":1250,"items":[{"name":"Молоко 3.2%","amount":89,"categoryName":"Продукты"},{"name":"Хлеб белый","amount":45,"categoryName":"Продукты"},{"name":"Шоколад Milka","amount":119,"categoryName":"Сладости"}]}
+Success:
+{"type":"EXPENSE","amount":1250,"description":"Grocery Store","categoryName":"Groceries","categoryType":"EXPENSE","date":"2025-01-15","store":"Grocery Store, Main St 42","totalAmount":1250,"items":[{"name":"Milk 3.2%","amount":89,"categoryName":"Groceries"},{"name":"White bread","amount":45,"categoryName":"Groceries"},{"name":"Chocolate Milka","amount":119,"categoryName":"Sweets"}]}
 
-Ошибка:
-{"error":"Не удалось распознать чек","detail":"Фото размыто или не содержит кассового чека"}`;
+Error:
+{"error":"Failed to recognize receipt","detail":"Photo is blurry or does not contain a receipt"}`;
+
+const RECEIPT_USER_TEXT: Record<string, string> = {
+  en: 'Analyze this receipt and extract purchase data.',
+  ru: 'Проанализируй этот чек и извлеки данные о покупках.',
+};
 
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private openai: OpenAI | null = null;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
     this.initClient();
   }
 
   private initClient() {
-    const apiKey = process.env.DEEPSEEK_API_KEY;
+    const apiKey = this.configService.get<string>('DEEPSEEK_API_KEY');
     if (!apiKey) {
       this.logger.warn('DEEPSEEK_API_KEY not set — AI features disabled');
       return;
     }
-    this.openai = new OpenAI({
-      baseURL: 'https://api.deepseek.com',
-      apiKey,
-    });
+    const apiUrl =
+      this.configService.get<string>('DEEPSEEK_API_URL') ||
+      'https://api.deepseek.com';
+    this.openai = new OpenAI({ baseURL: apiUrl, apiKey });
   }
 
   private async getUserCategories(userId: string) {
@@ -95,30 +105,43 @@ export class AiService {
     }));
   }
 
-  private buildVoiceContext(categories: Array<{ name: string; type: string }>, language?: string): string {
-    const incomeCats = categories.filter((c) => c.type === 'INCOME').map((c) => c.name);
-    const expenseCats = categories.filter((c) => c.type === 'EXPENSE').map((c) => c.name);
+  private buildVoiceContext(
+    categories: Array<{ name: string; type: string }>,
+    language?: string,
+  ): string {
+    const incomeCats = categories
+      .filter((c) => c.type === 'INCOME')
+      .map((c) => c.name);
+    const expenseCats = categories
+      .filter((c) => c.type === 'EXPENSE')
+      .map((c) => c.name);
     let prompt = VOICE_SYSTEM_PROMPT;
-    prompt += `\n\n## Категории пользователя\nДоходы: ${incomeCats.join(', ') || '(нет)'}\nРасходы: ${expenseCats.join(', ') || '(нет)'}\nЯзык ответа: ${language || 'ru'}`;
+    prompt += `\n\n## User categories\nIncome: ${incomeCats.join(', ') || '(none)'}\nExpenses: ${expenseCats.join(', ') || '(none)'}\nResponse language: ${language || 'en'}`;
     return prompt;
   }
 
-  private buildReceiptContext(categories: Array<{ name: string; type: string }>, language?: string): string {
-    const incomeCats = categories.filter((c) => c.type === 'INCOME').map((c) => c.name);
-    const expenseCats = categories.filter((c) => c.type === 'EXPENSE').map((c) => c.name);
+  private buildReceiptContext(
+    categories: Array<{ name: string; type: string }>,
+    language?: string,
+  ): string {
+    const incomeCats = categories
+      .filter((c) => c.type === 'INCOME')
+      .map((c) => c.name);
+    const expenseCats = categories
+      .filter((c) => c.type === 'EXPENSE')
+      .map((c) => c.name);
     let prompt = RECEIPT_SYSTEM_PROMPT;
-    prompt += `\n\n## Категории пользователя\nДоходы: ${incomeCats.join(', ') || '(нет)'}\nРасходы: ${expenseCats.join(', ') || '(нет)'}\nЯзык ответа: ${language || 'ru'}`;
+    prompt += `\n\n## User categories\nIncome: ${incomeCats.join(', ') || '(none)'}\nExpenses: ${expenseCats.join(', ') || '(none)'}\nResponse language: ${language || 'en'}`;
     return prompt;
   }
 
-  /** Парсинг текстовой транзакции (голос/текст) */
   async parseVoiceTransaction(
     userId: string,
     text: string,
     language?: string,
   ): Promise<ParsedTransaction> {
     if (!this.openai) {
-      throw new Error('DeepSeek API не настроен. Укажите DEEPSEEK_API_KEY в .env');
+      throw new AppException('errors.aiNotConfigured', 503);
     }
 
     const categories = await this.getUserCategories(userId);
@@ -126,23 +149,30 @@ export class AiService {
 
     this.logger.log(`Voice parse for user ${userId}: "${text}"`);
 
-    const response = await this.openai.chat.completions.create({
-      model: 'deepseek-chat',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: text },
-      ],
-      temperature: 0.1,
-      max_tokens: 500,
-    });
+    try {
+      const response = await this.openai.chat.completions.create({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: text },
+        ],
+        temperature: 0.1,
+        max_tokens: 500,
+      });
 
-    const content = response.choices[0]?.message?.content || '';
-    this.logger.debug(`DeepSeek voice response: ${content}`);
+      const content = response.choices[0]?.message?.content || '';
+      this.logger.debug(`DeepSeek voice response: ${content}`);
 
-    return this.parseResponse<ParsedTransaction>(content);
+      return this.parseResponse<ParsedTransaction>(content);
+    } catch (error) {
+      if (error instanceof AppException) throw error;
+      this.logger.error(
+        `Voice parse error for user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new AppException('errors.aiResponseError', 502);
+    }
   }
 
-  /** Парсинг чека по фото */
   async parseReceiptTransaction(
     userId: string,
     imageBase64: string,
@@ -150,38 +180,50 @@ export class AiService {
     language?: string,
   ): Promise<ParsedReceipt> {
     if (!this.openai) {
-      throw new Error('DeepSeek API не настроен. Укажите DEEPSEEK_API_KEY в .env');
+      throw new AppException('errors.aiNotConfigured', 503);
     }
 
     const categories = await this.getUserCategories(userId);
     const systemPrompt = this.buildReceiptContext(categories, language);
     const dataUrl = `data:${mimeType};base64,${imageBase64}`;
 
-    this.logger.log(`Receipt parse for user ${userId}, image size: ${imageBase64.length}`);
+    this.logger.log(
+      `Receipt parse for user ${userId}, image size: ${imageBase64.length}`,
+    );
 
-    const response = await this.openai.chat.completions.create({
-      model: 'deepseek-chat',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: [
-            { type: 'image_url', image_url: { url: dataUrl } },
-            { type: 'text', text: 'Проанализируй этот чек и извлеки данные о покупках.' },
-          ],
-        },
-      ],
-      temperature: 0.1,
-      max_tokens: 1000,
-    });
+    try {
+      const response = await this.openai.chat.completions.create({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: [
+              { type: 'image_url', image_url: { url: dataUrl } },
+              {
+                type: 'text',
+                text: RECEIPT_USER_TEXT[language || 'en'] || RECEIPT_USER_TEXT['en'],
+              },
+            ],
+          },
+        ],
+        temperature: 0.1,
+        max_tokens: 1000,
+      });
 
-    const content = response.choices[0]?.message?.content || '';
-    this.logger.debug(`DeepSeek receipt response: ${content}`);
+      const content = response.choices[0]?.message?.content || '';
+      this.logger.debug(`DeepSeek receipt response: ${content}`);
 
-    return this.parseResponse<ParsedReceipt>(content);
+      return this.parseResponse<ParsedReceipt>(content);
+    } catch (error) {
+      if (error instanceof AppException) throw error;
+      this.logger.error(
+        `Receipt parse error for user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new AppException('errors.aiResponseError', 502);
+    }
   }
 
-  /** Парсинг JSON из ответа DeepSeek */
   private parseResponse<T>(content: string): T {
     let cleaned = content.trim();
     if (cleaned.startsWith('```json')) {
@@ -198,15 +240,18 @@ export class AiService {
       const parsed = JSON.parse(cleaned);
 
       if (parsed.error) {
-        throw new Error(parsed.detail || parsed.error);
+        throw new AppException('errors.aiParseError', 400, {
+          detail: parsed.detail || parsed.error,
+        });
       }
 
       return parsed as T;
     } catch (e) {
+      if (e instanceof AppException) throw e;
       this.logger.error(`Failed to parse AI response: ${content}`, e);
-      throw new Error(
-        `Не удалось распознать ответ AI: ${e instanceof Error ? e.message : 'неизвестная ошибка'}`,
-      );
+      throw new AppException('errors.aiParseError', 422, {
+        detail: e instanceof Error ? e.message : 'unknown',
+      });
     }
   }
 }

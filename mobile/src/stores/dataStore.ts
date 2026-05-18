@@ -215,7 +215,7 @@ export const useDataStore = create<DataState>()(
         set({ isLoadingTransactions: true });
         try {
           const raw = await transactionsService.getAll(filters);
-          const transactions = raw.map((t) => ({
+          const transactions = (raw.items ?? raw).map((t: any) => ({
             ...t,
             amount: Number(t.amount),
           }));

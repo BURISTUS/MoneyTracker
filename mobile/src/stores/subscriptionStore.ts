@@ -38,6 +38,7 @@ const DEFAULT_FEATURES: Record<string, FeatureAccess> = {
   ACCOUNT_DEBT: { allowed: false },
   GOALS: { allowed: false },
   WISHLIST_INCUBATOR: { allowed: true, limit: 5, limitUnit: 'желаний' },
+  PERSONAL_CATEGORIES: { allowed: true, limit: 3, limitUnit: 'категорий' },
   LIFE_COST: { allowed: true },
   ANALYTICS_BASIC: { allowed: true },
   ANALYTICS_COMPARISON: { allowed: false },

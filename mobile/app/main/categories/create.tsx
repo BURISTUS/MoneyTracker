@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useSubscriptionStore } from '../../../src/stores/subscriptionStore';
 import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { useTranslation } from 'react-i18next';
@@ -86,6 +87,20 @@ export default function CreateCategoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const addCategory = useDataStore((s) => s.addCategory);
+  const categories = useDataStore((s) => s.categories);
+  const checkAccess = useSubscriptionStore((s) => s.checkAccess);
+  const showPaywall = useSubscriptionStore((s) => s.showPaywall);
+
+  const categoryLimit = checkAccess('PERSONAL_CATEGORIES');
+  const maxCategories = categoryLimit?.limit ?? Infinity;
+  const canCreate = categories.length < maxCategories;
+
+  React.useEffect(() => {
+    if (!canCreate) {
+      showPaywall('PERSONAL_CATEGORIES');
+      router.back();
+    }
+  }, []);
 
   const [name, setName] = useState('');
   const [type, setType] = useState<CategoryType>(CategoryTypeEnum.EXPENSE);

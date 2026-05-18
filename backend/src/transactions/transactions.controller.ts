@@ -1,7 +1,21 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { TransferTransactionDto } from './dto/transfer-transaction.dto';
 
 @ApiTags('Transactions')
 @Controller('transactions')
@@ -16,18 +30,24 @@ export class TransactionsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiQuery({ name: 'categoryId', required: false })
   @ApiQuery({ name: 'type', required: false })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   async findAll(
-    @Request() req: any,
+    @Request() req: { user: { id: string } },
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('categoryId') categoryId?: string,
     @Query('type') type?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.transactionsService.findAll(req.user.id, {
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
       categoryId,
       type,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
     });
   }
 
@@ -36,11 +56,15 @@ export class TransactionsController {
   @ApiQuery({ name: 'startDate', required: true })
   @ApiQuery({ name: 'endDate', required: true })
   async getSummary(
-    @Request() req: any,
+    @Request() req: { user: { id: string } },
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
-    return this.transactionsService.getSummary(req.user.id, new Date(startDate), new Date(endDate));
+    return this.transactionsService.getSummary(
+      req.user.id,
+      new Date(startDate),
+      new Date(endDate),
+    );
   }
 
   @Get('analytics')
@@ -48,7 +72,7 @@ export class TransactionsController {
   @ApiQuery({ name: 'startDate', required: true })
   @ApiQuery({ name: 'endDate', required: true })
   async getAnalytics(
-    @Request() req: any,
+    @Request() req: { user: { id: string } },
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
@@ -61,15 +85,18 @@ export class TransactionsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get transaction by id' })
-  async findById(@Param('id') id: string, @Request() req: any) {
+  async findById(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+  ) {
     return this.transactionsService.findById(id, req.user.id);
   }
 
   @Post('transfer')
   @ApiOperation({ summary: 'Transfer money between accounts' })
   async transfer(
-    @Request() req: any,
-    @Body() body: { fromAccountId: string; toAccountId: string; amount: number; description?: string; date?: string },
+    @Request() req: { user: { id: string } },
+    @Body() body: TransferTransactionDto,
   ) {
     return this.transactionsService.transfer(req.user.id, {
       fromAccountId: body.fromAccountId,
@@ -82,17 +109,27 @@ export class TransactionsController {
 
   @Post()
   @ApiOperation({ summary: 'Create transaction' })
-  async create(@Request() req: any, @Body() body: { accountId: string; categoryId: string; amount: number; type: string; description?: string; date?: string }) {
+  async create(
+    @Request() req: { user: { id: string } },
+    @Body() body: CreateTransactionDto,
+  ) {
     return this.transactionsService.create(req.user.id, {
-      ...body,
+      accountId: body.accountId,
+      categoryId: body.categoryId,
       amount: BigInt(body.amount),
+      type: body.type,
+      description: body.description,
       date: body.date ? new Date(body.date) : undefined,
     });
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update transaction' })
-  async update(@Param('id') id: string, @Request() req: any, @Body() body: { description?: string; date?: string; amount?: number; accountId?: string }) {
+  async update(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+    @Body() body: UpdateTransactionDto,
+  ) {
     return this.transactionsService.update(id, req.user.id, {
       description: body.description,
       date: body.date ? new Date(body.date) : undefined,
@@ -103,7 +140,10 @@ export class TransactionsController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete transaction' })
-  async delete(@Param('id') id: string, @Request() req: any) {
+  async delete(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+  ) {
     return this.transactionsService.delete(id, req.user.id);
   }
 }

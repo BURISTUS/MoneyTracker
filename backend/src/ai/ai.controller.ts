@@ -1,58 +1,58 @@
-import { Controller, Post, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AiService } from './ai.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PremiumGuard } from '../common/premium.guard';
+import { RequirePremium } from '../common/require-premium.decorator';
 import { RateLimitGuard } from '../rate-limit/rate-limit.guard';
+import { ParseVoiceDto } from './dto/parse-voice.dto';
+import { ParseReceiptDto } from './dto/parse-receipt.dto';
 
 @ApiTags('AI')
 @Controller('ai')
+@UseGuards(JwtAuthGuard, PremiumGuard)
+@ApiBearerAuth()
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
   @Post('voice-transaction')
-  @UseGuards(JwtAuthGuard, RateLimitGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Parse voice/text input into transaction data via DeepSeek AI' })
+  @RequirePremium('AI_VOICE')
+  @UseGuards(RateLimitGuard)
+  @ApiOperation({
+    summary: 'Parse voice/text input into transaction data via DeepSeek AI',
+  })
   async parseVoiceTransaction(
-    @Request() req: any,
-    @Body() body: { text: string; language?: string },
+    @Request() req: { user: { id: string } },
+    @Body() body: ParseVoiceDto,
   ) {
-    if (!body.text || !body.text.trim()) {
-      return { error: 'Текст не может быть пустым' };
-    }
-
-    const result = await this.aiService.parseVoiceTransaction(
+    return this.aiService.parseVoiceTransaction(
       req.user.id,
-      body.text.trim(),
+      body.text,
       body.language,
     );
-
-    return result;
   }
 
   @Post('receipt-transaction')
-  @UseGuards(JwtAuthGuard, RateLimitGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Parse receipt photo into transaction data via DeepSeek AI Vision' })
+  @RequirePremium('AI_RECEIPT')
+  @UseGuards(RateLimitGuard)
+  @ApiOperation({
+    summary: 'Parse receipt photo into transaction data via DeepSeek AI Vision',
+  })
   async parseReceiptTransaction(
-    @Request() req: any,
-    @Body() body: { imageBase64: string; mimeType: string; language?: string },
+    @Request() req: { user: { id: string } },
+    @Body() body: ParseReceiptDto,
   ) {
-    if (!body.imageBase64) {
-      return { error: 'Изображение не предоставлено' };
-    }
-
-    if (!body.mimeType) {
-      body.mimeType = 'image/jpeg';
-    }
-
-    const result = await this.aiService.parseReceiptTransaction(
+    return this.aiService.parseReceiptTransaction(
       req.user.id,
       body.imageBase64,
-      body.mimeType,
+      body.mimeType || 'image/jpeg',
       body.language,
     );
-
-    return result;
   }
 }

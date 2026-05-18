@@ -1,18 +1,23 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AppException } from '../common/app-exception';
+
+const ANNUAL_RATE = 0.12;
 
 @Injectable()
 export class LifeCostService {
   constructor(private prisma: PrismaService) {}
 
   async getHourlyRate(userId: string): Promise<number> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
     if (!user?.hourlyRate) {
-      throw new BadRequestException('Hourly rate not set. Please configure it in your profile.');
+      throw new AppException('errors.hourlyRateNotSet', 400);
     }
 
-    return user.hourlyRate / 100; // Конвертируем из копеек в рубли
+    return user.hourlyRate / 100;
   }
 
   async calculateHours(userId: string, amount: number) {
@@ -29,9 +34,12 @@ export class LifeCostService {
     };
   }
 
-  async simulateInvestment(userId: string, amount: number, years: number = 10) {
-    const annualRate = 0.12; // 12% годовых
-    const monthlyRate = annualRate / 12;
+  async simulateInvestment(
+    userId: string,
+    amount: number,
+    years: number = 10,
+  ) {
+    const monthlyRate = ANNUAL_RATE / 12;
     const months = years * 12;
 
     const rubles = amount / 100;
@@ -43,7 +51,7 @@ export class LifeCostService {
       futureValue: Math.round(futureValue),
       profit: Math.round(profit),
       years,
-      annualRate: annualRate * 100,
+      annualRate: ANNUAL_RATE * 100,
     };
   }
 

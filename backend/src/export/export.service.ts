@@ -34,12 +34,12 @@ export class ExportService {
     });
 
     const rows = transactions.map((t) => ({
-      Дата: t.date.toISOString().split('T')[0],
-      Тип: t.type === 'INCOME' ? 'Доход' : 'Расход',
-      Категория: t.category?.name ?? '—',
-      Счёт: t.account?.name ?? '—',
-      Сумма: Number(t.amount) / 100,
-      Описание: t.description ?? '',
+      Date: t.date.toISOString().split('T')[0],
+      Type: t.type === 'INCOME' ? 'Income' : 'Expense',
+      Category: t.category?.name ?? '—',
+      Account: t.account?.name ?? '—',
+      Amount: Number(t.amount) / 100,
+      Description: t.description ?? '',
     }));
 
     return this.format(rows, format, 'transactions');
@@ -54,24 +54,24 @@ export class ExportService {
     const analytics = await this.transactionsService.getAnalytics(userId, startDate, endDate);
 
     const byCategoryRows = analytics.byCategory.map((c: any) => ({
-      Категория: c.category.name,
-      Тип: c.category.type === 'INCOME' ? 'Доход' : 'Расход',
-      Сумма: c.amount / 100,
-      Процент: c.percentage.toFixed(1),
-      Количество: c.count,
+      Category: c.category.name,
+      Type: c.category.type === 'INCOME' ? 'Income' : 'Expense',
+      Amount: c.amount / 100,
+      Percentage: c.percentage.toFixed(1),
+      Count: c.count,
     }));
 
     const byDayRows = analytics.byDay.map((d: any) => ({
-      Дата: d.date,
-      Доход: d.income / 100,
-      Расход: d.expense / 100,
+      Date: d.date,
+      Income: d.income / 100,
+      Expense: d.expense / 100,
     }));
 
     const summary = {
-      Период: `${startDate.toISOString().split('T')[0]} — ${endDate.toISOString().split('T')[0]}`,
-      Доходы: analytics.totals.income / 100,
-      Расходы: analytics.totals.expense / 100,
-      Баланс: analytics.totals.balance / 100,
+      Period: `${startDate.toISOString().split('T')[0]} — ${endDate.toISOString().split('T')[0]}`,
+      TotalIncome: analytics.totals.income / 100,
+      TotalExpense: analytics.totals.expense / 100,
+      Balance: analytics.totals.balance / 100,
     };
 
     if (format === 'json') {
@@ -107,14 +107,14 @@ export class ExportService {
       const csv1 = parse(byCategory, { delimiter: ',', quote: '"' });
       const csv2 = parse(byDay, { delimiter: ',', quote: '"' });
       const csv3 = parse([summary], { delimiter: ',', quote: '"' });
-      return `--- Сводка ---\n${csv3}\n\n--- По категориям ---\n${csv1}\n\n--- По дням ---\n${csv2}`;
+      return `--- Summary ---\n${csv3}\n\n--- By Category ---\n${csv1}\n\n--- By Day ---\n${csv2}`;
     }
 
     // XLSX — multiple sheets
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([summary]), 'Сводка');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byCategory), 'Категории');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byDay), 'По дням');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([summary]), 'Summary');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byCategory), 'Categories');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byDay), 'By Day');
     return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   }
 }

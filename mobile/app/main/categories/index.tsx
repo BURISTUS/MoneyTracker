@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
+import { useSubscriptionStore } from '../../../src/stores/subscriptionStore';
 import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
@@ -43,6 +44,13 @@ export default function CategoriesIndexScreen() {
   const toast = useToast();  const categories = useDataStore((s) => s.categories);
   const transactions = useDataStore((s) => s.transactions);
   const fetchCategories = useDataStore((s) => s.fetchCategories);
+  const checkAccess = useSubscriptionStore((s) => s.checkAccess);
+  const showPaywall = useSubscriptionStore((s) => s.showPaywall);
+
+  const categoryLimit = checkAccess('PERSONAL_CATEGORIES');
+  const maxCategories = categoryLimit?.limit ?? Infinity;
+  const personalCount = categories.length;
+  const canCreate = personalCount < maxCategories;
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
@@ -166,11 +174,38 @@ export default function CategoriesIndexScreen() {
         </View>
 
         <View style={S.actions}>
-          <Pressable onPress={() => router.push('/main/categories/create')} style={S.actionBtn}>
-            <View style={[S.actionIconWrap, { backgroundColor: C.primaryBg }]}>
-              <Ionicons name="add" size={18} color={C.primary} />
+          <Pressable
+            onPress={() => {
+              if (!canCreate) {
+                showPaywall('PERSONAL_CATEGORIES');
+                return;
+              }
+              router.push('/main/categories/create');
+            }}
+            style={S.actionBtn}
+          >
+            <View style={[S.actionIconWrap, { backgroundColor: canCreate ? C.primaryBg : '#F59E0B15' }]}>
+              {canCreate ? (
+                <Ionicons name="add" size={18} color={C.primary} />
+              ) : (
+                <Ionicons name="lock-closed" size={18} color="#F59E0B" />
+              )}
             </View>
-            <Text style={[S.actionText, { color: C.primary }]}>{t("categories.create")}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[S.actionText, { color: canCreate ? C.primary : C.textMain }]}>
+                {t('categories.create')}
+              </Text>
+              {!canCreate && (
+                <Text style={{ fontSize: 11, color: '#F59E0B', marginTop: 2 }}>
+                  {personalCount}/{maxCategories} · Premium
+                </Text>
+              )}
+            </View>
+            {!canCreate && (
+              <View style={{ backgroundColor: '#F59E0B', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFF' }}>PRO</Text>
+              </View>
+            )}
           </Pressable>
 
           <Pressable onPress={() => router.push('/main/categories/chart')} style={S.actionBtn}>

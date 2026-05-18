@@ -2,17 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppException } from '../common/app-exception';
 
+const DEFAULT_DEADLINE_MONTHS = 6;
+
 @Injectable()
 export class GoalsService {
   constructor(private prisma: PrismaService) {}
 
-  private serializeGoal(goal: any) {
+  private serializeGoal(goal: Record<string, unknown>) {
     const current = Number(goal.currentAmount);
     const target = Number(goal.targetAmount);
     return {
       ...goal,
-      targetAmount: goal.targetAmount.toString(),
-      currentAmount: goal.currentAmount.toString(),
+      targetAmount: (goal.targetAmount as bigint).toString(),
+      currentAmount: (goal.currentAmount as bigint).toString(),
       percentComplete: target > 0 ? (current / target) * 100 : 0,
       remaining: target - current,
       isCompleted: goal.isCompleted || current >= target,
@@ -44,7 +46,20 @@ export class GoalsService {
     return this.serializeGoal(goal);
   }
 
-  async create(userId: string, data: { name: string; targetAmount: bigint; currency?: string; deadline?: Date | string }) {
+  async create(
+    userId: string,
+    data: {
+      name: string;
+      targetAmount: bigint;
+      currency?: string;
+      deadline?: Date | string;
+    },
+  ) {
+    const defaultDeadline = new Date();
+    defaultDeadline.setMonth(
+      defaultDeadline.getMonth() + DEFAULT_DEADLINE_MONTHS,
+    );
+
     const goal = await this.prisma.goal.create({
       data: {
         userId,
@@ -52,7 +67,7 @@ export class GoalsService {
         targetAmount: data.targetAmount,
         currency: data.currency || 'RUB',
         currentAmount: 0,
-        deadline: data.deadline ? new Date(data.deadline) : new Date(),
+        deadline: data.deadline ? new Date(data.deadline) : defaultDeadline,
       },
     });
     return this.serializeGoal(goal);
@@ -63,15 +78,21 @@ export class GoalsService {
     userId: string,
     data: { name?: string; targetAmount?: bigint; deadline?: Date | string },
   ) {
-    const goal = await this.prisma.goal.findFirst({ where: { id, userId } });
+    const goal = await this.prisma.goal.findFirst({
+      where: { id, userId },
+    });
     if (!goal) throw new AppException('errors.goalNotFound', 404);
 
     const updated = await this.prisma.goal.update({
       where: { id },
       data: {
         ...(data.name !== undefined && { name: data.name }),
-        ...(data.targetAmount !== undefined && { targetAmount: data.targetAmount }),
-        ...(data.deadline !== undefined && { deadline: new Date(data.deadline) }),
+        ...(data.targetAmount !== undefined && {
+          targetAmount: data.targetAmount,
+        }),
+        ...(data.deadline !== undefined && {
+          deadline: new Date(data.deadline),
+        }),
       },
     });
     return this.serializeGoal(updated);
@@ -82,13 +103,18 @@ export class GoalsService {
     userId: string,
     data: { amount: bigint; note?: string; date?: Date },
   ) {
-    const goal = await this.prisma.goal.findFirst({ where: { id, userId } });
+    const goal = await this.prisma.goal.findFirst({
+      where: { id, userId },
+    });
     if (!goal) throw new AppException('errors.goalNotFound', 404);
+
+    if (data.amount <= 0) {
+      throw new AppException('errors.invalidContribution', 400);
+    }
 
     const newAmount = goal.currentAmount + data.amount;
     const isCompleted = newAmount >= goal.targetAmount;
 
-    // Create contribution + update goal in tx
     await this.prisma.$transaction([
       this.prisma.goalContribution.create({
         data: {
@@ -108,7 +134,9 @@ export class GoalsService {
   }
 
   async delete(id: string, userId: string) {
-    const goal = await this.prisma.goal.findFirst({ where: { id, userId } });
+    const goal = await this.prisma.goal.findFirst({
+      where: { id, userId },
+    });
     if (!goal) throw new AppException('errors.goalNotFound', 404);
     await this.prisma.goal.delete({ where: { id } });
     return { success: true };

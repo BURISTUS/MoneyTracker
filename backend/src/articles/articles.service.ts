@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppException } from '../common/app-exception';
 
@@ -49,6 +49,8 @@ const SEED_ARTICLES = [
 export class ArticlesService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
 
+  private readonly logger = new Logger(ArticlesService.name);
+
   async onModuleInit() {
     await this.seed();
   }
@@ -58,7 +60,6 @@ export class ArticlesService implements OnModuleInit {
       const existing = await this.prisma.article.findUnique({ where: { slug: article.slug } });
 
       if (existing) {
-        // Delete old translations and re-insert with rich content
         await this.prisma.articleTranslation.deleteMany({ where: { articleId: existing.id } });
         await this.prisma.articleTranslation.createMany({
           data: article.translations.map((t) => ({
@@ -66,7 +67,7 @@ export class ArticlesService implements OnModuleInit {
             ...t,
           })),
         });
-        console.log(`🔄 Updated article: ${article.slug}`);
+        this.logger.log(`Updated article: ${article.slug}`);
       } else {
         await this.prisma.article.create({
           data: {
@@ -77,7 +78,7 @@ export class ArticlesService implements OnModuleInit {
             },
           },
         });
-        console.log(`🌱 Seeded article: ${article.slug}`);
+        this.logger.log(`Seeded article: ${article.slug}`);
       }
     }
   }

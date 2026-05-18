@@ -28,20 +28,32 @@ export class HttpExceptionFilter implements ExceptionFilter {
   async catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<{ headers: Record<string, string> }>();
+
+    const lang =
+      request.headers?.['accept-language'] ||
+      request.headers?.['Accept-Language'] ||
+      'en';
 
     let status: number;
     let message: string;
     let error: string;
 
     if (exception instanceof AppException) {
-      // Our custom exception — translate the i18n key
       status = exception.getStatus();
       try {
         message = await this.i18n.translate(exception.i18nKey, {
+          lang,
           args: exception.i18nParams,
         });
       } catch {
-        message = exception.i18nKey; // fallback to key if translation missing
+        message = exception.i18nKey;
+      }
+      if (exception.i18nParams && Object.keys(exception.i18nParams).length > 0) {
+        for (const [k, v] of Object.entries(exception.i18nParams)) {
+          message = message.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v));
+          message = message.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+        }
       }
       error = HttpStatus[status] || 'Error';
     } else if (exception instanceof HttpException) {

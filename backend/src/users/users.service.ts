@@ -29,7 +29,7 @@ export class UsersService {
   async update(id: string, data: Prisma.UserUpdateInput) {
     const user = await this.findById(id);
     if (!user) {
-      throw new AppException('errors.accountNotFound', 404);
+      throw new AppException('errors.userNotFound', 404);
     }
     return this.prisma.user.update({
       where: { id },

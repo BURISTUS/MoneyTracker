@@ -1,6 +1,19 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppException } from '../common/app-exception';
+
+export interface SerializedWishlistItem {
+  [key: string]: unknown;
+  price: number;
+  status: string;
+  cooldownEnds: Date;
+  isFrozen: boolean;
+  isReady: boolean;
+  daysRemaining: number;
+}
+
+const INVESTMENT_YEARS = 10;
+const ANNUAL_RATE = 0.12;
 
 @Injectable()
 export class WishlistService {
@@ -14,26 +27,58 @@ export class WishlistService {
 
     const now = new Date();
 
-    const serialize = (item: any) => ({
+    const serialize = (item: Record<string, unknown>): SerializedWishlistItem => ({
       ...item,
       price: Number(item.price),
-      isFrozen: item.status === 'PENDING' && item.cooldownEnds > now,
-      isReady: item.status === 'READY' || (item.status === 'PENDING' && item.cooldownEnds <= now),
-      daysRemaining: Math.max(0, Math.ceil((item.cooldownEnds.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))),
+      status: item.status as string,
+      cooldownEnds: item.cooldownEnds as Date,
+      isFrozen: item.status === 'PENDING' && (item.cooldownEnds as Date) > now,
+      isReady:
+        item.status === 'READY' ||
+        (item.status === 'PENDING' && (item.cooldownEnds as Date) <= now),
+      daysRemaining: Math.max(
+        0,
+        Math.ceil(
+          ((item.cooldownEnds as Date).getTime() - now.getTime()) /
+            (1000 * 60 * 60 * 24),
+        ),
+      ),
     });
 
-    const all = items.map(serialize);
+    const all = items.map((item) =>
+      serialize(item as unknown as Record<string, unknown>),
+    );
 
-    const ready = all.filter(i => i.isReady && i.status !== 'REJECTED' && i.status !== 'PURCHASED');
-    const pending = all.filter(i => i.status === 'PENDING' && i.cooldownEnds > now);
-    const history = all.filter(i => i.status === 'REJECTED' || i.status === 'PURCHASED');
+    const ready = all.filter(
+      (i) =>
+        i.isReady &&
+        i.status !== 'REJECTED' &&
+        i.status !== 'PURCHASED',
+    );
+    const pending = all.filter(
+      (i) => i.status === 'PENDING' && i.cooldownEnds > now,
+    );
+    const history = all.filter(
+      (i) => i.status === 'REJECTED' || i.status === 'PURCHASED',
+    );
 
     return { ready, pending, history, all };
   }
 
-  async create(userId: string, data: { name: string; price: bigint; description?: string; category?: string; cooldownDays?: number }) {
+  async create(
+    userId: string,
+    data: {
+      name: string;
+      price: bigint;
+      description?: string;
+      category?: string;
+      cooldownDays?: number;
+    },
+  ) {
     const cooldownDays = data.cooldownDays || 7;
-    const cooldownEnds = new Date(Date.now() + cooldownDays * 24 * 60 * 60 * 1000);
+    const cooldownEnds = new Date(
+      Date.now() + cooldownDays * 24 * 60 * 60 * 1000,
+    );
 
     return this.prisma.wishlistItem.create({
       data: {
@@ -49,15 +94,24 @@ export class WishlistService {
     });
   }
 
-  async reject(userId: string, itemId: string): Promise<{ item: any; futureValue: number; message: string }> {
-    const item = await this.prisma.wishlistItem.findUnique({ where: { id: itemId } });
+  async reject(
+    userId: string,
+    itemId: string,
+  ): Promise<{
+    item: Record<string, unknown>;
+    futureValue: number;
+    message: string;
+  }> {
+    const item = await this.prisma.wishlistItem.findUnique({
+      where: { id: itemId },
+    });
 
     if (!item || item.userId !== userId) {
       throw new AppException('errors.wishlistNotFound', 404);
     }
 
     if (item.status === 'PURCHASED' || item.status === 'REJECTED') {
-      throw new BadRequestException('Item already decided');
+      throw new AppException('errors.wishlistAlreadyDecided', 400);
     }
 
     const updated = await this.prisma.wishlistItem.update({
@@ -65,36 +119,51 @@ export class WishlistService {
       data: { status: 'REJECTED', decidedAt: new Date() },
     });
 
-    const futureValue = await this.calculateCompoundInterest(item.price, 10);
+    const futureValue = await this.calculateCompoundInterest(
+      item.price,
+      INVESTMENT_YEARS,
+    );
 
     return {
       item: { ...updated, price: Number(updated.price) },
       futureValue: Number(futureValue) / 100,
-      message: `Вы не купили ${updated.name}. Эти ${Number(updated.price) / 100}\u20BD через 10 лет превратятся в ${Number(futureValue) / 100}\u20BD (при 12% годовых)`,
+      message: `Вы не купили ${updated.name}. Эти ${Number(updated.price) / 100}\u20BD через ${INVESTMENT_YEARS} лет превратятся в ${Number(futureValue) / 100}\u20BD (при ${(ANNUAL_RATE * 100).toFixed(0)}% годовых)`,
     };
   }
 
   async purchase(userId: string, itemId: string) {
-    const item = await this.prisma.wishlistItem.findUnique({ where: { id: itemId } });
+    const item = await this.prisma.wishlistItem.findUnique({
+      where: { id: itemId },
+    });
 
     if (!item || item.userId !== userId) {
       throw new AppException('errors.wishlistNotFound', 404);
     }
 
     if (item.status === 'PURCHASED' || item.status === 'REJECTED') {
-      throw new BadRequestException('Item already decided');
+      throw new AppException('errors.wishlistAlreadyDecided', 400);
     }
 
     const updated = await this.prisma.wishlistItem.update({
       where: { id: itemId },
-      data: { status: 'PURCHASED', decidedAt: new Date(), purchasedAt: new Date() },
+      data: {
+        status: 'PURCHASED',
+        decidedAt: new Date(),
+        purchasedAt: new Date(),
+      },
     });
 
-    return { success: true, item: { ...updated, price: Number(updated.price) }, message: `Вы купили ${updated.name} за ${Number(updated.price) / 100}\u20BD` };
+    return {
+      success: true,
+      item: { ...updated, price: Number(updated.price) },
+      message: `Вы купили ${updated.name} за ${Number(updated.price) / 100}\u20BD`,
+    };
   }
 
   async snooze(userId: string, itemId: string) {
-    const item = await this.prisma.wishlistItem.findUnique({ where: { id: itemId } });
+    const item = await this.prisma.wishlistItem.findUnique({
+      where: { id: itemId },
+    });
 
     if (!item || item.userId !== userId) {
       throw new AppException('errors.wishlistNotFound', 404);
@@ -110,12 +179,14 @@ export class WishlistService {
       },
     });
 
-    return { success: true, message: 'Таймер сброшен на 7 дней' };
+    return { success: true, message: 'wishlist.cooldownReset' };
   }
 
-  async calculateCompoundInterest(principal: bigint, years: number = 10): Promise<bigint> {
-    const annualRate = 0.12;
-    const monthlyRate = annualRate / 12;
+  async calculateCompoundInterest(
+    principal: bigint,
+    years: number = INVESTMENT_YEARS,
+  ): Promise<bigint> {
+    const monthlyRate = ANNUAL_RATE / 12;
     const months = years * 12;
 
     const principalNum = Number(principal);
