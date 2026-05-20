@@ -988,5 +988,25 @@
     "customDesc": "Create more than 3 categories for accurate expense tracking",
     "unlockPremium": "Unlock Premium",
     "notNow": "Not now"
+  },
+  "security": {
+    "title": "Security",
+    "enterPin": "Enter PIN",
+    "pinSubtitle": "Enter your 4-digit PIN to unlock",
+    "wrongPin": "Wrong PIN. Try again.",
+    "useBiometric": "Use biometrics",
+    "unlockBiometric": "Unlock with biometrics",
+    "lockEnabled": "App lock",
+    "lockEnabledDesc": "Require authentication when opening the app",
+    "lockMethod": "Lock method",
+    "methodPin": "PIN code",
+    "methodBiometric": "Biometrics",
+    "setPin": "Set PIN",
+    "setPinDesc": "Choose a 4-digit PIN code",
+    "confirmPin": "Confirm PIN",
+    "pinMismatch": "PINs do not match. Try again.",
+    "pinSet": "PIN set successfully",
+    "pinRemoved": "PIN removed",
+    "biometricNotAvailable": "Biometric authentication is not available on this device"
   }
 }

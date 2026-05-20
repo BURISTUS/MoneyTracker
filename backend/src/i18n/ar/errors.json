@@ -14,5 +14,8 @@
   "goalNotFound": "الهدف غير موجود",
   "wishlistNotFound": "عنصر قائمة الرغبات غير موجود",
   "invalidCredentials": "بريد إلكتروني أو كلمة مرور غير صالحة",
-  "emailExists": "مستخدم بهذا البريد الإلكتروني موجود بالفعل"
+  "emailExists": "مستخدم بهذا البريد الإلكتروني موجود بالفعل",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
 }

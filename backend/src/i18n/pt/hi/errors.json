@@ -14,5 +14,8 @@
   "goalNotFound": "लक्ष्य नहीं मिला",
   "wishlistNotFound": "इच्छा-सूची आइटम नहीं मिला",
   "invalidCredentials": "अमान्य ईमेल या पासवर्ड",
-  "emailExists": "इस ईमेल वाला उपयोगकर्ता पहले से मौजूद है"
+  "emailExists": "इस ईमेल वाला उपयोगकर्ता पहले से मौजूद है",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
 }

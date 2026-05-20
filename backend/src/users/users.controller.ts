@@ -34,7 +34,6 @@ export class UsersController {
       language: user.language,
       hourlyRate: user.hourlyRate,
       monthlyHours: user.monthlyHours,
-      gamification: user.gamification,
       plan: subscription.plan,
       isPremium: effectivePlan !== 'free',
       subscriptionExpiresAt: subscription.expiresAt,

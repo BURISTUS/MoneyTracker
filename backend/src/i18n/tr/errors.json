@@ -14,5 +14,8 @@
   "goalNotFound": "Hedef bulunamadı",
   "wishlistNotFound": "İstek listesi öğesi bulunamadı",
   "invalidCredentials": "Geçersiz e-posta veya şifre",
-  "emailExists": "Bu e-postaya sahip bir kullanıcı zaten var"
+  "emailExists": "Bu e-postaya sahip bir kullanıcı zaten var",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
 }

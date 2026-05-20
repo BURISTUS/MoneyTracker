@@ -14,5 +14,8 @@
   "goalNotFound": "লক্ষ্য পাওয়া যায়নি",
   "wishlistNotFound": "উইশলিস্ট আইটেম পাওয়া যায়নি",
   "invalidCredentials": "অবৈধ ইমেল বা পাসওয়ার্ড",
-  "emailExists": "এই ইমেল সহ ব্যবহারকারী ইতিমধ্যে বিদ্যমান"
+  "emailExists": "এই ইমেল সহ ব্যবহারকারী ইতিমধ্যে বিদ্যমান",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
 }

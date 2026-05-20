@@ -1,0 +1,208 @@
+{
+  "nav": {
+    "download": "Herunterladen"
+  },
+  "hero": {
+    "badge": "Revolution im Personal Finance",
+    "title1": "Hör auf,",
+    "title2": "Dein Leben",
+    "title3": " gegen Zeug einzutauschen",
+    "subtitle": "Sieh jeden Kauf in Stunden deines Lebens. Töte Impulskäufe mit dem 7-Tage-Wunsch-Inkubator. Nimm die Kontrolle zurück.",
+    "cta": "Kostenlos laden",
+    "learn": "Funktionen ansehen",
+    "phone": {
+      "balance": "Guthaben",
+      "today": "Heute",
+      "hours": "Lebensstunden",
+      "t1": "-$15",
+      "t1cat": "Kaffee",
+      "t2": "-$120",
+      "t2cat": "Lebensmittel",
+      "t3": "-$250",
+      "t3cat": "Einkaufen"
+    }
+  },
+  "lc": {
+    "badge": "Killer-Feature",
+    "title": "Das Echte Preisschild",
+    "subtitle": "Jeder Preis in der App wird zweimal angezeigt — in deiner Währung und in Stunden deines Lebens.",
+    "card": {
+      "label": "Heutiger Kauf",
+      "item": "PlayStation 5",
+      "hours": "31 Stunden deines Lebens",
+      "detail": "Eine $400 Konsole — fast 4 volle Arbeitstage. 40% der Impulskäufe werden bereut. Immer noch wert?",
+      "coffee": "Tägliches $5 Latte",
+      "coffeeHours": "18 Min/Tag = 110 Std/Jahr"
+    },
+    "how": "So Funktioniert's",
+    "s1": {
+      "t": "Gib dein Einkommen ein",
+      "d": "Sag uns dein Gehalt und deine Arbeitsstunden. Wir berechnen deinen echten Stundenlohn."
+    },
+    "s2": {
+      "t": "Sieh die Wahrheit",
+      "d": "Jede Transaktion zeigt Lebensstunden. Kategorien, Diagramme, Wunschliste — überall."
+    },
+    "s3": {
+      "t": "Triff bessere Entscheidungen",
+      "d": "Wenn du \"40 Arbeitsstunden\" statt \"$600\" siehst, werden Entscheidungen leichter."
+    }
+  },
+  "ai": {
+    "badge": "KI-Powered",
+    "title": "Dein KI-Finanzberater",
+    "subtitle": "Eingebaute KI, die deine Ausgabemuster versteht und persönliche Ratschläge gibt.",
+    "q1": "Wie viel habe ich diesen Monat für Essen ausgegeben?",
+    "a1": "Du hast $280 für Essen ausgegeben, das sind 30% deines Budgets. Das sind $60 weniger als letzten Monat!",
+    "q2": "Kann ich mir eine $499 Gitarre leisten?",
+    "a2": "Eine $499 Gitarre kostet 40 Stunden deines Lebens. Du hast noch $1,840 in deinem Budget diesen Monat.",
+    "f1": {
+      "t": "Smarte Einblicke",
+      "d": "Die KI analysiert deine Ausgabemuster und zeigt, wo du sparen kannst."
+    },
+    "f2": {
+      "t": "Natürliche Sprache",
+      "d": "Stelle Fragen in natürlicher Sprache. Keine komplizierten Menüs oder Filter."
+    },
+    "f3": {
+      "t": "Spracheingabe",
+      "d": "Sprich deine Transaktionen. SpendWise versteht und kategorisiert sie."
+    },
+    "f4": {
+      "t": "Belegscannen",
+      "d": "Fotografiere deinen Beleg. Die KI extrahiert Artikel, Preise und Kategorien."
+    }
+  },
+  "inc": {
+    "badge": "Impulskiller",
+    "title": "Der Wunsch-Inkubator",
+    "subtitle": "7 Tage Bedenkzeit vor jedem Kauf. Die meisten Wünsche sterben vor Tag 7.",
+    "s1": {
+      "t": "Du willst etwas?",
+      "d": "Füge es dem Inkubator mit einem Grund hinzu: \"Warum brauche ich das?\""
+    },
+    "s2": {
+      "t": "7 Tage Einfrieren",
+      "d": "Der Kaufen-Button ist gesperrt. Beobachte den Countdown."
+    },
+    "s3": {
+      "t": "Willst du es noch?",
+      "d": "Tag 7 — entscheide dich. Kauf es oder lehn es stolz ab. Sieh, wie viel Leben du gespart hast."
+    },
+    "r": {
+      "t": "Du sagtest \"Ich brauche das nicht\"",
+      "d": "Du hast gerade 40 Stunden deines Lebens gespart. Zu 10% angelegt, sind das $2,400 in 10 Jahren."
+    }
+  },
+  "an": {
+    "badge": "Smarte Analysen",
+    "title": "Verstehe Dein Geld",
+    "subtitle": "Leistungsstarke Diagramme und Berichte, die deine Finanzgeschichte enthüllen.",
+    "f1": {
+      "t": "Ausgabenübersicht",
+      "d": "$12,480 dieses Jahr ausgegeben — 70% für Bedürfnisse, 30% für Wünsche. Schöne Donut-Diagramme nach Kategorie."
+    },
+    "f2": {
+      "t": "Trends & Muster",
+      "d": "Verfolge Ausgabentrends über Wochen, Monate und Jahre. Erkenne Muster, die dir nie aufgefallen sind."
+    },
+    "f3": {
+      "t": "Lebensstunden-Berichte",
+      "d": "Jeder Bericht zeigt Kosten in Lebensstunden. Dein $67.50/Monat Abo kostet 5 Stunden deines Lebens."
+    },
+    "f4": {
+      "t": "Budget-Tracking",
+      "d": "Setze Limits pro Kategorie. Erhalte Warnungen bei 80% und bleib den ganzen Monat auf Kurs."
+    },
+    "f5": {
+      "t": "Einkommensanalyse",
+      "d": "Verfolge alle Einkommensquellen. Dein $3,200 Monatsgehalt, visualisiert. Sieh deine Sparquote."
+    },
+    "f6": {
+      "t": "Exportieren & Teilen",
+      "d": "Exportiere Berichte als CSV. Teile Finanzübersichten mit deinem Partner oder Berater."
+    }
+  },
+  "feat": {
+    "badge": "Vollständiges Toolkit",
+    "title": "Alles, Was Du Brauchst",
+    "subtitle": "Ein komplettes Finanzmanagementsystem, nicht nur ein Ausgaben-Tracker.",
+    "f1": {
+      "t": "Multi-Konto",
+      "d": "Bargeld, Bank, Kreditkarten, Investitionen. Verwalte alle Konten an einem Ort mit Multi-Währungs-Unterstützung."
+    },
+    "f2": {
+      "t": "Smarte Kategorien",
+      "d": "Automatisch kategorisierte Ausgaben mit schönen Donut-Diagrammen. Sieh genau, wohin dein Geld geht — in Geld und Lebensstunden."
+    },
+    "f3": {
+      "t": "Budgetlimits",
+      "d": "Setze monatliche Limits pro Kategorie. Erhalte Warnungen, wenn du nahe am Limit bist. Bleib auf Kurs ohne Stress."
+    },
+    "f4": {
+      "t": "Ziele & Träume",
+      "d": "Setze finanzielle Ziele mit Deadlines. Verfolge den Fortschritt. Sieh, wie nah du dran bist — in Geld und Lebensstunden."
+    },
+    "f5": {
+      "t": "KI-Assistent",
+      "d": "Integrierter KI-Chat für Finanzberatung. Spracheingabe für schnelle Transaktionen. KI-gestütztes Belegscannen."
+    },
+    "f6": {
+      "t": "300+ Währungen",
+      "d": "Echtzeit-Wechselkurse für Fiat, Krypto und Metalle. Wandle sofort zwischen beliebigen Währungen um."
+    }
+  },
+  "how": {
+    "badge": "Leg Los",
+    "title": "In 2 Minuten Eingerichtet",
+    "s1": {
+      "t": "Laden & Registrieren",
+      "d": "Erstelle ein Konto oder probiere die volle App im Demo-Modus. Keine Kreditkarte nötig."
+    },
+    "s2": {
+      "t": "Gib dein Einkommen ein",
+      "d": "Gib dein Gehalt und deinen Arbeitsplan ein — ob $3,200/Monat oder mehr. Die App berechnet deinen echten Stundenlohn."
+    },
+    "s3": {
+      "t": "Tracke Alles",
+      "d": "Füge Transaktionen manuell, per Sprache oder durch Belegscans hinzu. Selbst ein $5 Kauf zeigt seine wahren Kosten in Lebensstunden."
+    },
+    "s4": {
+      "t": "Sieh, Wie Sich Dein Leben Verändert",
+      "d": "Spare $150/Monat bei Impulskäufen. Mehr Ersparnisse. Klare finanzielle Ziele. Echte Freiheit."
+    }
+  },
+  "prem": {
+    "badge": "Premium",
+    "title": "Entfessle Dein Volles Potenzial",
+    "subtitle": "Die Gratis-Version ist mächtig. Premium macht sie unaufhaltsam — nur $14.99/Monat.",
+    "p1": "Unbegrenzter Wunsch-Inkubator mit Analysen",
+    "p2": "KI-Finanzberater — unbegrenzter Chat",
+    "p3": "Belegscannen mit KI",
+    "p4": "Spracheingabe für Transaktionen",
+    "p5": "Geteiltes Familienbudget",
+    "p6": "Erweiterte Analysen & Prognosen",
+    "cta": "Premium Kostenlos Testen"
+  },
+  "cta": {
+    "title": "Bereit, aufzuhören, Leben gegen Zeug einzutauschen?",
+    "subtitle": "Schließen Sie sich Tausenden von Menschen an, die ihre Finanzen kontrollieren.",
+    "as": "Laden im App Store",
+    "gp": "Hol es dir bei Google Play"
+  },
+  "footer": {
+    "tag": "Tausche dein Leben nicht gegen Zeug.",
+    "product": "Produkt",
+    "features": "Funktionen",
+    "premium": "Premium",
+    "download": "Herunterladen",
+    "company": "Unternehmen",
+    "about": "Über uns",
+    "blog": "Blog",
+    "contact": "Kontakt",
+    "legal": "Rechtliches",
+    "privacy": "Datenschutzrichtlinie",
+    "terms": "Nutzungsbedingungen",
+    "rights": "Alle Rechte vorbehalten."
+  }
+}

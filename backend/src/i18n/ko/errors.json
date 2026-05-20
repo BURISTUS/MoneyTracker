@@ -14,5 +14,8 @@
   "goalNotFound": "목표를 찾을 수 없습니다",
   "wishlistNotFound": "위시리스트 항목을 찾을 수 없습니다",
   "invalidCredentials": "유효하지 않은 이메일 또는 비밀번호",
-  "emailExists": "이 이메일을 가진 사용자가 이미 존재합니다"
+  "emailExists": "이 이메일을 가진 사용자가 이미 존재합니다",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
 }

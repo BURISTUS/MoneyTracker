@@ -14,5 +14,8 @@
   "goalNotFound": "Objetivo não encontrado",
   "wishlistNotFound": "Desejo não encontrado",
   "invalidCredentials": "Email ou senha inválidos",
-  "emailExists": "Usuário com este email já existe"
+  "emailExists": "Usuário com este email já existe",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
 }

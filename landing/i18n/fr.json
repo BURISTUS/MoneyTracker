@@ -1,0 +1,208 @@
+{
+  "nav": {
+    "download": "Télécharger"
+  },
+  "hero": {
+    "badge": "Révolution en Finances Personnelles",
+    "title1": "Arrêtez d'Échanger",
+    "title2": "Votre Vie",
+    "title3": " contre des Trucs",
+    "subtitle": "Visualisez chaque achat en heures de votre vie. Éliminez les achats impulsifs avec l'Incubateur de Souhaits de 7 jours. Reprenez le contrôle.",
+    "cta": "Obtenez-le Gratuitement",
+    "learn": "Voir les Fonctionnalités",
+    "phone": {
+      "balance": "Solde",
+      "today": "Aujourd'hui",
+      "hours": "heures-vie",
+      "t1": "-$15",
+      "t1cat": "Café",
+      "t2": "-$120",
+      "t2cat": "Courses",
+      "t3": "-$250",
+      "t3cat": "Shopping"
+    }
+  },
+  "lc": {
+    "badge": "Fonctionnalité Phare",
+    "title": "Le Vrai Prix",
+    "subtitle": "Chaque prix dans l'app est affiché deux fois — dans votre devise et en heures de votre vie.",
+    "card": {
+      "label": "Achat du jour",
+      "item": "PlayStation 5",
+      "hours": "31 heures de votre vie",
+      "detail": "Une console à $400 — presque 4 jours complets de travail. 40% des achats impulsifs sont regrettés. Ça vaut encore le coup ?",
+      "coffee": "Latte Quotidien à $5",
+      "coffeeHours": "18 min/jour = 110 h/an"
+    },
+    "how": "Comment Ça Marche",
+    "s1": {
+      "t": "Entrez vos revenus",
+      "d": "Indiquez votre salaire et vos heures de travail. Nous calculons votre vrai taux horaire."
+    },
+    "s2": {
+      "t": "Voyez la vérité",
+      "d": "Chaque transaction affiche les heures de vie. Catégories, graphiques, liste de souhaits — partout."
+    },
+    "s3": {
+      "t": "Prenez de meilleures décisions",
+      "d": "Quand vous voyez « 40 heures de travail » au lieu de « $600 », les décisions deviennent plus simples."
+    }
+  },
+  "ai": {
+    "badge": "Propulsé par l'IA",
+    "title": "Votre Conseiller Financier IA",
+    "subtitle": "IA intégrée qui comprend vos habitudes de dépenses et donne des conseils personnalisés.",
+    "q1": "Combien ai-je dépensé en nourriture ce mois-ci ?",
+    "a1": "Vous avez dépensé $280 en nourriture ce mois-ci, soit 30% de votre budget. C'est $60 de moins que le mois dernier !",
+    "q2": "Puis-je me payer une guitare à $499 ?",
+    "a2": "Une guitare à $499 coûte 40 heures de votre vie. Il vous reste $1,840 dans votre budget ce mois-ci.",
+    "f1": {
+      "t": "Analyses Intelligentes",
+      "d": "L'IA analyse vos habitudes de dépenses et identifie les économies possibles."
+    },
+    "f2": {
+      "t": "Langage Naturel",
+      "d": "Posez vos questions en langage naturel. Pas de menus compliqués ni de filtres."
+    },
+    "f3": {
+      "t": "Saisie Vocale",
+      "d": "Dictez vos transactions. SpendWise les comprend et les catégorise."
+    },
+    "f4": {
+      "t": "Scan de Reçus",
+      "d": "Prenez en photo votre reçu. L'IA extrait les articles, prix et catégories."
+    }
+  },
+  "inc": {
+    "badge": "Tueur d'Impulsions",
+    "title": "L'Incubateur de Souhaits",
+    "subtitle": "7 jours de réflexion avant chaque achat. La plupart des envies meurent avant le jour 7.",
+    "s1": {
+      "t": "Vous voulez quelque chose ?",
+      "d": "Ajoutez-le à l'Incubateur avec une raison : « Pourquoi en ai-je besoin ? »"
+    },
+    "s2": {
+      "t": "Attendez 7 Jours",
+      "d": "Le bouton Acheter est verrouillé. Regardez le compte à rebours."
+    },
+    "s3": {
+      "t": "Vous le voulez encore ?",
+      "d": "Jour 7 — décidez. Achetez ou refusez avec fierté. Voyez combien de vie vous avez économisée."
+    },
+    "r": {
+      "t": "Vous avez dit « Je n'en ai pas besoin »",
+      "d": "Vous venez d'économiser 40 heures de votre vie. Investi à 10%, cela fait $2,400 en 10 ans."
+    }
+  },
+  "an": {
+    "badge": "Analyses Intelligentes",
+    "title": "Comprenez Votre Argent",
+    "subtitle": "Des graphiques et rapports puissants qui révèlent votre histoire financière.",
+    "f1": {
+      "t": "Répartition des Dépenses",
+      "d": "$12,480 dépensés cette année — 70% en besoins, 30% en envies. Magnifiques graphiques en anneau par catégorie."
+    },
+    "f2": {
+      "t": "Tendances et Tendances",
+      "d": "Suivez les tendances de dépenses sur des semaines, des mois et des années. Repérez des habitudes que vous n'aviez jamais remarquées."
+    },
+    "f3": {
+      "t": "Rapports en Heures de Vie",
+      "d": "Chaque rapport montre les coûts en heures de vie. Cet abonnement à $67.50/mois coûte 5 heures de votre vie."
+    },
+    "f4": {
+      "t": "Suivi du Budget",
+      "d": "Définissez des limites par catégorie. Recevez des alertes à 80% et restez sur les rails tout le mois."
+    },
+    "f5": {
+      "t": "Analyse des Revenus",
+      "d": "Suivez toutes vos sources de revenus. Vos $3,200 de revenus mensuels, visualisés. Voyez votre taux d'épargne."
+    },
+    "f6": {
+      "t": "Exporter et Partager",
+      "d": "Exportez les rapports en CSV. Partagez les résumés financiers avec votre partenaire ou conseiller."
+    }
+  },
+  "feat": {
+    "badge": "Boîte à Outils Complète",
+    "title": "Tout Ce Dont Vous Avez Besoin",
+    "subtitle": "Un système complet de gestion financière, pas seulement un traqueur de dépenses.",
+    "f1": {
+      "t": "Multi-Comptes",
+      "d": "Espèces, banque, cartes de crédit, investissements. Suivez tous vos comptes en un seul endroit avec support multi-devises."
+    },
+    "f2": {
+      "t": "Catégories Intelligentes",
+      "d": "Dépenses auto-catégorisées avec de beaux graphiques en anneau. Voyez exactement où va votre argent — en argent et en heures de vie."
+    },
+    "f3": {
+      "t": "Limites Budgétaires",
+      "d": "Définissez des limites mensuelles par catégorie. Recevez des alertes quand vous approchez de la limite. Restez sur les rails sans stress."
+    },
+    "f4": {
+      "t": "Objectifs & Rêves",
+      "d": "Définissez des objectifs financiers avec des délais. Suivez les progrès. Voyez à quel point vous êtes proche — en argent et en heures de vie."
+    },
+    "f5": {
+      "t": "Assistant IA",
+      "d": "Chat IA intégré pour des conseils financiers. Saisie vocale pour des transactions rapides. Scan de reçus propulsé par l'IA."
+    },
+    "f6": {
+      "t": "300+ Devises",
+      "d": "Taux de change en temps réel pour les devises fiat, les cryptomonnaies et les métaux. Convertissez entre n'importe quelle devise instantanément."
+    }
+  },
+  "how": {
+    "badge": "Commencez Maintenant",
+    "title": "Opérationnel en 2 Minutes",
+    "s1": {
+      "t": "Téléchargez et Inscrivez-vous",
+      "d": "Créez un compte ou essayez l'app complète en mode démo. Aucune carte bancaire requise."
+    },
+    "s2": {
+      "t": "Configurez vos Revenus",
+      "d": "Entrez votre salaire et votre emploi du temps — que ce soit $3,200/mois ou plus. L'app calcule votre vrai taux horaire."
+    },
+    "s3": {
+      "t": "Suivez Tout",
+      "d": "Ajoutez des transactions manuellement, à la voix ou en scannant des reçus. Même un achat de $5 montre son vrai coût en heures de vie."
+    },
+    "s4": {
+      "t": "Regardez Votre Vie Changer",
+      "d": "Économisez $150/mois sur les achats impulsifs. Plus d'économies. Des objectifs financiers clairs. Une vraie liberté."
+    }
+  },
+  "prem": {
+    "badge": "Premium",
+    "title": "Libérez Tout votre Potentiel",
+    "subtitle": "La version gratuite est puissante. Premium la rend redoutable — seulement $14.99/mois.",
+    "p1": "Incubateur de Souhaits illimité avec analyses",
+    "p2": "Conseiller financier IA — chat illimité",
+    "p3": "Scan de reçus avec l'IA",
+    "p4": "Saisie vocale des transactions",
+    "p5": "Partage du budget familial",
+    "p6": "Analyses avancées et prévisions",
+    "cta": "Essayez Premium Gratuitement"
+  },
+  "cta": {
+    "title": "Prêt à Arrêter d'Échanger Votre Vie contre des Trucs ?",
+    "subtitle": "Rejoignez des milliers de personnes qui reprennent le contrôle de leurs finances.",
+    "as": "Télécharger sur l'App Store",
+    "gp": "Disponible sur Google Play"
+  },
+  "footer": {
+    "tag": "N'échangez pas votre vie contre des trucs.",
+    "product": "Produit",
+    "features": "Fonctionnalités",
+    "premium": "Premium",
+    "download": "Télécharger",
+    "company": "Entreprise",
+    "about": "À propos",
+    "blog": "Blog",
+    "contact": "Contact",
+    "legal": "Juridique",
+    "privacy": "Politique de Confidentialité",
+    "terms": "Conditions d'Utilisation",
+    "rights": "Tous droits réservés."
+  }
+}

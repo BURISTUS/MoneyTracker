@@ -1,0 +1,208 @@
+{
+  "nav": {
+    "download": "Scarica"
+  },
+  "hero": {
+    "badge": "Rivoluzione della Finanza Personale",
+    "title1": "Smetti di Scambiare",
+    "title2": "La Tua Vita",
+    "title3": " con le Cose",
+    "subtitle": "Vedi ogni acquisto in ore della tua vita. Elimina gli acquisti d'impulso con il Wish Incubator di 7 giorni. Riprendi il controllo.",
+    "cta": "Scarica Gratis",
+    "learn": "Scopri le Funzionalità",
+    "phone": {
+      "balance": "Saldo",
+      "today": "Oggi",
+      "hours": "ore-vita",
+      "t1": "-$15",
+      "t1cat": "Caffè",
+      "t2": "-$120",
+      "t2cat": "Spesa",
+      "t3": "-$250",
+      "t3cat": "Shopping"
+    }
+  },
+  "lc": {
+    "badge": "Funzionalità Chiave",
+    "title": "Il Prezzo Reale",
+    "subtitle": "Ogni prezzo nell'app viene mostrato due volte — nella tua valuta e in ore della tua vita.",
+    "card": {
+      "label": "Acquisto di oggi",
+      "item": "PlayStation 5",
+      "hours": "31 ore della tua vita",
+      "detail": "Una console da $400 — quasi 4 intere giornate lavorative. Il 40% degli acquisti d'impulso viene rimpianto. Ne vale ancora la pena?",
+      "coffee": "Caffè Latte Giornaliero da $5",
+      "coffeeHours": "18 min/giorno = 110 ore/anno"
+    },
+    "how": "Come Funziona",
+    "s1": {
+      "t": "Inserisci il tuo reddito",
+      "d": "Comunica il tuo stipendio e le ore di lavoro. Calcoliamo la tua vera tariffa oraria."
+    },
+    "s2": {
+      "t": "Scopri la verità",
+      "d": "Ogni transazione mostra le ore di vita. Categorie, grafici, wishlist — ovunque."
+    },
+    "s3": {
+      "t": "Prendi decisioni migliori",
+      "d": "Quando vedi \"40 ore di lavoro\" invece di \"$600\", le decisioni diventano più facili."
+    }
+  },
+  "ai": {
+    "badge": "Powered by AI",
+    "title": "Il Tuo Consulente Finanziario AI",
+    "subtitle": "AI integrata che comprende le tue abitudini di spesa e offre consigli personalizzati.",
+    "q1": "Quanto ho speso per il cibo questo mese?",
+    "a1": "Hai speso $280 per il cibo questo mese, il 30% del tuo budget. Sono $60 in meno rispetto al mese scorso!",
+    "q2": "Posso permettermi una chitarra da $499?",
+    "a2": "Una chitarra da $499 costa 40 ore della tua vita. Ti restano $1,840 nel budget questo mese.",
+    "f1": {
+      "t": "Analisi Intelligenti",
+      "d": "L'AI analizza le tue abitudini di spesa e identifica dove puoi risparmiare."
+    },
+    "f2": {
+      "t": "Linguaggio Naturale",
+      "d": "Fai domande in linguaggio naturale. Niente menu complicati o filtri."
+    },
+    "f3": {
+      "t": "Input Vocale",
+      "d": "Parla le tue transazioni. SpendWise le comprende e le categorizza."
+    },
+    "f4": {
+      "t": "Scansione Scontrini",
+      "d": "Scatta una foto del tuo scontrino. L'AI estrae articoli, prezzi e categorie."
+    }
+  },
+  "inc": {
+    "badge": "Ammazza Impulsi",
+    "title": "Il Wish Incubator",
+    "subtitle": "7 giorni di riflessione prima di ogni acquisto. La maggior parte dei desideri muore prima del 7° giorno.",
+    "s1": {
+      "t": "Vuoi Qualcosa?",
+      "d": "Aggiungilo all'Incubator con un motivo: \"Perché mi serve?\""
+    },
+    "s2": {
+      "t": "Congela per 7 Giorni",
+      "d": "Il pulsante Acquista è bloccato. Guarda il conto alla rovescia scorrere."
+    },
+    "s3": {
+      "t": "Lo Vuoi Ancora?",
+      "d": "Giorno 7 — decidi. Compralo o respingilo con orgoglio. Scopri quanta vita hai risparmiato."
+    },
+    "r": {
+      "t": "Hai detto \"Non mi serve\"",
+      "d": "Hai appena risparmiato 40 ore della tua vita. Investite al 10%, sono $2,400 in 10 anni."
+    }
+  },
+  "an": {
+    "badge": "Analisi Intelligenti",
+    "title": "Comprendi i Tuoi Soldi",
+    "subtitle": "Grafici e report potenti che svelano la tua storia finanziaria.",
+    "f1": {
+      "t": "Dettaglio Spese",
+      "d": "$12,480 spesi quest'anno — 70% per i bisogni, 30% per i desideri. Bellissimi grafici a ciambella per categoria."
+    },
+    "f2": {
+      "t": "Tendenze e Modelli",
+      "d": "Traccia le tendenze di spesa su settimane, mesi e anni. Scopri modelli che non avevi mai notato."
+    },
+    "f3": {
+      "t": "Report in Ore di Vita",
+      "d": "Ogni report mostra i costi in ore di vita. Quel tuo abbonamento da $67.50/mese costa 5 ore della tua vita."
+    },
+    "f4": {
+      "t": "Controllo Budget",
+      "d": "Imposta limiti per categoria. Ricevi avvisi all'80% e resta in carreggiata tutto il mese."
+    },
+    "f5": {
+      "t": "Analisi dei Redditi",
+      "d": "Traccia tutte le fonti di reddito. Il tuo reddito mensile di $3,200, visualizzato. Scopri il tuo tasso di risparmio."
+    },
+    "f6": {
+      "t": "Esporta e Condividi",
+      "d": "Esporta i report come CSV. Condividi i riepiloghi finanziari con il tuo partner o consulente."
+    }
+  },
+  "feat": {
+    "badge": "Kit Completo",
+    "title": "Tutto Ciò di Cui Hai Bisogno",
+    "subtitle": "Un sistema completo di gestione finanziaria, non solo un tracker delle spese.",
+    "f1": {
+      "t": "Multi-Conto",
+      "d": "Contanti, banca, carte di credito, investimenti. Tieni traccia di tutti i tuoi conti in un unico posto con supporto multi-valuta."
+    },
+    "f2": {
+      "t": "Categorie Intelligenti",
+      "d": "Spese categorizzate automaticamente con bellissimi grafici a ciambella. Scopri esattamente dove va il tuo denaro — in soldi e ore di vita."
+    },
+    "f3": {
+      "t": "Limiti di Budget",
+      "d": "Imposta limiti mensili per categoria. Ricevi avvisi quando sei al limite. Resta in carreggiata senza stress."
+    },
+    "f4": {
+      "t": "Obiettivi e Sogni",
+      "d": "Imposta obiettivi finanziari con scadenze. Monitora i progressi. Scopri quanto sei vicino — in soldi e ore di vita."
+    },
+    "f5": {
+      "t": "Assistente AI",
+      "d": "Chat AI integrata per consigli finanziari. Inserimento vocale per transazioni rapide. Scansione scontrini con AI."
+    },
+    "f6": {
+      "t": "300+ Valute",
+      "d": "Tassi di cambio in tempo reale per valute fiat, criptovalute e metalli. Converti tra qualsiasi valuta istantaneamente."
+    }
+  },
+  "how": {
+    "badge": "Inizia Subito",
+    "title": "Operativo in 2 Minuti",
+    "s1": {
+      "t": "Scarica e Registrati",
+      "d": "Crea un account o prova l'app completa in modalità demo. Nessuna carta di credito richiesta."
+    },
+    "s2": {
+      "t": "Imposta il Tuo Reddito",
+      "d": "Inserisci il tuo stipendio e il tuo orario di lavoro — che sia $3,200/mese o più. L'app calcola automaticamente la tua vera tariffa oraria."
+    },
+    "s3": {
+      "t": "Tieni Traccia di Tutto",
+      "d": "Aggiungi transazioni manualmente, con la voce o scansionando le ricevute. Anche un acquisto di $5 mostra il suo vero costo in ore di vita."
+    },
+    "s4": {
+      "t": "Guarda la Tua Vita Cambiare",
+      "d": "Risparmia $150/mese sugli acquisti d'impulso. Più risparmi. Obiettivi finanziari chiari. Vera libertà."
+    }
+  },
+  "prem": {
+    "badge": "Premium",
+    "title": "Sblocca il Tuo Potenziale",
+    "subtitle": "La versione gratuita è potente. Premium la rende inarrestabile — solo $14.99/mese.",
+    "p1": "Wish Incubator illimitato con analitiche",
+    "p2": "Consulente finanziario AI — chat illimitata",
+    "p3": "Scansione scontrini con AI",
+    "p4": "Inserimento transazioni vocale",
+    "p5": "Condivisione budget familiare",
+    "p6": "Analitiche avanzate e previsioni",
+    "cta": "Prova Premium Gratis"
+  },
+  "cta": {
+    "title": "Pronto a Smettere di Scambiare la Vita con le Cose?",
+    "subtitle": "Unisciti a migliaia di persone che prendono il controllo delle proprie finanze.",
+    "as": "Scarica sull'App Store",
+    "gp": "Disponibile su Google Play"
+  },
+  "footer": {
+    "tag": "Non scambiare la tua vita con le cose.",
+    "product": "Prodotto",
+    "features": "Funzionalità",
+    "premium": "Premium",
+    "download": "Scarica",
+    "company": "Azienda",
+    "about": "Chi Siamo",
+    "blog": "Blog",
+    "contact": "Contatti",
+    "legal": "Legale",
+    "privacy": "Politica sulla Privacy",
+    "terms": "Termini di Servizio",
+    "rights": "Tutti i diritti riservati."
+  }
+}

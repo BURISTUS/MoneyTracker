@@ -55,22 +55,6 @@ export class NotificationsService {
     });
   }
 
-  async sendLevelUp(userId: string, level: number, status: string) {
-    return this.create(userId, {
-      type: 'LEVEL_UP',
-      title: 'Повышение уровня! 🎉',
-      body: `Ты достиг уровня ${level} - ${status}!`,
-    });
-  }
-
-  async sendAchievement(userId: string, achievementName: string) {
-    return this.create(userId, {
-      type: 'ACHIEVEMENT_EARNED',
-      title: 'Новое достижение! 🏆',
-      body: `Ты заработал: ${achievementName}`,
-    });
-  }
-
   async sendBudgetAlert(userId: string, categoryName: string, percentUsed: number) {
     return this.create(userId, {
       type: 'BUDGET_ALERT',

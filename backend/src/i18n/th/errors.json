@@ -14,5 +14,8 @@
   "goalNotFound": "ไม่พบเป้าหมาย",
   "wishlistNotFound": "ไม่พบรายการสิ่งที่อยากได้",
   "invalidCredentials": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
-  "emailExists": "มีผู้ใช้ด้วยอีเมลนี้อยู่แล้ว"
+  "emailExists": "มีผู้ใช้ด้วยอีเมลนี้อยู่แล้ว",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
 }

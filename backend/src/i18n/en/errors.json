@@ -39,5 +39,8 @@
   "currencyNotFound": "Currency not found: {{from}} or {{to}}",
   "negativeHourlyRate": "Hourly rate cannot be negative",
   "authenticationRequired": "Authentication required",
-  "featureNotAvailable": "{{feature}} is not available on your plan"
+  "featureNotAvailable": "{{feature}} is not available on your plan",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
 }

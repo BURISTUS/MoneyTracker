@@ -1,0 +1,208 @@
+{
+  "nav": {
+    "download": "Pobierz"
+  },
+  "hero": {
+    "badge": "Rewolucja Finansów Osobistych",
+    "title1": "Przestań Wymieniać",
+    "title2": "Swoje Życie",
+    "title3": " na Rzeczy",
+    "subtitle": "Widz każdy zakup w godzinach swojego życia. Zabij impulsywne zakupy z 7-dniowym Wish Incubatorem. Odzyskaj kontrolę.",
+    "cta": "Pobierz Za Darmo",
+    "learn": "Zobacz Funkcje",
+    "phone": {
+      "balance": "Saldo",
+      "today": "Dzisiaj",
+      "hours": "godziny życia",
+      "t1": "-$15",
+      "t1cat": "Kawa",
+      "t2": "-$120",
+      "t2cat": "Produkty spożywcze",
+      "t3": "-$250",
+      "t3cat": "Zakupy"
+    }
+  },
+  "lc": {
+    "badge": "Funkcja Zabójca",
+    "title": "Prawdziwa Cena",
+    "subtitle": "Każda cena w aplikacji jest pokazywana dwa razy — w twojej walucie i w godzinach twojego życia.",
+    "card": {
+      "label": "Dzisiejszy zakup",
+      "item": "PlayStation 5",
+      "hours": "31 godzin twojego życia",
+      "detail": "Konsola za $400 — prawie 4 pełne dni pracy. 40% impulsywnych zakupów jest żałowanych. Warto nadal?",
+      "coffee": "Codzienne $5 Latte",
+      "coffeeHours": "18 min/dzień = 110 godz/rok"
+    },
+    "how": "Jak To Działa",
+    "s1": {
+      "t": "Wprowadź swoje dochody",
+      "d": "Podaj swoją pensję i godziny pracy. Obliczymy twoją prawdziwą stawkę godzinową."
+    },
+    "s2": {
+      "t": "Zobacz prawdę",
+      "d": "Każda transakcja pokazuje godziny życia. Kategorie, wykresy, lista życzeń — wszędzie."
+    },
+    "s3": {
+      "t": "Podejmuj lepsze decyzje",
+      "d": "Kiedy widzisz \"40 godzin pracy\" zamiast \"$600\", decyzje stają się łatwiejsze."
+    }
+  },
+  "ai": {
+    "badge": "Zasilane przez AI",
+    "title": "Twój AI Doradca Finansowy",
+    "subtitle": "Wbudowane AI, które rozumie Twoje wzorce wydatków i daje spersonalizowane porady.",
+    "q1": "Ile wydałem na jedzenie w tym miesiącu?",
+    "a1": "Wydałeś $280 na jedzenie w tym miesiącu, co stanowi 30% Twojego budżetu. To $60 mniej niż w zeszłym miesiącu!",
+    "q2": "Czy mogę sobie pozwolić gitarę za $499?",
+    "a2": "Gitara za $499 kosztuje 40 godzin Twojego życia. Zostało Ci $1,840 w budżecie na ten miesiąc.",
+    "f1": {
+      "t": "Inteligentne Wnioski",
+      "d": "AI analizuje Twoje wzorce wydatków i wskazuje, gdzie możesz oszczędzić."
+    },
+    "f2": {
+      "t": "Język Naturalny",
+      "d": "Zadawaj pytania w naturalnym języku. Bez skomplikowanych menu i filtrów."
+    },
+    "f3": {
+      "t": "Wprowadzanie Głosowe",
+      "d": "Mów swoje transakcje. SpendWise rozumie i kategoryzuje je."
+    },
+    "f4": {
+      "t": "Skanowanie Paragonów",
+      "d": "Zrób zdjęcie paragonu. AI wyciąga pozycje, ceny i kategorie."
+    }
+  },
+  "inc": {
+    "badge": "Zabójca Impulsów",
+    "title": "Wish Incubator",
+    "subtitle": "7-dniowy okres chłodzenia przed każdym zakupem. Większość pragnień umiera przed dniem 7.",
+    "s1": {
+      "t": "Chcesz Coś?",
+      "d": "Dodaj to do Inkubatora z powodem: \"Po co mi to?\""
+    },
+    "s2": {
+      "t": "Zamroź na 7 Dni",
+      "d": "Przycisk Kup jest zablokowany. Oglądaj odliczanie czasu."
+    },
+    "s3": {
+      "t": "Nadal Chcesz?",
+      "d": "Dzień 7 — zdecyduj. Kup lub z dumą odrzuć. Zobacz ile życia zaoszczędziłeś."
+    },
+    "r": {
+      "t": "Powiedziałeś \"Nie potrzebuję tego\"",
+      "d": "Właśnie zaoszczędziłeś 40 godzin swojego życia. Zainwestowane na 10%, to $2,400 za 10 lat."
+    }
+  },
+  "an": {
+    "badge": "Inteligentna Analityka",
+    "title": "Zrozum Swoje Pieniądze",
+    "subtitle": "Potężne wykresy i raporty, które odsłaniają Twoją historię finansową.",
+    "f1": {
+      "t": "Podział Wydatków",
+      "d": "$12,480 wydanych w tym roku — 70% na potrzeby, 30% na zachcianki. Piękne wykresy kołowe wg kategorii."
+    },
+    "f2": {
+      "t": "Trendy i Wzorce",
+      "d": "Śledź trendy wydatków tygodniami, miesiącami i latami. Dostrzeż wzorce, których wcześniej nie zauważyłeś."
+    },
+    "f3": {
+      "t": "Raporty w Godzinach Życia",
+      "d": "Każdy raport pokazuje koszty w godzinach życia. Ta subskrypcja $67.50/miesiąc kosztuje 5 godzin Twojego życia."
+    },
+    "f4": {
+      "t": "Śledzenie Budżetu",
+      "d": "Ustaw limity na kategorię. Otrzymuj alerty przy 80% i trzymaj się planu przez cały miesiąc."
+    },
+    "f5": {
+      "t": "Analiza Dochodów",
+      "d": "Śledź wszystkie źródła dochodów. Twój miesięczny dochód $3,200, zwizualizowany. Zobacz swoją stopę oszczędności."
+    },
+    "f6": {
+      "t": "Eksport i Udostępnianie",
+      "d": "Eksportuj raporty jako CSV. Udostępniaj podsumowania finansowe partnerowi lub doradcy."
+    }
+  },
+  "feat": {
+    "badge": "Pełen Zestaw Narzędzi",
+    "title": "Wszystko Czego Potrzebujesz",
+    "subtitle": "Kompletny system zarządzania finansami, nie tylko śledzenie wydatków.",
+    "f1": {
+      "t": "Wielokontowość",
+      "d": "Gotówka, bank, karty kredytowe, inwestycje. Śledź wszystkie konta w jednym miejscu z obsługą wielu walut."
+    },
+    "f2": {
+      "t": "Inteligentne Kategorie",
+      "d": "Automatycznie skategoryzowane wydatki z pięknymi wykresami kołowymi. Zobacz dokładnie gdzie idą twoje pieniądze — w złotówkach i godzinach życia."
+    },
+    "f3": {
+      "t": "Limity Budżetowe",
+      "d": "Ustaw miesięczne limity na kategorię. Otrzymuj alerty, gdy jesteś blisko granicy. Trzymaj się planu bez stresu."
+    },
+    "f4": {
+      "t": "Cele i Marzenia",
+      "d": "Ustaw cele finansowe z terminami. Śledź postępy. Zobacz jak blisko jesteś — w pieniądzach i godzinach życia."
+    },
+    "f5": {
+      "t": "Asystent AI",
+      "d": "Wbudowany czat AI do porad finansowych. Wprowadzanie głosowe do szybkich transakcji. Skanowanie paragonów z AI."
+    },
+    "f6": {
+      "t": "300+ Walut",
+      "d": "Kursy wymiany w czasie rzeczywistym dla walut fiat, kryptowalut i metali. Konwertuj między dowolnymi walutami natychmiast."
+    }
+  },
+  "how": {
+    "badge": "Zacznij Teraz",
+    "title": "Gotowe w 2 Minuty",
+    "s1": {
+      "t": "Pobierz i Zarejestruj się",
+      "d": "Utwórz konto lub wypróbuj pełną aplikację w trybie demo. Bez karty kredytowej."
+    },
+    "s2": {
+      "t": "Ustaw Swoje Dochody",
+      "d": "Wprowadź pensję i harmonogram pracy — czy to $3,200/miesiąc czy więcej. Aplikacja automatycznie oblicza twoją prawdziwą stawkę godzinową."
+    },
+    "s3": {
+      "t": "Śledź Wszystko",
+      "d": "Dodawaj transakcje ręcznie, głosem lub skanując paragony. Nawet zakup za $5 pokazuje swój prawdziwy koszt w godzinach życia."
+    },
+    "s4": {
+      "t": "Zobacz Jak Zmienia się Twoje Życie",
+      "d": "Oszczędź $150/miesiąc na impulsywnych zakupach. Więcej oszczędności. Jasne cele finansowe. Prawdziwa wolność."
+    }
+  },
+  "prem": {
+    "badge": "Premium",
+    "title": "Odblokuj Swój Pełen Potencjał",
+    "subtitle": "Darmowa wersja jest potężna. Premium czyni ją niepowstrzymaną — tylko $14.99/miesiąc.",
+    "p1": "Nieograniczony Wish Incubator z analityką",
+    "p2": "AI doradca finansowy — nieograniczony czat",
+    "p3": "Skanowanie paragonów z AI",
+    "p4": "Głosowe wprowadzanie transakcji",
+    "p5": "Współdzielenie budżetu rodzinnego",
+    "p6": "Zaawansowana analityka i prognozy",
+    "cta": "Wypróbuj Premium Za Darmo"
+  },
+  "cta": {
+    "title": "Gotowy Przestać Wymieniać Życie na Rzeczy?",
+    "subtitle": "Dołącz do tysięcy ludzi, którzy kontrolują swoje finanse.",
+    "as": "Pobierz z App Store",
+    "gp": "Pobierz z Google Play"
+  },
+  "footer": {
+    "tag": "Nie wymieniaj swojego życia na rzeczy.",
+    "product": "Produkt",
+    "features": "Funkcje",
+    "premium": "Premium",
+    "download": "Pobierz",
+    "company": "Firma",
+    "about": "O Nas",
+    "blog": "Blog",
+    "contact": "Kontakt",
+    "legal": "Prawne",
+    "privacy": "Polityka Prywatności",
+    "terms": "Regulamin Usługi",
+    "rights": "Wszelkie prawa zastrzeżone."
+  }
+}

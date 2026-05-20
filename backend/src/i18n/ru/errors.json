@@ -39,5 +39,8 @@
   "currencyNotFound": "Валюта не найдена: {{from}} или {{to}}",
   "negativeHourlyRate": "Часовая ставка не может быть отрицательной",
   "authenticationRequired": "Требуется авторизация",
-  "featureNotAvailable": "{{feature}} недоступна на вашем плане"
+  "featureNotAvailable": "{{feature}} недоступна на вашем плане",
+  "invalidRefreshToken": "Недействительный refresh token",
+  "refreshTokenRevoked": "Refresh token отозван. Войдите заново.",
+  "refreshTokenExpired": "Refresh token истёк. Войдите заново."
 }

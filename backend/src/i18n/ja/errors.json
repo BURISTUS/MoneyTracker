@@ -14,5 +14,8 @@
   "goalNotFound": "目標が見つかりません",
   "wishlistNotFound": "ウィッシュリスト項目が見つかりません",
   "invalidCredentials": "メールアドレスまたはパスワードが無効です",
-  "emailExists": "このメールアドレスは既に登録されています"
+  "emailExists": "このメールアドレスは既に登録されています",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
 }

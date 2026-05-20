@@ -2,6 +2,34 @@
 
 ## Выполненные задачи
 
+### Refresh-token механизм (2026-05-19)
+- [x] **Backend**: `RefreshToken` модель Prisma (id, token, userId, expiresAt, isRevoked)
+- [x] **Backend**: `POST /auth/refresh` — ротация refresh token на новую пару access+refresh
+- [x] **Backend**: `POST /auth/logout` — инвалидация refresh token
+- [x] **Backend**: JWT TTL 15 мин, refresh TTL 30 дней
+- [x] **Backend**: i18n ошибки (invalidRefreshToken, refreshTokenRevoked, refreshTokenExpired) EN+RU+18 языков
+- [x] **Backend**: Миграция `20260518212046_add_refresh_token_model`
+- [x] **Mobile**: `api.ts` — axios interceptor: 401 → `/auth/refresh` → retry оригинального запроса
+- [x] **Mobile**: `api.ts` — race condition защита (isRefreshing + refreshSubscribers queue)
+- [x] **Mobile**: `auth.ts` — refreshToken хранится в expo-secure-store (ключ `refreshToken`)
+- [x] **Mobile**: `auth.ts` — методы `refreshTokens()`, `clearAuth()` чистят оба токена
+- [x] **Mobile**: `types/index.ts` — `AuthResponse` обновлён (добавлено `refreshToken`)
+
+### AddTransactionModal рефакторинг (2026-05-19)
+- [x] 931 строка → 6 файлов: `TransactionForm/useTransactionForm.ts`, `AmountInput.tsx`, `CategorySelector.tsx`, `AccountSelector.tsx`, `TransactionNoteInput.tsx`, `TransactionTypeToggle.tsx`
+- [x] `useTransactionForm.ts` — кастомный hook с состоянием формы и бизнес-логикой
+- [x] Каждый подкомпонент получает props из родителя
+- [x] `AddTransactionModal.tsx` — тонкий слой, делегирует подкомпонентам
+
+### Biometric/pin-lock (2026-05-19)
+- [x] `expo-local-authentication` установлен
+- [x] `securityStore.ts` — isLockEnabled, lockMethod, pinHash (persisted в expo-secure-store)
+- [x] `LockScreen.tsx` — PIN numpad + biometric prompt + error feedback (vibration)
+- [x] `app/lock.tsx` — маршрут для lock screen
+- [x] `_layout.tsx` — LockMonitor (AppState background >30с → lock)
+- [x] `app/index.tsx` — проверка lock при запуске
+- [x] i18n секция `security` (EN+RU)
+
 ### Backend Code Quality Refactoring (2026-05-16)
 - [x] **61 проблема из аудита исправлена** (7 CRITICAL, 14 HIGH, 26 MEDIUM, 14 LOW)
 - [x] DTOs созданы для ВСЕХ endpoints (20+ DTO файлов):
@@ -317,6 +345,14 @@
 - [x] **subscriptionStore.test.ts** (29 тестов): checkAccess (default/status features), isPremium, plan, showPaywall, closePaywall, fetchStatus, accountLimit, allowedAccountTypes, clearFamily
 - [x] **98 тестов, все проходят** (`npm run test`)
 
+### Landing Page — SpendWise (2026-05-19)
+- [x] `landing/index.html` — полный редизайн в стиле 1Money, phone mockup, секции: Hero, Life-Cost, AI Advisor (chat demo), Incubator, Analytics (6 cards), Features (6 cards), How It Works, Premium, CTA, Footer
+- [x] `landing/css/styles.css` — точные токены из themeStore.ts (dark #0A0A0F / light #F5F1EB), toggle тема, transition 0.3s, responsive 3 breakpoint
+- [x] `landing/js/main.js` — theme toggle (localStorage sw-theme), language switcher (sw-lang), IntersectionObserver, navbar blur
+- [x] `landing/i18n/` — 20 файлов с новой структурой ключей (lc, ai, inc, an, feat, prem, how, cta, footer)
+- [x] Акцент на AI финансовый консультант (секция AI с чат-демо), подробная аналитика (6 карточек)
+- [x] App name: SpendWise — Financial Tracker
+
 ## Бэклог
 
 ### Приоритет высокий (запрошено PM)
@@ -325,6 +361,7 @@
 - [ ] **Скан чеков** — `receipt-scanning`: фото → DeepSeek Vision → позиции → транзакции
 - [ ] **Главный экран** — `home-screen-redesign`: переработка UX/UI (последняя очередь)
 - [ ] **Бюджеты — редизайн** — `budget-rethink`: inline indicators, возможно удаление отдельной вкладки
+- [ ] **E2E тесты фиксы** — рус/англ имена в app.e2e-spec.ts (21 падающий тест)
 
 ### Приоритет средний (аналитические находки)
 - [ ] Transfer между счетами (TransactionType.TRANSFER) — `transfer-accounts`

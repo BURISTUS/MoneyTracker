@@ -1,0 +1,208 @@
+{
+  "nav": {
+    "download": "Download"
+  },
+  "hero": {
+    "badge": "Financial Tracker",
+    "title1": "Stop trading",
+    "title2": "your life",
+    "title3": " for stuff",
+    "subtitle": "AI financial advisor in your pocket. Every purchase in hours of your life. Kill impulse buying with the 7-day Wish Incubator.",
+    "cta": "Get It Free",
+    "learn": "Meet Your AI",
+    "phone": {
+      "balance": "Total Balance",
+      "today": "Today's spending",
+      "hours": "of your life today",
+      "t1": "Notifications",
+      "t1cat": "Subscriptions",
+      "t2": "Salary",
+      "t2cat": "Income",
+      "t3": "Groceries",
+      "t3cat": "Food"
+    }
+  },
+  "lc": {
+    "badge": "Killer Feature",
+    "title": "The Real Price Tag",
+    "subtitle": "Every price shown twice — in your currency and in hours of your life.",
+    "card": {
+      "label": "Today's purchase",
+      "item": "PlayStation 5",
+      "hours": "31h of your life",
+      "detail": "Almost 4 full work days. Still worth it?",
+      "coffee": "Daily Latte",
+      "coffeeHours": "18 min/day = 110 hrs/year"
+    },
+    "how": "How It Works",
+    "s1": {
+      "t": "Enter your income",
+      "d": "Salary + work hours → real hourly rate calculated automatically."
+    },
+    "s2": {
+      "t": "See the truth",
+      "d": "Every transaction shows life-hours. Categories, charts, wishlist — everywhere."
+    },
+    "s3": {
+      "t": "Make better choices",
+      "d": "\"40 hours of work\" hits different from \"$600\". Decisions get easier."
+    }
+  },
+  "ai": {
+    "badge": "AI-Powered",
+    "title": "Your Personal Financial Advisor",
+    "subtitle": "Built-in AI that knows your spending habits, answers questions, and helps you make smarter decisions — 24/7.",
+    "q1": "I spent $400 on dining out this month. Is that too much?",
+    "a1": "That's 25 hours of your life on restaurants. Your dining budget was $250 — you're $150 over. Last month you spent $280. Trend is going up. Want tips to cut back?",
+    "q2": "Yes, what can I do?",
+    "a2": "3 quick tips: 1) Meal prep on Sundays — saves ~$120/month. 2) Set a $60/week dining limit — I'll track it. 3) Use the Incubator for restaurant cravings — 70% of urges pass in 7 days.",
+    "f1": {
+      "t": "Smart Chat",
+      "d": "Ask anything about your finances. AI analyzes your real data and gives personalized advice."
+    },
+    "f2": {
+      "t": "Voice Input",
+      "d": "Say \"Spent 15 bucks on coffee\" — AI parses amount, category, and creates the transaction."
+    },
+    "f3": {
+      "t": "Receipt Scanner",
+      "d": "Snap a photo of your receipt. AI reads items, amounts, dates — creates transactions automatically."
+    },
+    "f4": {
+      "t": "Spending Insights",
+      "d": "AI spots patterns you miss: \"You spend 40% more on weekends\" or \"Subscription costs doubled in 3 months.\""
+    }
+  },
+  "inc": {
+    "badge": "Impulse Killer",
+    "title": "The Wish Incubator",
+    "subtitle": "7-day cooling period. Most desires die before day 7.",
+    "s1": {
+      "t": "Want Something?",
+      "d": "Add it with a reason: \"Why do I need this?\""
+    },
+    "s2": {
+      "t": "Freeze for 7 Days",
+      "d": "Buy button locked. Countdown timer ticking."
+    },
+    "s3": {
+      "t": "Still Want It?",
+      "d": "Decide on day 7. Buy or proudly reject."
+    },
+    "r": {
+      "t": "\"I don't need this\"",
+      "d": "You saved 40 hours of your life. Invested at 10% → $2,400 in 10 years."
+    }
+  },
+  "an": {
+    "badge": "Deep Analytics",
+    "title": "Know Where Every Cent Goes",
+    "subtitle": "Detailed breakdowns, trends, category insights — all visualized in beautiful charts.",
+    "f1": {
+      "t": "Donut Charts",
+      "d": "Beautiful donut charts per period — day, week, month, year. Tap any category for life-hours breakdown."
+    },
+    "f2": {
+      "t": "Trend Analysis",
+      "d": "Compare spending across months. See which categories grow, which shrink. Spot patterns before they become problems."
+    },
+    "f3": {
+      "t": "Category Insights",
+      "d": "Drill into any category. See top merchants, average transaction, life-hours cost, and month-over-month changes."
+    },
+    "f4": {
+      "t": "Period Navigation",
+      "d": "Swipe through days, weeks, months, years. Full calendar date range picker for custom periods."
+    },
+    "f5": {
+      "t": "Budget Tracking",
+      "d": "Set limits per category with color-coded progress bars. Get warnings at 80%. See remaining budget in real-time while adding transactions."
+    },
+    "f6": {
+      "t": "Data Export",
+      "d": "Export transactions to CSV with one tap. Full data portability — your data is yours."
+    }
+  },
+  "feat": {
+    "badge": "Full Toolkit",
+    "title": "Everything You Need",
+    "subtitle": "A complete financial system, not just an expense tracker.",
+    "f1": {
+      "t": "Multi-Account",
+      "d": "Cash, bank, cards, investments, debts. All in one place with multi-currency support and auto-balance updates."
+    },
+    "f2": {
+      "t": "Smart Categories",
+      "d": "16 built-in categories with custom icons and colors. Create your own. Donut charts show spending in money and life-hours."
+    },
+    "f3": {
+      "t": "Transfers",
+      "d": "Move money between accounts with auto-conversion. Cash to card, USD to EUR — all tracked instantly."
+    },
+    "f4": {
+      "t": "300+ Currencies",
+      "d": "Real-time rates for fiat, crypto, and precious metals. Convert anything instantly. Works offline with cached rates."
+    },
+    "f5": {
+      "t": "Biometric Lock",
+      "d": "Fingerprint, Face ID, or PIN code. Your financial data stays private — auto-locks after 30 seconds in background."
+    },
+    "f6": {
+      "t": "Demo Mode",
+      "d": "Try the full app instantly — no sign-up needed. Explore all features with sample data before creating an account."
+    }
+  },
+  "how": {
+    "badge": "Get Started",
+    "title": "Ready in 2 Minutes",
+    "s1": {
+      "t": "Download & Sign Up",
+      "d": "Create an account or try demo mode. No credit card needed."
+    },
+    "s2": {
+      "t": "Set Your Income",
+      "d": "Enter salary and work hours. Hourly rate calculated automatically."
+    },
+    "s3": {
+      "t": "Track Everything",
+      "d": "Add transactions manually, by voice, or scan receipts. Life-hours everywhere."
+    },
+    "s4": {
+      "t": "Watch Your Life Change",
+      "d": "Fewer impulse buys. More savings. AI-powered insights. Real freedom."
+    }
+  },
+  "prem": {
+    "badge": "Premium",
+    "title": "Unlock Full Potential",
+    "subtitle": "Free is powerful. Premium makes it unstoppable.",
+    "p1": "Unlimited Wish Incubator with analytics",
+    "p2": "AI financial advisor — unlimited chat",
+    "p3": "Receipt scanning with AI",
+    "p4": "Voice transaction input",
+    "p5": "Family budget sharing",
+    "p6": "Advanced analytics & forecasts",
+    "cta": "Try Premium Free"
+  },
+  "cta": {
+    "title": "Ready to take back control?",
+    "subtitle": "Join thousands of people taking control of their finances.",
+    "as": "Download on the",
+    "gp": "Get it on"
+  },
+  "footer": {
+    "tag": "Don't trade your life for stuff.",
+    "product": "Product",
+    "features": "Features",
+    "premium": "Premium",
+    "download": "Download",
+    "company": "Company",
+    "about": "About",
+    "blog": "Blog",
+    "contact": "Contact",
+    "legal": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "rights": "All rights reserved."
+  }
+}

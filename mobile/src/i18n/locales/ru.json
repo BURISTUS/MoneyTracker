@@ -970,5 +970,25 @@
     "customDesc": "Создайте больше 3 категорий для точного учёта расходов",
     "unlockPremium": "Разблокировать Premium",
     "notNow": "Не сейчас"
+  },
+  "security": {
+    "title": "Безопасность",
+    "enterPin": "Введите PIN",
+    "pinSubtitle": "Введите 4-значный PIN-код для разблокировки",
+    "wrongPin": "Неверный PIN. Попробуйте ещё.",
+    "useBiometric": "Использовать биометрию",
+    "unlockBiometric": "Разблокировать биометрией",
+    "lockEnabled": "Блокировка приложения",
+    "lockEnabledDesc": "Требовать аутентификацию при открытии приложения",
+    "lockMethod": "Метод блокировки",
+    "methodPin": "PIN-код",
+    "methodBiometric": "Биометрия",
+    "setPin": "Задать PIN",
+    "setPinDesc": "Выберите 4-значный PIN-код",
+    "confirmPin": "Подтвердите PIN",
+    "pinMismatch": "PIN-коды не совпадают. Попробуйте ещё.",
+    "pinSet": "PIN-код установлен",
+    "pinRemoved": "PIN-код удалён",
+    "biometricNotAvailable": "Биометрическая аутентификация недоступна на этом устройстве"
   }
 }

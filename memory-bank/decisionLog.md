@@ -1,5 +1,27 @@
 # Журнал решений
 
+## 2026-05-19: Refresh-token механизм
+
+### D-18: Refresh token — серверная ротация
+- **Решение**: Каждый refresh обменяет старый refresh token на новую пару (access + refresh). Старый помечается isRevoked=true.
+- **Причина**: Prevents token replay attacks. Если злоумышленник получит старый refresh, он будет уже отозван.
+- **Revoke all on reuse**: Если обнаружен попытка использовать отозванный refresh → все токены юзера отзываются (защита от кражи).
+
+### D-19: Refresh token — crypto.randomBytes вместо JWT
+- **Решение**: Refresh token = `crypto.randomBytes(64).toString('hex')`, хранится в БД
+- **Причина**: JWT для refresh не нужен — нет payload. Random opaque token нельзя декодировать, нельзя подделать. Проще отзывать.
+- **Альтернатива**: JWT для refresh (отклонено — сложнее отзыв, больше payload)
+
+### D-20: Race condition — refreshSubscribers queue
+- **Решение**: При 401 — первый запрос инициирует refresh, остальные подписываются в очередь. После refresh все получают новый токен и повторяют свои запросы.
+- **Причина**: Без очереди — N параллельных 401 → N refresh запросов → N новых токенов → N-1 отозваны.
+- **Реализация**: `isRefreshing` флаг + `refreshSubscribers` массив callbacks
+
+### D-21: PIN хэш — simpleHash вместо bcrypt
+- **Решение**: Простой хэш `simpleHash()` для PIN-кода (не cryptographic)
+- **Причина**: PIN 4 цифры — даже с bcrypt брутфорс тривиален (10K комбинаций). Основная защита — device lock + secure enclave. Нет смысла тратить CPU на bcrypt на мобильном.
+- **Альтернатива**: bcrypt/scrypt (отклонено — overkill для 4-digit PIN, замедляет UX)
+
 ## 2026-05-16: Бэкенд-рефакторинг (61 проблема из аудита)
 
 ### D-01: DTOs с class-validator для ВСЕХ endpoints
