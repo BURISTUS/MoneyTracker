@@ -397,22 +397,32 @@
 
 ## Бэклог
 
-### Приоритет высокий (запрошено PM)
-- [ ] **DeepSeek AI инфраструктура** — `deepseek-ai-section`: чат, пресеты, rate limiting, system prompt
-- [ ] **Speech-to-text транзакции** — `speech-to-text-transactions`: голосовой ввод → AI → предзаполнение формы
-- [ ] **Скан чеков** — `receipt-scanning`: фото → DeepSeek Vision → позиции → транзакции
-- [ ] **Главный экран** — `home-screen-redesign`: переработка UX/UI (последняя очередь)
+### Приоритет высокий — AI фичи (запрошено PM)
+- [ ] **DeepSeek AI чат** — подключить DeepSeek API к бэкенду `chat/` модулю: system prompt с контекстом юзера, пресет-вопросы (bilingual en/ru), rate limiting (Redis), error handling (таймаут 30с, 2 retry), валидация JSON ответа
+- [ ] **Speech-to-text транзакции** — голосовой ввод на мобайле → текст → DeepSeek → структурированная транзакция (сумма, категория, счёт) → предзаполнение AddTransactionModal. Бэкенд `ai/` модуль + `ParseVoiceDto` уже есть
+- [ ] **Скан чеков** — фото чека через камеру → DeepSeek Vision API → распознавание позиций (название, сумма, дата) → маппинг в транзакции. Бэкенд `ai/` + `ParseReceiptDto` есть, мобайл `ReceiptScanner` компонент есть
 
-### Приоритет средний (аналитические находки)
-- [ ] Transfer между счетами (TransactionType.TRANSFER) — `transfer-accounts` *(уже реализовано)*
-- [ ] Редактирование категорий *(уже реализовано)*
-- [ ] Регулярные транзакции — `recurring-transactions`
+### Приоритет высокий — UX/UI
+- [ ] **Главный экран редизайн** — `home-screen-redesign`: переработка Home screen UX/UI (последняя очередь, после AI фич)
+
+### Приоритет средний
+- [ ] **Регулярные транзакции** — `recurring-transactions`: шаблоны повторяющихся платежей (подписки, аренда), автосоздание по расписанию
+- [ ] ~~Transfer между счетами~~ *(реализовано)*
+- [ ] ~~Редактирование категорий~~ *(реализовано)*
+
+### Приоритет средний — Публикация
+- [ ] **Подготовка к релизу** — иконка приложения, splash screen, screenshots для сторов, metadata (название, описание, ключевые слова) на EN + RU
+- [ ] **RuStore публикация** — регистрация девелопер аккаунта, загрузка APK/AAB, заполнение карточки приложения, прохождение модерации, ссылка на лендинг
+- [ ] **AppGallery публикация (Huawei)** — регистрация Huawei Developer, интеграция HMS Core (если нужно), загрузка APK, прохождение ревью
+- [ ] **App Store публикация** — Apple Developer аккаунт, Xcode архивация, TestFlight бета-тестирование, review guidelines compliance, возрастной рейтинг
+- [ ] **Google Play публикация** — Google Play Console, signing key, AAB upload, content rating, data safety form, review
+- [ ] **Лендинг хостинг** — деплой `landing/` на Vercel/Netlify/GitHub Pages, кастомный домен, SSL
 
 ### Приоритет низкий / Premium
-- [ ] Семейный бюджет (Family module) — `family-module`
-- [ ] Депозиты/кредиты (Deposit/Loan modules) — `deposits-loans`
-- [ ] Прогнозирование (ForecastScenario)
-- [ ] Пуш-уведомления
-- [ ] Оффлайн-режим
-- [ ] Виджеты
+- [ ] **Семейный бюджет** (Family module) — бэкенд файлы есть, модуль не подключён в AppModule
+- [ ] **Пуш-уведомления** — Firebase Cloud Messaging / HMS Push, настройка на бэкенде, мобайл permissions
+- [ ] **Оффлайн-режим** — локальное кэширование транзакций, очередь синхронизации, conflict resolution
+- [ ] **Виджеты** — iOS Widgets (WidgetKit) / Android Widgets (Glance) — баланс, бюджет, последние траты
+- [ ] **Депозиты/кредиты** — модели удалены из Prisma schema, требуют восстановления и миграции
+- [ ] **Прогнозирование** (ForecastScenario) — модель удалена, требует восстановления
 ---
