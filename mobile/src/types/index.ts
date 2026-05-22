@@ -364,10 +364,8 @@ export interface Notification {
 export enum NotificationType {
   WISHLIST_READY = 'WISHLIST_READY',
   BUDGET_ALERT = 'BUDGET_ALERT',
-  CHALLENGE_INVITE = 'CHALLENGE_INVITE',
-  LEVEL_UP = 'LEVEL_UP',
-  ACHIEVEMENT_EARNED = 'ACHIEVEMENT_EARNED',
-  STREAK_WARNING = 'STREAK_WARNING',
+  GOAL_COMPLETED = 'GOAL_COMPLETED',
+  MONTHLY_SUMMARY = 'MONTHLY_SUMMARY',
 }
 
 // Chat Types
@@ -387,11 +385,33 @@ export interface Article {
   id: string;
   slug: string;
   tag: string;
+  isPremium: boolean;
   viewCount: number;
   title: string;
   content: string;
   readTime: string;
   language: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// === Budget ===
+
+export interface Budget {
+  id: string;
+  categoryId: string;
+  category?: {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+    type: string;
+  };
+  amount: number;
+  month: string;
+  spent: number;
+  percentUsed: number;
+  isOverBudget: boolean;
   createdAt: string;
   updatedAt: string;
 }

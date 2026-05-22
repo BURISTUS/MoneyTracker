@@ -31,6 +31,7 @@ interface Props {
   onClose: () => void;
   onSave: (data: { name: string; icon?: string; color?: string; excludeFromTotal: boolean; monthlyLimit: number | null }) => void;
   onDelete: (categoryId: string) => void;
+  budgetAmount?: number | null;
 }
 
 // Filter icon bank by income type
@@ -41,7 +42,7 @@ function filterIconBank(type: string) {
   return ICON_BANK.filter((g) => g.label !== 'Доходы');
 }
 
-export function CategoryEditModal({ visible, category, onClose, onSave, onDelete }: Props) {
+export function CategoryEditModal({ visible, category, onClose, onSave, onDelete, budgetAmount }: Props) {
   const { t } = useTranslation();
   const C = useTheme();
 
@@ -50,8 +51,8 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
   const [color, setColor] = useState(category.color || C.primary);
   const [excludeFromTotal, setExcludeFromTotal] = useState(category.excludeFromTotal);
   const [monthlyLimitText, setMonthlyLimitText] = useState(
-    category.monthlyLimit !== null && category.monthlyLimit !== undefined
-      ? String(Math.round(category.monthlyLimit / 100))
+    budgetAmount !== null && budgetAmount !== undefined
+      ? String(Math.round(budgetAmount / 100))
       : '',
   );
   const [expandedGroup, setExpandedGroup] = useState<number>(-1);
@@ -75,13 +76,13 @@ export function CategoryEditModal({ visible, category, onClose, onSave, onDelete
       setColor(category.color || C.primary);
       setExcludeFromTotal(category.excludeFromTotal);
       setMonthlyLimitText(
-        category.monthlyLimit !== null && category.monthlyLimit !== undefined
-          ? String(Math.round(category.monthlyLimit / 100))
+        budgetAmount !== null && budgetAmount !== undefined
+          ? String(Math.round(budgetAmount / 100))
           : '',
       );
       setExpandedGroup(-1);
     }
-  }, [visible, category]);
+  }, [visible, category, budgetAmount]);
 
   const handleSelectIcon = (def: IconDef) => {
     setIconRaw(serializeIcon(def));

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { safeAsyncStorage } from '../utils/safeAsyncStorage';
-import type { Account, Transaction, Goal, Category, UserGamification, Challenge, WishlistItem, User, Article } from '../types';
+import type { Account, Transaction, Goal, Category, UserGamification, Challenge, WishlistItem, User, Article, Budget } from '../types';
 import { AccountType, CategoryType, TransactionType, WishlistStatus } from '../types';
 import { useAuthStore } from './authStore';
 import transactionsService from '../services/transactions';
@@ -13,6 +13,7 @@ import currencyService from '../services/currency';
 import wishlistService from '../services/wishlist';
 import goalsService from '../services/goals';
 import articlesService from '../services/articles';
+import budgetsService from '../services/budgets';
 import { useSubscriptionStore } from './subscriptionStore';
 import type { ExchangeRate } from '../services/currency';
 import { setCurrencyConfig } from '../utils/formatters';
@@ -120,6 +121,15 @@ interface DataState {
   setHourlyRate: (rateRubles: number) => Promise<void>;
   calculateLifeCost: (amount: number) => Promise<{ hours: number; days: number; message: string }>;
   fetchHourlyRate: () => Promise<void>;
+
+  // Budgets
+  budgets: Budget[];
+  isLoadingBudgets: boolean;
+  fetchBudgets: (month?: string) => Promise<void>;
+  addBudget: (data: { categoryId: string; amount: number; month?: string }) => Promise<void>;
+  updateBudget: (id: string, amount: number) => Promise<void>;
+  deleteBudget: (id: string) => Promise<void>;
+  carryForwardBudgets: () => Promise<void>;
 
   // Initialization
   initializeData: () => Promise<void>;
@@ -554,6 +564,57 @@ export const useDataStore = create<DataState>()(
         }
       },
 
+      // Budgets
+      budgets: [],
+      isLoadingBudgets: false,
+
+      fetchBudgets: async (month?: string) => {
+        try {
+          set({ isLoadingBudgets: true });
+          const currentMonth = month || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+          const res = await budgetsService.getBudgets(currentMonth);
+          set({ budgets: res.data, isLoadingBudgets: false });
+        } catch (error) {
+          set({ isLoadingBudgets: false });
+        }
+      },
+
+      addBudget: async (data: { categoryId: string; amount: number; month?: string }) => {
+        try {
+          await budgetsService.createBudget(data);
+          await get().fetchBudgets(data.month);
+        } catch (error) {
+          throw error;
+        }
+      },
+
+      updateBudget: async (id: string, amount: number) => {
+        try {
+          await budgetsService.updateBudget(id, amount);
+          await get().fetchBudgets();
+        } catch (error) {
+          throw error;
+        }
+      },
+
+      deleteBudget: async (id: string) => {
+        try {
+          await budgetsService.deleteBudget(id);
+          await get().fetchBudgets();
+        } catch (error) {
+          throw error;
+        }
+      },
+
+      carryForwardBudgets: async () => {
+        try {
+          await budgetsService.carryForward();
+          await get().fetchBudgets();
+        } catch (error) {
+          throw error;
+        }
+      },
+
       // Initialize data from API
       initializeData: async () => {
         const isDemoMode = useAuthStore.getState().isDemoMode;
@@ -590,6 +651,9 @@ export const useDataStore = create<DataState>()(
         if (check('GOALS')?.allowed) {
           promises.push(get().fetchGoals());
         }
+        if (isPremium) {
+          promises.push(get().fetchBudgets());
+        }
 
         await Promise.all(promises);
       },
@@ -608,6 +672,7 @@ export const useDataStore = create<DataState>()(
         articles: state.articles,
         userCurrency: state.userCurrency,
         currencySymbol: state.currencySymbol,
+        budgets: state.budgets,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

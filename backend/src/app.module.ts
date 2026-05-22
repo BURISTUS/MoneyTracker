@@ -22,6 +22,8 @@ import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { ExportModule } from './export/export.module';
 import { FamilyModule } from './family/family.module';
+import { BudgetModule } from './budget/budget.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -61,6 +63,8 @@ import { FamilyModule } from './family/family.module';
     SubscriptionModule,
     ExportModule,
     FamilyModule,
+    BudgetModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

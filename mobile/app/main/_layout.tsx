@@ -40,6 +40,7 @@ export default function MainLayout() {
             <Stack.Screen name="goals/index" />
             <Stack.Screen name="life-cost/index" />
             <Stack.Screen name="chat/index" />
+            <Stack.Screen name="notifications/index" />
             <Stack.Screen name="analytics/index" />
             <Stack.Screen name="articles/[id]" />
           </Stack>

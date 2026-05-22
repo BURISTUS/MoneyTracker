@@ -9,7 +9,7 @@ interface ArticleTranslationInput {
   readTime: string;
 }
 
-const SEED_ARTICLES = [
+const SEED_ARTICLES: { slug: string; tag: string; isPremium?: boolean; translations: ArticleTranslationInput[] }[] = [
   {
     slug: 'price-of-life',
     tag: 'Life-Cost',
@@ -35,12 +35,25 @@ const SEED_ARTICLES = [
   {
     slug: 'budget-5-min',
     tag: 'Practice',
+    isPremium: false,
     translations: [
       { language: 'en', title: 'Budget in 5 minutes: a system that actually works', content: 'Most budgeting advice is terrible. "Track every penny!" "Create 47 categories!" "Use this spreadsheet with 12 tabs!" No wonder 80% of people give up on budgeting within 3 months.\n\n**The problem with traditional budgeting.**\nTraditional budgets treat you like an accountant. They demand precision, constant updates, and complex categorization. But life is messy. Unexpected expenses happen. And nobody wants to spend Sunday evening reconciling receipts.\n\n**The 50/30/20 framework, simplified.**\nInstead of tracking everything, use three buckets:\n\n**50% — Needs (Base)**\nRent, food, utilities, transport, minimum debt payments. If this exceeds 50%, you need to either increase income or reduce fixed costs — no amount of coffee-cutting will fix it.\n\n**30% — Wants (Conscious)**\nRestaurants, entertainment, hobbies, shopping, subscriptions. This is where the Incubator shines — freeze wants before spending.\n\n**20% — Future (Freedom)**\nSavings, investments, debt overpayment. This is your ticket out of the rat race. Every ruble here buys future freedom.\n\n**How to start today.**\n1. Open your banking app, look at last month\n2. Categorize into 3 buckets (don\'t overthink)\n3. If Needs > 50%: focus on income or housing\n4. If Wants > 30%: start using the Incubator\n5. If Future < 20%: automate a transfer on payday\n\nThat\'s it. 5 minutes, once a month. No spreadsheets, no guilt, no burnout. Just three numbers that tell you where your life is going.', readTime: '4 min read' },
       { language: 'ru', title: 'Бюджет за 5 минут: система, которая работает', content: 'Большинство советов по бюджету ужасны. «Отслеживай каждую копейку!» «Создай 47 категорий!» «Используй таблицу с 12 вкладками!» Неудивительно, что 80% людей бросают бюджетирование в течение 3 месяцев.\n\n**Проблема традиционного бюджетирования.**\nТрадиционные бюджеты относятся к тебе как к бухгалтеру. Они требуют точности, постоянных обновлений и сложной категоризации. Но жизнь беспорядочна. Неожиданные расходы случаются. И никто не хочет провести воскресный вечер, сверяя чеки.\n\n**Фреймворк 50/30/20, упрощённо.**\nВместо отслеживания всего используй три ведра:\n\n**50% — База (Необходимости)**\nАренда, еда, коммуналка, транспорт, минимальные платежи по долгам. Если это превышает 50%, нужно либо увеличить доход, либо сократить фиксированные расходы — никакая экономия на кофе это не исправит.\n\n**30% — Хотелки (Осознанные)**\nРестораны, развлечения, хобби, шопинг, подписки. Здесь Инкубатор проявляет себя лучше всего — замораживай хотелки перед тратой.\n\n**20% — Будущее (Свобода)**\nСбережения, инвестиции, досрочное погашение долгов. Это твой билет из крысиных бегов. Каждый рубль здесь покупает будущую свободу.\n\n**Как начать сегодня.**\n1. Открой банковское приложение, посмотри прошлый месяц\n2. Разнеси по трём вёдрам (не усложняй)\n3. Если База > 50%: фокус на доходе или жилье\n4. Если Хотелки > 30%: начни использовать Инкубатор\n5. Если Будущее < 20%: автоматизируй перевод в день зарплаты\n\nВот и всё. 5 минут, раз в месяц. Никаких таблиц, вины и выгорания. Всего три цифры, которые говорят тебе, куда движется твоя жизнь.', readTime: '5 мин чтения' },
       { language: 'es', title: 'Presupuesto en 5 minutos: un sistema que funciona', content: 'La mayoría de los consejos de presupuesto son terribles. ¡"Rastrea cada centavo"! ¡"Crea 47 categorías"! No es de extrañar que el 80% de las personas abandonen el presupuesto en 3 meses.\n\n**El problema con el presupuesto tradicional.**\nLos presupuestos tradicionales te tratan como a un contador. Exigen precisión, actualizaciones constantes y categorización compleja. Pero la vida es desordenada.\n\n**El marco 50/30/20, simplificado.**\nEn lugar de rastrear todo, usa tres categorías: 50% Necesidades, 30% Deseos, 20% Futuro. Cinco minutos, una vez al mes. Solo tres números que te dicen hacia dónde va tu vida.', readTime: '4 min lectura' },
       { language: 'de', title: 'Budget in 5 Minuten: Ein System, das funktioniert', content: 'Die meisten Budget-Ratschläge sind schrecklich. "Verfolge jeden Cent!" "Erstelle 47 Kategorien!" Kein Wunder, dass 80% der Menschen das Budgetieren innerhalb von 3 Monaten aufgeben.\n\n**Das Problem mit traditioneller Budgetierung.**\nTraditionelle Budgets behandeln dich wie einen Buchhalter. Sie verlangen Präzision, ständige Aktualisierungen und komplexe Kategorisierung. Aber das Leben ist chaotisch.\n\n**Das 50/30/20-Framework, vereinfacht.**\nStatt alles zu verfolgen, nutze drei Kategorien: 50% Notwendiges, 30% Wünsche, 20% Zukunft. Fünf Minuten, einmal im Monat. Nur drei Zahlen, die dir sagen, wohin dein Leben geht.', readTime: '4 Min. Lesezeit' },
       { language: 'pt', title: 'Orçamento em 5 minutos: um sistema que funciona', content: 'A maioria dos conselhos sobre orçamento é terrível. "Acompanhe cada centavo!" "Crie 47 categorias!" Não é de admirar que 80% das pessoas desistam de fazer orçamento em 3 meses.\n\n**O problema com o orçamento tradicional.**\nOs orçamentos tradicionais tratam você como um contador. Exigem precisão, atualizações constantes e categorização complexa. Mas a vida é bagunçada.\n\n**A estrutura 50/30/20, simplificada.**\nEm vez de rastrear tudo, use três categorias: 50% Necessidades, 30% Desejos, 20% Futuro. Cinco minutos, uma vez por mês. Apenas três números que dizem para onde sua vida está indo.', readTime: '4 min de leitura' },
+    ],
+  },
+];
+
+const SEED_PREMIUM_ARTICLES: typeof SEED_ARTICLES = [
+  {
+    slug: 'investing-101',
+    tag: 'Investing',
+    isPremium: true,
+    translations: [
+      { language: 'en', title: 'Investing 101: your first steps to financial freedom', content: 'You work hard for your money. But is your money working hard for you?\n\n**Why investing matters.**\nInflation eats 5-10% of your savings every year. That means money sitting in a bank account loses value daily. Investing is not optional — it\'s survival.\n\n**The three pillars.**\n\n**1. Emergency fund first.**\nBefore investing a single ruble, save 3-6 months of expenses. This is your safety net. Keep it in a high-yield savings account, not under your mattress.\n\n**2. Index funds: the lazy genius strategy.**\nYou don\'t need to pick stocks. Index funds buy a tiny piece of every major company. Historically, they return 8-12% annually. Set up automatic monthly contributions and forget about it for 20 years.\n\n**3. Diversification.**\nNever put all eggs in one basket. Spread across:\n• Domestic stocks (40%)\n• International stocks (30%)\n• Bonds (20%)\n• Real estate/alternatives (10%)\n\n**The math of compound interest.**\nInvest 10,000₽/month at 10% annual return:\n• After 10 years: 2,000,000₽\n• After 20 years: 7,600,000₽\n• After 30 years: 22,800,000₽\n\nThe earlier you start, the less you need to contribute. Time in the market beats timing the market.', readTime: '7 min read' },
+      { language: 'ru', title: 'Инвестиции 101: первые шаги к финансовой свободе', content: 'Ты усердно работаешь за деньги. Но работают ли деньги на тебя?\n\n**Почему инвестиции важны.**\nИнфляция съедает 5-10% твоих сбережений каждый год. Деньги на банковском счёте обесцениваются ежедневно. Инвестирование — не опция, а выживание.\n\n**Три столпа.**\n\n**1. Сначала — экстренный фонд.**\nПрежде чем инвестировать рубль, накопи 3-6 месяцев расходов. Это твоя страховка. Храни на накопительном счёте.\n\n**2. Индексные фонды: стратегия ленивого гения.**\nНе нужно выбирать акции. Индексные фонды покупают маленькую долю каждой крупной компании. Исторически они дают 8-12% годовых. Настрой автоматические ежемесячные пополнения и забудь на 20 лет.\n\n**3. Диверсификация.**\nНикогда не клади все яйца в одну корзину:\n• Отечественные акции (40%)\n• Международные акции (30%)\n• Облигации (20%)\n• Недвижимость/альтернативы (10%)\n\n**Математика сложного процента.**\nИнвестируй 10 000₽/мес под 10% годовых:\n• Через 10 лет: 2 000 000₽\n• Через 20 лет: 7 600 000₽\n• Через 30 лет: 22 800 000₽\n\nЧем раньше начнёшь, тем меньше нужно вкладывать. Время на рынке побеждает попытки угадать момент.', readTime: '7 мин чтения' },
     ],
   },
 ];
@@ -56,7 +69,8 @@ export class ArticlesService implements OnModuleInit {
   }
 
   private async seed() {
-    for (const article of SEED_ARTICLES) {
+    const allArticles = [...SEED_ARTICLES, ...SEED_PREMIUM_ARTICLES];
+    for (const article of allArticles) {
       const existing = await this.prisma.article.findUnique({ where: { slug: article.slug } });
 
       if (existing) {
@@ -67,12 +81,17 @@ export class ArticlesService implements OnModuleInit {
             ...t,
           })),
         });
+        await this.prisma.article.update({
+          where: { id: existing.id },
+          data: { isPremium: article.isPremium ?? false },
+        });
         this.logger.log(`Updated article: ${article.slug}`);
       } else {
         await this.prisma.article.create({
           data: {
             slug: article.slug,
             tag: article.tag,
+            isPremium: article.isPremium ?? false,
             translations: {
               create: article.translations,
             },
@@ -99,6 +118,7 @@ export class ArticlesService implements OnModuleInit {
         id: article.id,
         slug: article.slug,
         tag: article.tag,
+        isPremium: article.isPremium,
         viewCount: article.viewCount,
         title: translation?.title ?? '',
         content: translation?.content ?? '',
@@ -110,7 +130,7 @@ export class ArticlesService implements OnModuleInit {
     });
   }
 
-  async findOne(id: string, language: string) {
+  async findOne(id: string, language: string, userId?: string) {
     const article = await this.prisma.article.findUnique({
       where: { id },
       include: {
@@ -124,6 +144,18 @@ export class ArticlesService implements OnModuleInit {
       throw new AppException('errors.articleNotFound', 404);
     }
 
+    // Check premium access
+    if (article.isPremium && userId) {
+      const subscription = await this.prisma.subscription.findUnique({
+        where: { userId },
+        select: { plan: true },
+      });
+      const isPremium = subscription && ['PREMIUM', 'PREMIUM_FAMILY'].includes(subscription.plan);
+      if (!isPremium) {
+        throw new AppException('errors.premiumRequired', 403);
+      }
+    }
+
     // Increment view count
     await this.prisma.article.update({
       where: { id },
@@ -135,7 +167,8 @@ export class ArticlesService implements OnModuleInit {
       id: article.id,
       slug: article.slug,
       tag: article.tag,
-      viewCount: article.viewCount + 1, // return incremented value
+      isPremium: article.isPremium,
+      viewCount: article.viewCount + 1,
       title: translation?.title ?? '',
       content: translation?.content ?? '',
       readTime: translation?.readTime ?? '',

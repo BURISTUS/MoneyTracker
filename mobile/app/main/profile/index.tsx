@@ -12,6 +12,7 @@ import { LanguagePicker, getNativeName } from '../../../src/components/ui/Langua
 import { PremiumBadge } from '../../../src/components/ui/PremiumBadge';
 import { useTranslation } from 'react-i18next';
 import { useTheme, useThemeStore } from '../../../src/stores/themeStore';
+import { useNotificationsStore } from '../../../src/stores/notificationsStore';
 import type { FeatureKey } from '../../../src/types';
 import type { ExchangeRate } from '../../../src/services/currency';
 
@@ -39,6 +40,7 @@ export default function ProfileScreen() {
 
   const isDark = useThemeStore((s) => s.isDark);
   const toggleTheme = useThemeStore((s) => s.toggle);
+  const unreadCount = useNotificationsStore((s: { unreadCount: number }) => s.unreadCount);
 
   const isPremium = useSubscriptionStore((s) => s.isPremium());
   const isFamily = useSubscriptionStore((s) => s.isFamily());
@@ -236,6 +238,27 @@ export default function ProfileScreen() {
             <View style={{ width: 44, height: 28, borderRadius: 14, backgroundColor: isPremium ? '#F59E0B' : '#D1D5DB', justifyContent: 'center', paddingHorizontal: 2 }}>
               <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFF', alignSelf: isPremium ? 'flex-end' as const : 'flex-start' as const, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2 }} />
             </View>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push('/main/notifications/' as never)}
+            style={S.row}
+          >
+            <View style={[S.iconWrap, { backgroundColor: '#6366F115' }]}>
+              <Ionicons name="notifications-outline" size={18} color="#6366F1" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: C.textMain }}>{t('notifications.title')}</Text>
+              <Text style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>
+                {unreadCount > 0 ? t('notifications.unreadCount', { count: unreadCount }) : t('notifications.emptySub')}
+              </Text>
+            </View>
+            {unreadCount > 0 && (
+              <View style={{ minWidth: 20, height: 20, borderRadius: 10, backgroundColor: C.red, alignItems: 'center', justifyContent: 'center', marginRight: 6 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFF' }}>{unreadCount}</Text>
+              </View>
+            )}
+            <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
           </Pressable>
 
           <Pressable

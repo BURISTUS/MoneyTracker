@@ -42,14 +42,15 @@ export class ArticlesController {
   @ApiQuery({ name: 'lang', required: false })
   async findOne(
     @Param('id') id: string,
-    @Request() req: { headers: Record<string, string> },
+    @Request() req: { user?: { id: string }; headers: Record<string, string> },
     @Query('lang') lang?: string,
   ) {
     const language =
       lang ||
       req.headers['accept-language']?.split(',')[0]?.split('-')[0] ||
       'en';
-    return this.articlesService.findOne(id, language);
+    const userId = req.user?.id;
+    return this.articlesService.findOne(id, language, userId);
   }
 
   @Post()

@@ -104,23 +104,23 @@ export function useTransactionForm({
 
   const limitInfo = useMemo(() => {
     if (type !== 'EXPENSE' || !selectedCategory) return null;
-    const cat = categories.find((c: any) => c.id === selectedCategory);
-    if (!cat || !cat.monthlyLimit || cat.monthlyLimit <= 0) return null;
 
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const spent = transactions
-      .filter((tr: any) => tr.type === 'EXPENSE' && tr.categoryId === selectedCategory && new Date(tr.date) >= startOfMonth)
-      .reduce((sum: number, tr: any) => sum + Number(tr.amount), 0);
+    const budgets = useDataStore.getState().budgets;
+    const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+    const budget = budgets.find(
+      (b: { categoryId: string; month: string }) => b.categoryId === selectedCategory && b.month === currentMonth,
+    );
+    if (!budget) return null;
 
-    const limit = Number(cat.monthlyLimit);
+    const limit = Number(budget.amount);
+    const spent = Number(budget.spent);
     const percent = limit > 0 ? (spent / limit) * 100 : 0;
     const remaining = limit - spent;
     const threshold = 80;
     const barColor = percent > 100 ? C.expenseBar.over : percent >= threshold ? C.expenseBar.warn : C.expenseBar.ok;
 
     return { percent, remaining, barColor, limit, spent };
-  }, [type, selectedCategory, categories, transactions]);
+  }, [type, selectedCategory]);
 
   const reset = useCallback(() => {
     setType(initialType);

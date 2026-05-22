@@ -25,6 +25,8 @@ import { getTransactionCurrency } from '../../src/utils/transactionUtils';
 import { useSubscriptionStore } from '../../src/stores/subscriptionStore';
 import { PremiumBadge } from '../../src/components/ui/PremiumBadge';
 import { useToast } from '../../src/components/ui/Toast';
+import { CategoryIcon } from '../../src/components/ui/CategoryIcon';
+import { useNotificationsStore } from '../../src/stores/notificationsStore';
 import type { FeatureKey } from '../../src/types';
 
 function formatHours(hours: number, t: (key: string, opts?: any) => string): string {
@@ -100,6 +102,10 @@ export default function HomeScreen() {
   const articles = useDataStore((s) => s.articles);
   const isLoadingArticles = useDataStore((s) => s.isLoadingArticles);
   const fetchArticles = useDataStore((s) => s.fetchArticles);
+  const budgets = useDataStore((s) => s.budgets);
+  const fetchBudgets = useDataStore((s) => s.fetchBudgets);
+  const unreadCount = useNotificationsStore((s) => s.unreadCount);
+  const fetchUnreadCount = useNotificationsStore((s) => s.fetchUnreadCount);
 
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<'overview' | 'read'>('overview');
@@ -110,10 +116,12 @@ export default function HomeScreen() {
   const [aiResult, setAiResult] = useState<AiTransactionResult | AiReceiptResult | null>(null);
   const showPaywallFn = useSubscriptionStore((s) => s.showPaywall);
   const checkAccess = useSubscriptionStore((s) => s.checkAccess);
+  const isPremiumUser = useSubscriptionStore((s) => s.isPremium());
   const toast = useToast();
 
   useEffect(() => {
     initializeData();
+    fetchUnreadCount();
   }, []);
 
   const onRefresh = useCallback(async () => {
@@ -234,6 +242,26 @@ export default function HomeScreen() {
           >
             <Text style={[S.tabText, { color: tab === 'read' ? '#FFF' : C.textSec }]}>{t('home.tabRead')}</Text>
           </Pressable>
+          <TouchableOpacity
+            onPress={() => router.push('/main/notifications/' as never)}
+            style={{ marginLeft: 'auto', padding: 6, position: 'relative' }}
+          >
+            <Ionicons name="notifications-outline" size={22} color={C.textMain} />
+            {unreadCount > 0 && (
+              <View style={{
+                position: 'absolute',
+                top: 2, right: 2,
+                minWidth: 16, height: 16,
+                borderRadius: 8,
+                backgroundColor: C.red,
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFF', lineHeight: 16 }}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         {tab === 'overview' ? (
@@ -321,6 +349,61 @@ export default function HomeScreen() {
                 </>
               )}
             </View>
+
+            {/* Budgets Widget */}
+            {isPremiumUser && (
+              <View style={S.monthCard}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <Text style={S.monthTitle}>{t('budget.title')} · {t(`months.${today.getMonth()}`)}</Text>
+                  {budgets.length > 0 && (
+                    <TouchableOpacity onPress={() => router.push('/main/categories/' as never)}>
+                      <Text style={{ fontSize: 12, color: C.primary, fontWeight: '600' }}>{t('budget.editLimit')}</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {budgets.length === 0 ? (
+                  <TouchableOpacity
+                    onPress={() => router.push('/main/categories/' as never)}
+                    style={{ paddingVertical: 16, alignItems: 'center' }}
+                  >
+                    <Ionicons name="pie-chart-outline" size={28} color={C.textMuted} />
+                    <Text style={{ fontSize: 13, color: C.textSec, marginTop: 8 }}>{t('budget.noBudgets')}</Text>
+                    <Text style={{ fontSize: 13, color: C.primary, fontWeight: '600', marginTop: 4 }}>{t('budget.setLimits')}</Text>
+                  </TouchableOpacity>
+                ) : (
+                  budgets.slice(0, 5).map((budget) => {
+                    const percent = budget.percentUsed;
+                    const barColor = percent >= 100 ? C.red : percent >= 80 ? C.orange : C.green;
+                    return (
+                      <View key={budget.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${budget.category?.color || C.primary}18`, alignItems: 'center', justifyContent: 'center' }}>
+                          <CategoryIcon icon={budget.category?.icon || null} color={budget.category?.color || C.primary} size={16} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: C.textMain }}>{budget.category?.name}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                              {budget.isOverBudget && <Ionicons name="warning" size={12} color={C.red} />}
+                              <Text style={{ fontSize: 11, color: budget.isOverBudget ? C.red : C.textSec }}>
+                                {formatCurrency(budget.spent)} / {formatCurrency(budget.amount)}
+                              </Text>
+                            </View>
+                          </View>
+                          <View style={{ height: 4, borderRadius: 2, backgroundColor: C.divider }}>
+                            <View style={{ height: 4, borderRadius: 2, width: `${Math.min(percent, 100)}%`, backgroundColor: barColor }} />
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })
+                )}
+                {budgets.length > 5 && (
+                  <Text style={{ fontSize: 12, color: C.textSec, marginTop: 4 }}>
+                    {t('budget.more', { count: budgets.length - 5 })}
+                  </Text>
+                )}
+              </View>
+            )}
 
             {/* Daily Pulse */}
             <View style={S.pulseCard}>
@@ -437,11 +520,25 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={article.id}
                   style={S.articleCard}
-                  onPress={() => onArticlePress(article.id)}
+                  onPress={() => {
+                    if (article.isPremium && !isPremiumUser) {
+                      showPaywallFn('ARTICLES');
+                      return;
+                    }
+                    onArticlePress(article.id);
+                  }}
                   activeOpacity={0.7}
                 >
-                  <View style={S.articleTag}>
-                    <Text style={S.articleTagText}>{article.tag}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                    <View style={S.articleTag}>
+                      <Text style={S.articleTagText}>{article.tag}</Text>
+                    </View>
+                    {article.isPremium && !isPremiumUser && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#F59E0B15', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                        <Ionicons name="lock-closed" size={10} color="#F59E0B" />
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#F59E0B' }}>PRO</Text>
+                      </View>
+                    )}
                   </View>
                   <Text style={S.articleTitle}>{article.title}</Text>
                   <Text style={S.articleSub} numberOfLines={2}>{article.content}</Text>

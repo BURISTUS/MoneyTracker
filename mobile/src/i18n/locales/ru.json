@@ -360,7 +360,23 @@
     "limitLabel": "Лимит",
     "fromBudget": "из",
     "limitColon": "Лимит:",
-    "spentColon": "Потрачено:"
+    "spentColon": "Потрачено:",
+    "editLimit": "Изменить лимиты",
+    "setLimits": "Установить лимиты",
+    "overBudget": "Бюджет превышен!",
+    "more": "Ещё {{count}}"
+  },
+  "notifications": {
+    "title": "Уведомления",
+    "empty": "Нет уведомлений",
+    "emptySub": "Всё прочитано",
+    "markAllRead": "Прочитать все",
+    "wishlistReady": "Время решить",
+    "budgetAlert": "Внимание к бюджету",
+    "budgetOver": "Бюджет превышен",
+    "goalCompleted": "Цель достигнута",
+    "monthlySummary": "Итоги месяца",
+    "unreadCount": "{{count}} непрочитанных"
   },
   "goals": {
     "title": "Цели",

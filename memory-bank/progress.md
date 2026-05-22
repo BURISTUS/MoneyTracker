@@ -353,6 +353,48 @@
 - [x] Акцент на AI финансовый консультант (секция AI с чат-демо), подробная аналитика (6 карточек)
 - [x] App name: SpendWise — Financial Tracker
 
+### E2E тесты фиксы (2026-05-21)
+- [x] Заменены русские имена на английские в app.e2e-spec.ts (5 блоков)
+- [x] 'Наличные' → 'Cash', 'Банковский счёт' → 'Bank Account', 'Зарплата' → 'Salary', 'Продукты' → 'Groceries'
+- [x] 86/86 E2E тестов теперь проходят
+
+### Budget Module — редизайн (2026-05-21)
+- [x] **Prisma**: Budget model (id, userId, categoryId, amount BigInt, month "YYYY-MM", unique userId+categoryId+month)
+- [x] **Backend**: BudgetModule — CRUD + carry-forward + spent на лету (Prisma aggregate)
+- [x] **Backend**: DTOs — CreateBudgetDto, UpdateBudgetDto
+- [x] **Backend**: PremiumGuard на все endpoints
+- [x] **Backend**: i18n ключи budget.* (EN+RU)
+- [x] **Миграция**: `add_budget_model`
+- [x] **Mobile**: budgetsService (`src/services/budgets.ts`)
+- [x] **Mobile**: Budget type (`src/types/index.ts`)
+- [x] **Mobile**: dataStore — budgets[], fetchBudgets, addBudget, updateBudget, deleteBudget, carryForwardBudgets
+- [x] **Mobile**: Home виджет — мини-прогресс бары между Month Summary и Daily Pulse
+- [x] **Mobile**: i18n ключи budget.* (EN+RU)
+- [x] **AddTransaction hint** — limitInfo теперь читает из Budget store вместо category.monthlyLimit
+- [x] **Categories screen** — прогресс-бар из Budget table вместо monthlyLimit на Category
+- [x] **CategoryEditModal** — budgetAmount prop, сохранение через Budget API (addBudget/updateBudget/deleteBudget)
+- [x] **Cron задача** — @Cron('0 0 1 * *') перенос бюджетов 1-го числа каждого месяца
+
+### In-App Notifications (2026-05-21)
+- [x] **Prisma**: NotificationType enum расширен (+ GOAL_COMPLETED, MONTHLY_SUMMARY)
+- [x] **Backend**: NotificationsController — GET (paginated), PATCH read, PATCH read-all, GET unread-count
+- [x] **Backend**: NotificationsService — CRUD + sendWishlistReady, sendBudgetAlert, sendBudgetOver, sendGoalCompleted, sendMonthlySummary
+- [x] **Backend**: Триггер — budget alert при EXPENSE транзакции (>80% warn, >100% exceeded)
+- [x] **Backend**: NotificationsModule подключён в AppModule
+- [x] **Mobile**: notificationsService + notificationsStore (Zustand)
+- [x] **Mobile**: Экран уведомлений `/main/notifications/` — FlatList, иконки по типу, relative time, mark all read
+- [x] **Mobile**: Bell icon с red badge на Home header
+- [x] **i18n**: notifications.* (EN+RU)
+
+### Articles — Premium Access (2026-05-21)
+- [x] **Prisma**: `isPremium Boolean @default(false)` на Article
+- [x] **Backend**: GET /articles — возвращает isPremium флаг
+- [x] **Backend**: GET /articles/:id — 403 если isPremium и юзер не премиум
+- [x] **Backend**: Seed — 3 бесплатных + 1 премиум статья (Investing 101, EN+RU)
+- [x] **Mobile**: 🔒 PRO badge на премиум статьях в Home Read tab
+- [x] **Mobile**: Тап на премиум статью → PaywallModal (для free юзеров)
+- [x] **i18n**: premiumRequired, articleNotFound (EN+RU)
+
 ## Бэклог
 
 ### Приоритет высокий (запрошено PM)
@@ -360,14 +402,11 @@
 - [ ] **Speech-to-text транзакции** — `speech-to-text-transactions`: голосовой ввод → AI → предзаполнение формы
 - [ ] **Скан чеков** — `receipt-scanning`: фото → DeepSeek Vision → позиции → транзакции
 - [ ] **Главный экран** — `home-screen-redesign`: переработка UX/UI (последняя очередь)
-- [ ] **Бюджеты — редизайн** — `budget-rethink`: inline indicators, возможно удаление отдельной вкладки
-- [ ] **E2E тесты фиксы** — рус/англ имена в app.e2e-spec.ts (21 падающий тест)
 
 ### Приоритет средний (аналитические находки)
-- [ ] Transfer между счетами (TransactionType.TRANSFER) — `transfer-accounts`
-- [ ] Редактирование категорий
+- [ ] Transfer между счетами (TransactionType.TRANSFER) — `transfer-accounts` *(уже реализовано)*
+- [ ] Редактирование категорий *(уже реализовано)*
 - [ ] Регулярные транзакции — `recurring-transactions`
-- [ ] Уведомления (in-app) — `notifications-module`
 
 ### Приоритет низкий / Premium
 - [ ] Семейный бюджет (Family module) — `family-module`

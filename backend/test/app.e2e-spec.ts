@@ -172,12 +172,12 @@ describe('MoneyTracker E2E', () => {
       const accounts = await getAccounts(authToken);
       expect(accounts.length).toBeGreaterThanOrEqual(2);
       const names = accounts.map((a: any) => a.name);
-      expect(names).toContain('Наличные');
-      expect(names).toContain('Банковский счёт');
+      expect(names).toContain('Cash');
+      expect(names).toContain('Bank Account');
 
-      accountId = accounts.find((a: any) => a.name === 'Наличные').id;
+      accountId = accounts.find((a: any) => a.name === 'Cash').id;
       secondAccountId = accounts.find(
-        (a: any) => a.name === 'Банковский счёт',
+        (a: any) => a.name === 'Bank Account',
       ).id;
     });
 
@@ -188,14 +188,14 @@ describe('MoneyTracker E2E', () => {
       const incomeNames = categories
         .filter((c: any) => c.type === 'INCOME')
         .map((c: any) => c.name);
-      expect(incomeNames).toContain('Зарплата');
+      expect(incomeNames).toContain('Salary');
 
       const expenseNames = categories
         .filter((c: any) => c.type === 'EXPENSE')
         .map((c: any) => c.name);
-      expect(expenseNames).toContain('Продукты');
+      expect(expenseNames).toContain('Groceries');
 
-      categoryId = categories.find((c: any) => c.name === 'Зарплата').id;
+      categoryId = categories.find((c: any) => c.name === 'Salary').id;
     });
 
     it('POST /auth/register — rejects duplicate email', async () => {
@@ -266,11 +266,11 @@ describe('MoneyTracker E2E', () => {
       await activatePremium(uId);
 
       const accounts = await getAccounts(premiumToken);
-      premiumAccountId = accounts.find((a: any) => a.name === 'Наличные').id;
+      premiumAccountId = accounts.find((a: any) => a.name === 'Cash').id;
 
       const categories = await getCategories(premiumToken);
       premiumCategoryId = categories.find(
-        (c: any) => c.name === 'Зарплата',
+        (c: any) => c.name === 'Salary',
       ).id;
     });
   });
@@ -513,7 +513,7 @@ describe('MoneyTracker E2E', () => {
     beforeAll(async () => {
       const categories = await getCategories(authToken);
       const expenseCat = categories.find(
-        (c: any) => c.name === 'Продукты',
+        (c: any) => c.name === 'Groceries',
       );
       const incomeCat = categories.find((c: any) => c.name === 'Зарплата');
       expenseCategoryId = expenseCat ? expenseCat.id : categoryId;
@@ -1125,8 +1125,8 @@ describe('MoneyTracker E2E', () => {
     it('Step 3: Verify default categories', async () => {
       const cats = await getCategories(flowToken);
       expect(cats.length).toBeGreaterThanOrEqual(16);
-      flowIncomeCatId = cats.find((c: any) => c.name === 'Зарплата').id;
-      flowExpenseCatId = cats.find((c: any) => c.name === 'Продукты').id;
+      flowIncomeCatId = cats.find((c: any) => c.name === 'Salary').id;
+      flowExpenseCatId = cats.find((c: any) => c.name === 'Groceries').id;
     });
 
     it('Step 4: Set hourly rate', async () => {

@@ -378,7 +378,23 @@
     "limitLabel": "Limit",
     "fromBudget": "of",
     "limitColon": "Limit:",
-    "spentColon": "Spent:"
+    "spentColon": "Spent:",
+    "editLimit": "Edit limits",
+    "setLimits": "Set limits",
+    "overBudget": "Over budget!",
+    "more": "+{{count}} more"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications",
+    "emptySub": "You're all caught up",
+    "markAllRead": "Mark all read",
+    "wishlistReady": "Time to decide",
+    "budgetAlert": "Budget alert",
+    "budgetOver": "Budget exceeded",
+    "goalCompleted": "Goal achieved",
+    "monthlySummary": "Monthly summary",
+    "unreadCount": "{{count}} unread"
   },
   "goals": {
     "title": "Goals",

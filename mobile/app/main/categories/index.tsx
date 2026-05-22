@@ -44,6 +44,10 @@ export default function CategoriesIndexScreen() {
   const toast = useToast();  const categories = useDataStore((s) => s.categories);
   const transactions = useDataStore((s) => s.transactions);
   const fetchCategories = useDataStore((s) => s.fetchCategories);
+  const budgets = useDataStore((s) => s.budgets);
+  const addBudget = useDataStore((s) => s.addBudget);
+  const updateBudget = useDataStore((s) => s.updateBudget);
+  const deleteBudget = useDataStore((s) => s.deleteBudget);
   const checkAccess = useSubscriptionStore((s) => s.checkAccess);
   const showPaywall = useSubscriptionStore((s) => s.showPaywall);
 
@@ -81,17 +85,35 @@ export default function CategoriesIndexScreen() {
   const handleSave = async (data: { name: string; icon?: string; color?: string; excludeFromTotal: boolean; monthlyLimit: number | null }) => {
     if (!editingCategory) return;
     try {
+      // Update category name/icon/color/excludeFromTotal
       const body: Record<string, unknown> = {};
       if (data.name !== editingCategory.name) body.name = data.name;
       body.icon = data.icon;
       body.color = data.color;
       body.excludeFromTotal = data.excludeFromTotal;
-      body.monthlyLimit = data.monthlyLimit;
       await categoriesService.update(editingCategory.id, body);
+
+      // Save budget limit via Budget API
+      const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+      const existingBudget = budgets.find(
+        (b: { categoryId: string; month: string }) => b.categoryId === editingCategory.id && b.month === currentMonth,
+      );
+
+      if (data.monthlyLimit && data.monthlyLimit > 0) {
+        if (existingBudget) {
+          await updateBudget(existingBudget.id, data.monthlyLimit);
+        } else {
+          await addBudget({ categoryId: editingCategory.id, amount: data.monthlyLimit, month: currentMonth });
+        }
+      } else if (!data.monthlyLimit && existingBudget) {
+        await deleteBudget(existingBudget.id);
+      }
+
       await fetchCategories();
       setEditingCategory(null);
-    } catch (error: any) {
-      toast.showError(error?.message || t('categories.saveError'));
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : undefined;
+      toast.showError(msg || t('categories.saveError'));
     }
   };
 
@@ -105,11 +127,14 @@ export default function CategoriesIndexScreen() {
     }
   };
 
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
   const renderCategory = (category: Category) => {
     const totals = categoryTotals.get(category.id);
     const spent = totals?.expense ?? 0;
-    const monthlyLimitKopecks = category.monthlyLimit;
-    const hasLimit = monthlyLimitKopecks !== null && monthlyLimitKopecks !== undefined && monthlyLimitKopecks > 0;
+    const budget = budgets.find((b: { categoryId: string; month: string }) => b.categoryId === category.id && b.month === currentMonth);
+    const monthlyLimitKopecks = budget ? Number(budget.amount) : null;
+    const hasLimit = monthlyLimitKopecks !== null && monthlyLimitKopecks > 0;
     const limitProgress = hasLimit ? Math.min(spent / monthlyLimitKopecks, 1) : 0;
     const limitOver = hasLimit && spent > monthlyLimitKopecks;
 
@@ -247,6 +272,11 @@ export default function CategoriesIndexScreen() {
           onClose={() => setEditingCategory(null)}
           onSave={handleSave}
           onDelete={handleDelete}
+          budgetAmount={(() => {
+            const cm = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+            const b = budgets.find((bg: { categoryId: string; month: string }) => bg.categoryId === editingCategory.id && bg.month === cm);
+            return b ? Number(b.amount) : null;
+          })()}
         />
       )}
     </View>

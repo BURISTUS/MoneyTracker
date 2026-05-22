@@ -4,7 +4,7 @@
 - Backend: NestJS + Prisma + PostgreSQL + Redis (docker-compose)
 - Mobile: React Native (Expo 54) + TypeScript + Zustand + React Query
 - TypeScript: 0 ошибок (бэкенд + мобайл)
-- **E2E тесты: 65/86 проходят** (21 падает из-за рус/англ имён — предсуществующая проблема)
+- **E2E тесты: 86/86 проходят** (фикс рус→англ имён)
 - **Unit тесты: 98 тестов, все проходят** (`npm run test`)
 - **i18n полная интеграция** — 200+ хардкод строк заменены на t() вызовы, EN+RU переводы полные, 18 языков с EN fallback
 - **Фронтенд-аудит**: все проблемы из FRONTEND_REVIEW.md исправлены
@@ -12,45 +12,41 @@
 ## Спринт — текущие задачи
 
 ### Выполнено
-- [x] **Unit-тесты (mobile)** — Jest + jest-expo, 98 тестов в 5 suites
-- [x] **Refresh-token механизм** — backend (модель, endpoints, ротация, JWT 15мин) + mobile (interceptor, refresh logic, race condition protection)
-- [x] **AddTransactionModal рефакторинг** — 931 строка → 6 подкомпонентов + hook (TransactionForm/)
-- [x] **Biometric/pin-lock** — expo-local-authentication + PIN + lock screen + AppState мониторинг
+- [x] **E2E тесты фиксы** — рус/англ имена счетов/категорий заменены на английские (Cash, Bank Account, Salary, Groceries)
+- [x] **Budget Module (backend)** — Prisma Budget model + BudgetModule (CRUD + carry-forward + spent на лету)
+- [x] **Budget Widget (mobile Home)** — виджет на Home с мини-прогресс барами, premium only
+- [x] **Budget Service + Store (mobile)** — budgetsService + dataStore методы
 
 ### В очереди
-- [ ] E2E тесты фиксы — рус/англ имена счетов/категорий в тестах
+- _пусто_
 
-## Refresh-token — детали
-- **Backend**: `Session` модель (userId, refreshToken, expiresAt, isRevoked, deviceInfo) — единая таблица сессий
-- **Backend**: `POST /auth/refresh` (ротация), `POST /auth/logout` (инвалидация), JWT TTL 15мин, session TTL 30 дней
-- **Mobile**: axios interceptor при 401 → `/auth/refresh` → retry, race condition через refreshSubscribers queue
-- **Ключи ошибок**: `invalidRefreshToken`, `refreshTokenRevoked`, `refreshTokenExpired` (EN+RU+18 языков EN fallback)
-- **SecureStore**: `authToken` + `refreshToken`
+## Notifications Module — детали
+- **Prisma**: NotificationType enum расширен (WISHLIST_READY, BUDGET_ALERT, GOAL_COMPLETED, MONTHLY_SUMMARY)
+- **Backend**: NotificationsController (GET, PATCH read, PATCH read-all, GET unread-count)
+- **Backend**: NotificationsService — create, getByUser (paginated), markAsRead, markAllAsRead, getUnreadCount, deleteOldNotifications
+- **Backend**: Триггер budget alert при создании EXPENSE транзакции (>80% и >100%)
+- **Backend**: NotificationsModule подключён в AppModule
+- **Backend**: Тексты English
+- **Mobile**: notificationsService (`src/services/notifications.ts`)
+- **Mobile**: notificationsStore (Zustand)
+- **Mobile**: Экран `/main/notifications/` — FlatList, иконки по типу, relative time, mark all read
+- **Mobile**: Bell icon с бейджем на Home header
+- **i18n**: notifications.* ключи (EN+RU)
+- **Миграция**: `add_notification_types`, `add_article_premium`
 
-## Схема БД — чистка (2026-05-19)
-- **Удалено 15 моделей**: Session(старая), RefreshToken, UserGamification, Achievement, UserAchievement, XpEvent, StreakDay, Challenge, UserChallenge, Deposit, DepositTransaction, Loan, LoanPayment, SavingsGoal, ForecastScenario
-- **Удалено 9 enum**: GamificationStatus, AchievementCondition, AchievementTier, ChallengeType, ChallengeStatus, DepositType, CompoundingType, DepositTransactionType, LoanType
-- **NotificationType**: убраны LEVEL_UP, ACHIEVEMENT_EARNED, STREAK_WARNING, CHALLENGE_INVITE
-- **User**: убраны 9 dead relations
-- **Добавлены индексы**: Transaction(userId,date), Transaction(userId,type), Transaction(accountId), Transaction(categoryId), Account(userId), Goal(userId), GoalContribution(goalId), WishlistItem(userId,status), Notification(userId,isRead)
-
-## AddTransactionModal рефакторинг — детали
-- **Папка**: `src/components/ui/TransactionForm/`
-- **Подкомпоненты**: `TransactionTypeToggle.tsx`, `AmountInput.tsx`, `CategorySelector.tsx`, `AccountSelector.tsx`, `TransactionNoteInput.tsx`
-- **Hook**: `useTransactionForm.ts` — всё состояние + бизнес-логика
-- **Barrel**: `index.ts` — экспорты
-- **Основной**: `AddTransactionModal.tsx` — тонкий слой, использует подкомпоненты
-
-## Biometric/pin-lock — детали
-- **expo-local-authentication** — fingerprint/face
-- **PIN**: 4 цифры, хэш в expo-secure-store (через securityStore)
-- **Lock screen**: `src/components/ui/LockScreen.tsx`
-- **Route**: `app/lock.tsx`
-- **Store**: `src/stores/securityStore.ts` — isLockEnabled, lockMethod, pinHash
-- **AppState мониторинг**: `_layout.tsx` → LockMonitor — background >30с → lock
-- **i18n**: секция `security` (EN+RU)
+## Budget Module — детали
+- **Prisma**: `Budget` модель (id, userId, categoryId, amount BigInt, month "YYYY-MM", unique userId+categoryId+month)
+- **Backend**: `src/budget/` — BudgetModule, BudgetController, BudgetService, DTOs
+- **Endpoints**: GET /budgets?month=, POST /budgets, PATCH /budgets/:id, DELETE /budgets/:id, POST /budgets/carry-forward
+- **spent**: считается на лету через Prisma aggregate (EXPENSE transactions за месяц)
+- **Premium**: все endpoints защищены PremiumGuard
+- **Mobile service**: `src/services/budgets.ts`
+- **Mobile store**: dataStore — budgets[], fetchBudgets, addBudget, updateBudget, deleteBudget, carryForwardBudgets
+- **Home виджет**: между Month Summary и Daily Pulse — мини-карточки с прогресс барами, CTA если нет бюджетов
+- **i18n**: budget.* ключи добавлены EN+RU (backend + mobile)
+- **Миграция**: `add_budget_model`
 
 ## Статус
 - 0 ошибок TypeScript
 - 98/98 unit тестов проходят
-- 65/86 E2E тестов проходят (21 предсуществующая проблема)
+- 86/86 E2E тестов проходят

@@ -31,6 +31,7 @@ model User {
   chatMessages  ChatMessage[]
   subscription  Subscription?
   sessions      Session[]
+  budgets       Budget[]
 
   @@map("users")
 }
@@ -99,6 +100,7 @@ model Category {
 
   user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  budgets      Budget[]
 
   @@index([userId])
   @@map("categories")
@@ -258,6 +260,27 @@ model Notification {
 enum NotificationType {
   WISHLIST_READY
   BUDGET_ALERT
+  GOAL_COMPLETED
+  MONTHLY_SUMMARY
+}
+
+// === BUDGETS ===
+
+model Budget {
+  id         String   @id @default(uuid())
+  userId     String
+  categoryId String
+  amount     BigInt
+  month      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month])
+  @@index([userId, month])
+  @@map("budgets")
 }
 
 // === EXCHANGE RATES ===
@@ -345,6 +368,7 @@ model Article {
   id        String   @id @default(uuid())
   slug      String   @unique
   tag       String
+  isPremium Boolean  @default(false)
   viewCount Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

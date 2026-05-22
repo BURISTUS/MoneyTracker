@@ -1,12 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppException } from '../common/app-exception';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class TransactionsService {
   private readonly logger = new Logger(TransactionsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async findAll(
     userId: string,
@@ -115,6 +119,13 @@ export class TransactionsService {
         where: { id: data.accountId },
         data: { balance: { increment: balanceChange } },
       });
+
+      // Check budget alert for EXPENSE transactions
+      if (data.type === 'EXPENSE') {
+        this.checkBudgetAlert(userId, data.categoryId).catch(() => {
+          // Silently fail — notifications are non-critical
+        });
+      }
 
       return tx.transaction.findUnique({
         where: { id: transaction.id },
@@ -487,5 +498,43 @@ export class TransactionsService {
         balanceChange: Math.round(balanceChange * 10) / 10,
       },
     };
+  }
+
+  private async checkBudgetAlert(userId: string, categoryId: string) {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    const budget = await this.prisma.budget.findFirst({
+      where: { userId, categoryId, month: currentMonth },
+      include: {
+        category: { select: { name: true } },
+      },
+    });
+
+    if (!budget) return;
+
+    const [year, mon] = currentMonth.split('-').map(Number);
+    const startDate = new Date(year, mon - 1, 1);
+    const endDate = new Date(year, mon, 1);
+
+    const result = await this.prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: {
+        userId,
+        categoryId,
+        type: 'EXPENSE',
+        date: { gte: startDate, lt: endDate },
+      },
+    });
+
+    const spent = Number(result._sum.amount || 0);
+    const amount = Number(budget.amount);
+    const percentUsed = amount > 0 ? Math.round((spent / amount) * 100) : 0;
+
+    if (percentUsed >= 100) {
+      await this.notificationsService.sendBudgetOver(userId, budget.category.name);
+    } else if (percentUsed >= 80) {
+      await this.notificationsService.sendBudgetAlert(userId, budget.category.name, percentUsed);
+    }
   }
 }
