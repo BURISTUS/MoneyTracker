@@ -1,0 +1,21 @@
+{
+  "insufficientFunds": "Niewystarczające środki. Dostępne {{available}} ₽, wymagane {{needed}} ₽",
+  "negativeBalance": "Nie można przelać z \"{{account}}\" — saldo {{balance}}",
+  "accountNotFound": "Nie znaleziono konta",
+  "categoryNotFound": "Nie znaleziono kategorii",
+  "transactionNotFound": "Nie znaleziono transakcji",
+  "sameAccount": "Nie można przelać na to samo konto",
+  "unauthorized": "Wymagane uwierzytelnienie",
+  "forbidden": "Dostęp zabroniony",
+  "validationError": "Błąd walidacji",
+  "internalError": "Wewnętrzny błąd serwera",
+  "sessionExpired": "Sesja wygasła. Zaloguj się ponownie.",
+  "budgetNotFound": "Nie znaleziono budżetu",
+  "goalNotFound": "Nie znaleziono celu",
+  "wishlistNotFound": "Nie znaleziono pozycji z listy życzeń",
+  "invalidCredentials": "Nieprawidłowy email lub hasło",
+  "emailExists": "Użytkownik z tym adresem email już istnieje",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
+}

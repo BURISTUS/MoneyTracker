@@ -1,42 +1,30 @@
 import React from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
-import { useTheme } from '../../theme';
-import { Text } from '../ui/Text';
-import { Card } from '../ui/Card';
-import { Icon } from '../ui/Icon';
+import { Ionicons } from '@expo/vector-icons';
+import { Text } from '../../../components/ui/text';
+import { useTheme } from '../../stores/themeStore';
 
 interface StatCardProps {
-  icon: React.ComponentProps<typeof Icon>['name'];
+  icon: string;
   label: string;
   value: string;
   color?: string;
   style?: StyleProp<ViewStyle>;
 }
 
-export const StatCard: React.FC<StatCardProps> = React.memo(({ icon, label, value, color = '#6366F1', style }) => {
-  const { spacing, borderRadius: br } = useTheme();
-
+export const StatCard: React.FC<StatCardProps> = React.memo(({ icon, label, value, color, style }) => {
+  const C = useTheme();
+  const cardColor = color ?? C.primary;
   return (
-    <Card variant="glass" padding="md" style={style}>
+    <View className="bg-background-50 rounded-2xl border border-outline-200 p-4" style={style}>
       <View
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: br.sm,
-          backgroundColor: `${color}15`,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: spacing.sm,
-        }}
+        className="w-8 h-8 rounded-lg items-center justify-center mb-2"
+        style={{ backgroundColor: `${cardColor}15` }}
       >
-        <Icon name={icon} size={16} color={color} />
+        <Ionicons name={icon as React.ComponentProps<typeof Ionicons>['name']} size={16} color={cardColor} />
       </View>
-      <Text size="lg" weight="bold" numberOfLines={1}>
-        {value}
-      </Text>
-      <Text size="xs" style={{ color: '#71717A', marginTop: 2 }}>
-        {label}
-      </Text>
-    </Card>
+      <Text className="text-lg font-bold" numberOfLines={1}>{value}</Text>
+      <Text className="text-xs text-typography-400 mt-0.5">{label}</Text>
+    </View>
   );
 });

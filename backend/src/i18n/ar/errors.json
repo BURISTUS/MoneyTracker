@@ -1,0 +1,21 @@
+{
+  "insufficientFunds": "أموال غير كافية. متاح {{available}} ₽، مطلوب {{needed}} ₽",
+  "negativeBalance": "لا يمكن التحويل من \"{{account}}\" — الرصيد {{balance}}",
+  "accountNotFound": "الحساب غير موجود",
+  "categoryNotFound": "الفئة غير موجودة",
+  "transactionNotFound": "المعاملة غير موجودة",
+  "sameAccount": "لا يمكن التحويل إلى نفس الحساب",
+  "unauthorized": "المصادقة مطلوبة",
+  "forbidden": "تم رفض الوصول",
+  "validationError": "خطأ في التحقق",
+  "internalError": "خطأ داخلي في الخادم",
+  "sessionExpired": "انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.",
+  "budgetNotFound": "الميزانية غير موجودة",
+  "goalNotFound": "الهدف غير موجود",
+  "wishlistNotFound": "عنصر قائمة الرغبات غير موجود",
+  "invalidCredentials": "بريد إلكتروني أو كلمة مرور غير صالحة",
+  "emailExists": "مستخدم بهذا البريد الإلكتروني موجود بالفعل",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
+}

@@ -40,6 +40,8 @@ export const transactionsService = {
   async update(id: string, data: {
     description?: string;
     date?: string;
+    amount?: number;
+    accountId?: string;
   }): Promise<Transaction> {
     return apiPatch<Transaction>(`/transactions/${id}`, data);
   },
@@ -52,6 +54,22 @@ export const transactionsService = {
   // Get transaction summary
   async getSummary(startDate: string, endDate: string): Promise<TransactionSummary> {
     return apiGet<TransactionSummary>(`/transactions/summary?startDate=${startDate}&endDate=${endDate}`);
+  },
+
+  // Transfer between accounts
+  async transfer(data: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: number;
+    description?: string;
+    date?: string;
+  }): Promise<{ fromTransaction: Transaction; toTransaction: Transaction }> {
+    return apiPost<{ fromTransaction: Transaction; toTransaction: Transaction }>('/transactions/transfer', data);
+  },
+
+  // Get analytics
+  async getAnalytics(startDate: string, endDate: string): Promise<any> {
+    return apiGet<any>(`/transactions/analytics?startDate=${startDate}&endDate=${endDate}`);
   },
 };
 

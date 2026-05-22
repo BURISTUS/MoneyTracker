@@ -1,0 +1,208 @@
+{
+  "nav": {
+    "download": "İndir"
+  },
+  "hero": {
+    "badge": "Kişisel Finans Devrimi",
+    "title1": "Hayatını",
+    "title2": "Eşya İçin",
+    "title3": " Feda Etmeyi Bırak",
+    "subtitle": "Her alışverişi hayatının saatleriyle gör. 7 günlük İstek Kuluçka Makinesi ile dürtüsel alışverişi öldür. Kontrolleri geri al.",
+    "cta": "Ücretsiz İndir",
+    "learn": "Özellikleri Gör",
+    "phone": {
+      "balance": "Bakiye",
+      "today": "Bugün",
+      "hours": "yaşam saati",
+      "t1": "-$15",
+      "t1cat": "Kahve",
+      "t2": "-$120",
+      "t2cat": "Market",
+      "t3": "-$250",
+      "t3cat": "Alışveriş"
+    }
+  },
+  "lc": {
+    "badge": "Ölümcül Özellik",
+    "title": "Gerçek Fiyat Etiketi",
+    "subtitle": "Uygulamadaki her fiyat iki kez gösterilir — para biriminizde ve hayatınızın saatleriyle.",
+    "card": {
+      "label": "Bugünkü satın alma",
+      "item": "PlayStation 5",
+      "hours": "Hayatından 31 saat",
+      "detail": "$400'lık bir konsol — neredeyse 4 tam iş günü. Dürtüsel alışverişlerin %40'ı pişmanlıkla sonuçlanır. Hâlâ değer mi?",
+      "coffee": "Günlük $5 Latte",
+      "coffeeHours": "18 dk/gün = 110 saat/yıl"
+    },
+    "how": "Nasıl Çalışır",
+    "s1": {
+      "t": "Gelirinizi girin",
+      "d": "Maaşınızı ve çalışma saatlerinizi belirtin. Gerçek saatlik ücretinizi hesaplıyoruz."
+    },
+    "s2": {
+      "t": "Gerçeği görün",
+      "d": "Her işlem hayat saatlerini gösterir. Kategoriler, grafikler, istek listesi — her yerde."
+    },
+    "s3": {
+      "t": "Daha iyi kararlar alın",
+      "d": "$600 yerine \"40 saat iş\" gördüğünüzde, kararlar kolaylaşır."
+    }
+  },
+  "ai": {
+    "badge": "AI Destekli",
+    "title": "AI Finansal Danışmanınız",
+    "subtitle": "Harcama alışkanlıklarınızı anlayan ve kişiselleştirilmiş tavsiyeler veren yerleşik AI.",
+    "q1": "Bu ay yemeğe ne kadar harcadım?",
+    "a1": "Bu ay yemeğe $280 harcadınız, bütçenizin %30'u. Geçen aya göre $60 daha az!",
+    "q2": "$499'luk bir gitar alabilir miyim?",
+    "a2": "$499'luk bir gitar hayatınızdan 40 saat. Bu ay bütçenizde $1,840 kaldı.",
+    "f1": {
+      "t": "Akıllı Çıkarımlar",
+      "d": "AI harcama alışkanlıklarınızı analiz eder ve nerede tasarruf edebileceğinizi belirler."
+    },
+    "f2": {
+      "t": "Doğal Dil",
+      "d": "Doğal dilde soru sorun. Karmaşık menüler veya filtreler yok."
+    },
+    "f3": {
+      "t": "Sesli Giriş",
+      "d": "İşlemlerinizi söyleyin. SpendWise anlar ve kategorize eder."
+    },
+    "f4": {
+      "t": "Fiş Tarama",
+      "d": "Fişinizin fotoğrafını çekin. AI ürünleri, fiyatları ve kategorileri çıkarır."
+    }
+  },
+  "inc": {
+    "badge": "Dürtü Katili",
+    "title": "İstek Kuluçka Makinesi",
+    "subtitle": "Her alışverişten önce 7 günlük bekleme süresi. Çoğu istek 7. günden önce ölür.",
+    "s1": {
+      "t": "Bir Şey mi İstiyorsunuz?",
+      "d": "Bir nedenle İstek Kuluçka Makinesine ekleyin: \"Buna neden ihtiyacım var?\""
+    },
+    "s2": {
+      "t": "7 Gün Dondurun",
+      "d": "Satın Al butonu kilitli. Geri sayım zamanlayıcısının işlemesini izleyin."
+    },
+    "s3": {
+      "t": "Hâlâ İstiyor musunuz?",
+      "d": "7. gün — karar verin. Satın alın veya gururla reddedin. Ne kadar hayat kurtardığınızı görün."
+    },
+    "r": {
+      "t": "\"Buna ihtiyacım yok\" dediniz",
+      "d": "Hayatınızdan tam 40 saat kurtardınız. %10'dan yatırım yaparsanız, 10 yılda $2,400 eder."
+    }
+  },
+  "an": {
+    "badge": "Akıllı Analitik",
+    "title": "Paranızı Anlayın",
+    "subtitle": "Mali hikayenizi ortaya çıkaran güçlü grafikler ve raporlar.",
+    "f1": {
+      "t": "Harcama Dağılımı",
+      "d": "Bu yıl $12,480 harcadı — %70 ihtiyaçlara, %30 isteklere. Kategoriye göre güzel halka grafikler."
+    },
+    "f2": {
+      "t": "Trendler ve Örüntüler",
+      "d": "Haftalar, aylar ve yıllar boyunca harcama trendlerini takip edin. Hiç fark etmediğiniz örüntüleri keşfedin."
+    },
+    "f3": {
+      "t": "Yaşam Saati Raporları",
+      "d": "Her rapor maliyetleri yaşam saati olarak gösterir. $67.50/ay abonelik hayatınızdan 5 saat."
+    },
+    "f4": {
+      "t": "Bütçe Takibi",
+      "d": "Kategori bazında limitler belirleyin. %80'de uyarılar alın ve tüm ay boyunca yolda kalın."
+    },
+    "f5": {
+      "t": "Gelir Analizi",
+      "d": "Tüm gelir kaynaklarını takip edin. $3,200 aylık geliriniz, görselleştirildi. Tasarruf oranınızı görün."
+    },
+    "f6": {
+      "t": "Dışa Aktar ve Paylaş",
+      "d": "Raporları CSV olarak dışa aktarın. Mali özetleri partneriniz veya danışmanınızla paylaşın."
+    }
+  },
+  "feat": {
+    "badge": "Tam Araç Seti",
+    "title": "İhtiyacınız Olan Her Şey",
+    "subtitle": "Sadece bir harcama takibi değil, eksiksiz bir finansal yönetim sistemi.",
+    "f1": {
+      "t": "Çoklu Hesap",
+      "d": "Nakit, banka, kredi kartları, yatırımlar. Tüm hesaplarınızı tek yerde, çoklu para birimi desteğiyle takip edin."
+    },
+    "f2": {
+      "t": "Akıllı Kategoriler",
+      "d": "Güzel halka grafiklerle otomatik kategorize edilmiş harcamalar. Paranızın tam olarak nereye gittiğini görün — parayla ve yaşam saatleriyle."
+    },
+    "f3": {
+      "t": "Bütçe Limitleri",
+      "d": "Kategori bazında aylık limitler belirleyin. Sınıra yaklaştığınızda uyarı alın. Stres yaşamadan yolda kalın."
+    },
+    "f4": {
+      "t": "Hedefler & Hayaller",
+      "d": "Son teslim tarihleriyle finansal hedefler belirleyin. İlerlemeyi takip edin. Ne kadar yakın olduğunuzu görün — parayla ve yaşam saatleriyle."
+    },
+    "f5": {
+      "t": "Yapay Zeka Asistanı",
+      "d": "Finansal tavsiye için yerleşik yapay zeka sohbeti. Hızlı işlemler için sesli giriş. Yapay zeka destekli fiş tarama."
+    },
+    "f6": {
+      "t": "300+ Para Birimi",
+      "d": "Fiat, kripto ve metaller için anlık döviz kurları. Herhangi bir para birimi arasında anında dönüşüm."
+    }
+  },
+  "how": {
+    "badge": "Başlayın",
+    "title": "2 Dakikada Hazırsınız",
+    "s1": {
+      "t": "İndirin & Kayıt Olun",
+      "d": "Bir hesap oluşturun veya tam uygulamayı demo modunda deneyin. Kredi kartı gerekmez."
+    },
+    "s2": {
+      "t": "Gelirinizi Ayarlayın",
+      "d": "Maaşınızı ve çalışma programınızı girin — ister $3,200/ay ister daha fazla. Uygulama gerçek saatlik ücretinizi otomatik hesaplar."
+    },
+    "s3": {
+      "t": "Her Şeyi Takip Edin",
+      "d": "İşlemleri manuel olarak, sesle veya fiş taramasıyla ekleyin. $5'lık bir alışveriş bile yaşam saatlerinde gerçek maliyetini gösterir."
+    },
+    "s4": {
+      "t": "Hayatınızın Değişmesini İzleyin",
+      "d": "Dürtüsel alışverişlerde ayda $150 tasarruf edin. Daha fazla tasarruf. Net finansal hedefler. Gerçek özgürlük."
+    }
+  },
+  "prem": {
+    "badge": "Premium",
+    "title": "Tam Potansiyelinizi Açın",
+    "subtitle": "Ücretsiz sürüm güçlüdür. Premium onu durdurulamaz yapar — sadece $14.99/ay.",
+    "p1": "Analitikli sınırsız İstek Kuluçka Makinesi",
+    "p2": "Yapay zeka finansal danışman — sınırsız sohbet",
+    "p3": "Yapay zeka ile fiş tarama",
+    "p4": "Sesli işlem girişi",
+    "p5": "Aile bütçesi paylaşımı",
+    "p6": "Gelişmiş analitik ve tahminler",
+    "cta": "Premium'u Ücretsiz Dene"
+  },
+  "cta": {
+    "title": "Hayatını Eşya İçin Feda Etmeyi Bırakmaya hazır mısınız?",
+    "subtitle": "Finanslarını kontrol eden binlerce insana katılın.",
+    "as": "App Store'dan İndirin",
+    "gp": "Google Play'den Edinin"
+  },
+  "footer": {
+    "tag": "Hayatını eşya için feda etme.",
+    "product": "Ürün",
+    "features": "Özellikler",
+    "premium": "Premium",
+    "download": "İndir",
+    "company": "Şirket",
+    "about": "Hakkımızda",
+    "blog": "Blog",
+    "contact": "İletişim",
+    "legal": "Yasal",
+    "privacy": "Gizlilik Politikası",
+    "terms": "Kullanım Koşulları",
+    "rights": "Tüm hakları saklıdır."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "insufficientFunds": "অপর্যাপ্ত তহবিল। উপলব্ধ {{available}} ₽, প্রয়োজন {{needed}} ₽",
+  "negativeBalance": "\"{{account}}\" থেকে স্থানান্তর করা যাবে না — ব্যালেন্স {{balance}}",
+  "accountNotFound": "অ্যাকাউন্ট পাওয়া যায়নি",
+  "categoryNotFound": "ক্যাটাগরি পাওয়া যায়নি",
+  "transactionNotFound": "লেনদেন পাওয়া যায়নি",
+  "sameAccount": "একই অ্যাকাউন্টে স্থানান্তর করা যাবে না",
+  "unauthorized": "প্রমাণীকরণ প্রয়োজন",
+  "forbidden": "প্রবেশ নিষিদ্ধ",
+  "validationError": "যাচাইকরণ ত্রুটি",
+  "internalError": "অভ্যন্তরীণ সার্ভার ত্রুটি",
+  "sessionExpired": "সেশন শেষ হয়েছে। আবার লগইন করুন।",
+  "budgetNotFound": "বাজেট পাওয়া যায়নি",
+  "goalNotFound": "লক্ষ্য পাওয়া যায়নি",
+  "wishlistNotFound": "উইশলিস্ট আইটেম পাওয়া যায়নি",
+  "invalidCredentials": "অবৈধ ইমেল বা পাসওয়ার্ড",
+  "emailExists": "এই ইমেল সহ ব্যবহারকারী ইতিমধ্যে বিদ্যমান",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
+}

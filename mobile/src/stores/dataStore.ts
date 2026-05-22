@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { Account, Transaction, Budget, Goal, Category, UserGamification, Achievement, Challenge, WishlistItem, User } from '../types';
-import { AccountType, CategoryType, TransactionType, BudgetPeriod, GamificationStatus, AchievementCondition, AchievementTier, ChallengeType, WishlistStatus } from '../types';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { safeAsyncStorage } from '../utils/safeAsyncStorage';
+import type { Account, Transaction, Goal, Category, UserGamification, Challenge, WishlistItem, User, Article, Budget } from '../types';
+import { AccountType, CategoryType, TransactionType, WishlistStatus } from '../types';
 import { useAuthStore } from './authStore';
 import transactionsService from '../services/transactions';
 import accountsService from '../services/accounts';
@@ -9,27 +10,28 @@ import categoriesService, { CategoryTypeOption, IconOption } from '../services/c
 import authService from '../services/auth';
 import lifeCostService from '../services/lifeCost';
 import currencyService from '../services/currency';
+import wishlistService from '../services/wishlist';
+import goalsService from '../services/goals';
+import articlesService from '../services/articles';
+import budgetsService from '../services/budgets';
+import { useSubscriptionStore } from './subscriptionStore';
 import type { ExchangeRate } from '../services/currency';
 import { setCurrencyConfig } from '../utils/formatters';
+import { getTransactionCurrency } from '../utils/transactionUtils';
+import i18n from '../i18n';
 
 // Initial empty state - data will be loaded from API
 const INITIAL_ACCOUNTS: Account[] = [];
 const INITIAL_CATEGORIES: Category[] = [];
 const INITIAL_TRANSACTIONS: Transaction[] = [];
-const INITIAL_BUDGETS: Budget[] = [];
 const INITIAL_GOALS: Goal[] = [];
 const INITIAL_GAMIFICATION: UserGamification = {
   id: '',
   userId: '',
-  xp: 0,
-  level: 1,
-  savedAmount: 0,
-  status: GamificationStatus.CONSUMER_DRONE,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   hourlyRate: undefined,
 };
-const INITIAL_ACHIEVEMENTS: Achievement[] = [];
 const INITIAL_CHALLENGES: Challenge[] = [];
 const INITIAL_WISHLIST: WishlistItem[] = [];
 
@@ -59,38 +61,32 @@ interface DataState {
   addTransaction: (transaction: Transaction) => void;
   fetchTransactions: (filters?: { startDate?: string; endDate?: string; categoryId?: string; type?: string }) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
-  updateTransaction: (id: string, data: { description?: string; date?: string }) => Promise<void>;
+  updateTransaction: (id: string, data: { description?: string; date?: string; amount?: number; accountId?: string }) => Promise<void>;
 
   // Categories
   categories: Category[];
   setCategories: (categories: Category[]) => void;
   fetchCategories: () => Promise<void>;
-  addCategory: (data: { name: string; type: CategoryType; icon: string; color: string; isBaseNeed?: boolean }) => Promise<void>;
-
-  // Budgets
-  budgets: Budget[];
-  isLoadingBudgets: boolean;
-  setBudgets: (budgets: Budget[]) => void;
-  addBudget: (budget: Budget) => void;
-  updateBudget: (id: string, data: Partial<Budget>) => void;
+  addCategory: (data: { name: string; type: CategoryType; icon: string; color: string; isBaseNeed?: boolean; excludeFromTotal?: boolean; monthlyLimit?: number | null }) => Promise<void>;
 
   // Goals
   goals: Goal[];
   isLoadingGoals: boolean;
   setGoals: (goals: Goal[]) => void;
-  addGoal: (goal: Goal) => void;
-  updateGoal: (id: string, data: Partial<Goal>) => void;
+  fetchGoals: () => Promise<void>;
+  createGoal: (data: { name: string; targetAmount: number; currency?: string; deadline?: string }) => Promise<Goal>;
+  addGoalContribution: (id: string, amount: number, note?: string) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
 
-  // Gamification
+  // Gamification / Life-Cost
   gamification: UserGamification | null;
   user: User | null;
   setGamification: (gamification: UserGamification | null) => void;
   setUser: (user: User | null) => void;
-  addXp: (amount: number) => void;
   fetchGamification: () => Promise<void>;
 
-  // Achievements
-  achievements: Achievement[];
+  // Achievements (kept for backward compat, unused)
+  achievements: any[];
   earnedAchievements: string[];
   earnAchievement: (id: string) => void;
 
@@ -101,8 +97,14 @@ interface DataState {
 
   // Wishlist
   wishlist: WishlistItem[];
-  addWishlistItem: (item: WishlistItem) => void;
+  fetchWishlist: () => Promise<void>;
+  addWishlistItem: (item: WishlistItem) => Promise<void>;
   updateWishlistItem: (id: string, data: Partial<WishlistItem>) => void;
+
+  // Articles
+  articles: Article[];
+  isLoadingArticles: boolean;
+  fetchArticles: () => Promise<void>;
 
   // Currency
   userCurrency: string;
@@ -119,6 +121,15 @@ interface DataState {
   setHourlyRate: (rateRubles: number) => Promise<void>;
   calculateLifeCost: (amount: number) => Promise<{ hours: number; days: number; message: string }>;
   fetchHourlyRate: () => Promise<void>;
+
+  // Budgets
+  budgets: Budget[];
+  isLoadingBudgets: boolean;
+  fetchBudgets: (month?: string) => Promise<void>;
+  addBudget: (data: { categoryId: string; amount: number; month?: string }) => Promise<void>;
+  updateBudget: (id: string, amount: number) => Promise<void>;
+  deleteBudget: (id: string) => Promise<void>;
+  carryForwardBudgets: () => Promise<void>;
 
   // Initialization
   initializeData: () => Promise<void>;
@@ -191,16 +202,8 @@ export const useDataStore = create<DataState>()(
       setTransactions: (transactions) => set({ transactions }),
       addTransaction: async (transaction) => {
         try {
-          console.log('📝 Creating transaction:', {
-            accountId: transaction.accountId,
-            categoryId: transaction.categoryId,
-            amount: transaction.amount,
-            type: transaction.type,
-            date: transaction.date,
-          });
-
           const amountNum = Number(transaction.amount);
-          await transactionsService.create({
+          const created = await transactionsService.create({
             accountId: transaction.accountId,
             categoryId: String(transaction.categoryId),
             amount: amountNum,
@@ -209,8 +212,13 @@ export const useDataStore = create<DataState>()(
             date: transaction.date,
           });
 
-          console.log('✅ Transaction created successfully');
-          set((state) => ({ transactions: [transaction, ...state.transactions] }));
+          // Use the real DB transaction, not the temp one
+          const realTx = { ...created, amount: Number(created.amount) };
+          set((state) => ({ transactions: [realTx, ...state.transactions] }));
+
+          // Update account balance
+          const accounts = await accountsService.getAll();
+          set({ accounts });
         } catch (error) {
           console.error('Failed to sync transaction:', error);
         }
@@ -218,7 +226,11 @@ export const useDataStore = create<DataState>()(
       fetchTransactions: async (filters?: { startDate?: string; endDate?: string; categoryId?: string; type?: string }) => {
         set({ isLoadingTransactions: true });
         try {
-          const transactions = await transactionsService.getAll(filters);
+          const raw = await transactionsService.getAll(filters);
+          const transactions = ((raw as any).items ?? raw).map((t: any) => ({
+            ...t,
+            amount: Number(t.amount),
+          }));
           set({ transactions, isLoadingTransactions: false });
         } catch (error) {
           set({ isLoadingTransactions: false });
@@ -231,19 +243,25 @@ export const useDataStore = create<DataState>()(
           set((state) => ({
             transactions: state.transactions.filter((t) => t.id !== id),
           }));
+          // Refresh account balances
+          const accounts = await accountsService.getAll();
+          set({ accounts });
         } catch (error) {
           console.error('Failed to delete transaction:', error);
           throw error;
         }
       },
-      updateTransaction: async (id: string, data: { description?: string; date?: string }) => {
+      updateTransaction: async (id: string, data: { description?: string; date?: string; amount?: number; accountId?: string }) => {
         try {
-          await transactionsService.update(id, data);
+          const updated = await transactionsService.update(id, data);
           set((state) => ({
             transactions: state.transactions.map((t) =>
-              t.id === id ? { ...t, ...data } : t
+              t.id === id ? { ...t, ...data, amount: data.amount ?? t.amount } : t
             ),
           }));
+          // Refresh accounts
+          const accounts = await accountsService.getAll();
+          set({ accounts });
         } catch (error) {
           console.error('Failed to update transaction:', error);
           throw error;
@@ -255,23 +273,14 @@ export const useDataStore = create<DataState>()(
       setCategories: (cats) => set({ categories: cats }),
       fetchCategories: async () => {
         try {
-          // Load all categories (system + personal) with auth
           const categories = await categoriesService.getAll();
           set({ categories });
-          console.log(`✅ Loaded ${categories.length} categories`);
+          if (__DEV__) console.log(`✅ Loaded ${categories.length} categories`);
         } catch (error) {
           console.error('Failed to fetch categories:', error);
-          // Fallback: try loading system categories without auth
-          try {
-            const systemCategories = await categoriesService.getSystemCategories();
-            set({ categories: systemCategories });
-            console.log(`✅ Loaded ${systemCategories.length} system categories (fallback)`);
-          } catch (fallbackError) {
-            console.error('Failed to fetch system categories:', fallbackError);
-          }
         }
       },
-      addCategory: async (data: { name: string; type: CategoryType; icon: string; color: string; isBaseNeed?: boolean }) => {
+      addCategory: async (data: { name: string; type: CategoryType; icon: string; color: string; isBaseNeed?: boolean; excludeFromTotal?: boolean; monthlyLimit?: number | null }) => {
         try {
           await categoriesService.create(data);
           const categories = await categoriesService.getAll();
@@ -282,42 +291,65 @@ export const useDataStore = create<DataState>()(
         }
       },
 
-      // Budgets
-      budgets: INITIAL_BUDGETS,
-      isLoadingBudgets: false,
-      setBudgets: (budgets) => set({ budgets }),
-      addBudget: (budget) => set((state) => ({ budgets: [...state.budgets, budget] })),
-      updateBudget: (id, data) => set((state) => ({
-        budgets: state.budgets.map((b) => b.id === id ? { ...b, ...data } : b)
-      })),
-
       // Goals
       goals: INITIAL_GOALS,
       isLoadingGoals: false,
       setGoals: (goals) => set({ goals }),
-      addGoal: (goal) => set((state) => ({ goals: [...state.goals, goal] })),
-      updateGoal: (id, data) => set((state) => ({
-        goals: state.goals.map((g) => g.id === id ? { ...g, ...data } : g)
-      })),
+      fetchGoals: async () => {
+        set({ isLoadingGoals: true });
+        try {
+          const goals = await goalsService.getAll();
+          set({ goals, isLoadingGoals: false });
+        } catch (error) {
+          set({ isLoadingGoals: false });
+          console.error('Failed to fetch goals:', error);
+        }
+      },
+      createGoal: async (data) => {
+        set({ isLoadingGoals: true });
+        try {
+          const goal = await goalsService.create(data);
+          set((state) => ({
+            goals: [goal, ...state.goals],
+            isLoadingGoals: false,
+          }));
+          return goal;
+        } catch (error) {
+          set({ isLoadingGoals: false });
+          throw error;
+        }
+      },
+      addGoalContribution: async (id, amount, note) => {
+        try {
+          const updated = await goalsService.addContribution(id, { amount: Math.round(amount * 100), note });
+          set((state) => ({
+            goals: state.goals.map((g) => (g.id === id ? updated : g)),
+          }));
+        } catch (error) {
+          console.error('Failed to add contribution:', error);
+          throw error;
+        }
+      },
+      deleteGoal: async (id) => {
+        try {
+          await goalsService.delete(id);
+          set((state) => ({
+            goals: state.goals.filter((g) => g.id !== id),
+          }));
+        } catch (error) {
+          console.error('Failed to delete goal:', error);
+          throw error;
+        }
+      },
 
-      // Gamification
+      // Gamification / Life-Cost
       gamification: INITIAL_GAMIFICATION,
       user: null,
       setGamification: (gamification) => set({ gamification }),
       setUser: (user: User | null) => set({ user }),
-      addXp: (amount) => set((state) => {
-        if (!state.gamification) return state;
-        const newXp = state.gamification.xp + amount;
-        const newLevel = Math.floor(newXp / 1000) + 1;
-        return {
-          gamification: {
-            ...state.gamification,
-            xp: newXp,
-            level: newLevel,
-          }
-        };
-      }),
       fetchGamification: async () => {
+        const allowed = useSubscriptionStore.getState().checkAccess('LIFE_COST')?.allowed;
+        if (!allowed) return;
         try {
           const rate = await lifeCostService.getHourlyRate();
           set((state) => ({
@@ -331,8 +363,8 @@ export const useDataStore = create<DataState>()(
         }
       },
 
-      // Achievements
-      achievements: INITIAL_ACHIEVEMENTS,
+      // Achievements (backward compat)
+      achievements: [],
       earnedAchievements: [],
       earnAchievement: (id) => set((state) => ({
         earnedAchievements: state.earnedAchievements.includes(id)
@@ -349,10 +381,49 @@ export const useDataStore = create<DataState>()(
 
       // Wishlist
       wishlist: INITIAL_WISHLIST,
-      addWishlistItem: (item) => set((state) => ({ wishlist: [...state.wishlist, item] })),
+      fetchWishlist: async () => {
+        try {
+          const response = await wishlistService.getAll();
+          set({ wishlist: response.all });
+        } catch (e) {
+          console.error('Failed to fetch wishlist:', e);
+        }
+      },
+      addWishlistItem: async (item) => {
+        const isDemoMode = useAuthStore.getState().isDemoMode;
+        if (!isDemoMode) {
+          try {
+            const created = await wishlistService.create({
+              name: item.name,
+              price: item.price,
+              description: item.description,
+              cooldownDays: item.cooldownDays,
+            });
+            set((state) => ({ wishlist: [...state.wishlist, created] }));
+            return;
+          } catch (e) {
+            console.error('Failed to create wishlist item:', e);
+          }
+        }
+        set((state) => ({ wishlist: [...state.wishlist, item] }));
+      },
       updateWishlistItem: (id, data) => set((state) => ({
         wishlist: state.wishlist.map((w) => w.id === id ? { ...w, ...data } : w)
       })),
+
+      // Articles
+      articles: [],
+      isLoadingArticles: false,
+      fetchArticles: async () => {
+        set({ isLoadingArticles: true });
+        try {
+          const articles = await articlesService.getAll();
+          set({ articles, isLoadingArticles: false });
+        } catch (e) {
+          set({ isLoadingArticles: false });
+          console.error('Failed to fetch articles:', e);
+        }
+      },
 
       userCurrency: 'RUB',
       setUserCurrency: (currency: string) => {
@@ -391,45 +462,56 @@ export const useDataStore = create<DataState>()(
 
       // Helpers
       getTotalBalance: () => {
-        const { accounts } = get();
-        return accounts.reduce((sum, acc) => sum + acc.balance, 0);
+        const { accounts, convertToUserCurrency } = get();
+        return accounts.reduce((sum, acc) => {
+          return sum + convertToUserCurrency(Number(acc.balance), acc.currency);
+        }, 0);
       },
 
       getMonthlyIncome: () => {
-        const { transactions } = get();
+        const { transactions, categories, convertToUserCurrency } = get();
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const excludedIds = new Set(categories.filter((c) => c.excludeFromTotal).map((c) => c.id));
         return transactions
           .filter((t) => t.type === 'INCOME' && new Date(t.date) >= startOfMonth)
-          .reduce((sum, t) => sum + t.amount, 0);
+          .filter((t) => !excludedIds.has(t.categoryId))
+          .reduce((sum, t) => {
+            const accCurrency = getTransactionCurrency(t);
+            return sum + convertToUserCurrency(Number(t.amount), accCurrency);
+          }, 0);
       },
 
       getMonthlyExpenses: () => {
-        const { transactions } = get();
+        const { transactions, categories, convertToUserCurrency } = get();
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const excludedIds = new Set(categories.filter((c) => c.excludeFromTotal).map((c) => c.id));
         return transactions
           .filter((t) => t.type === 'EXPENSE' && new Date(t.date) >= startOfMonth)
-          .reduce((sum, t) => sum + t.amount, 0);
+          .filter((t) => !excludedIds.has(t.categoryId))
+          .reduce((sum, t) => {
+            const accCurrency = getTransactionCurrency(t);
+            return sum + convertToUserCurrency(Number(t.amount), accCurrency);
+          }, 0);
       },
 
       getHourlyRate: () => {
         const { gamification } = get();
-        return gamification?.hourlyRate ? gamification.hourlyRate / 100 : 1500;
+        return gamification?.hourlyRate ? Number(gamification.hourlyRate) : 1500;
       },
 
       setHourlyRate: async (rateRubles: number) => {
-        const rateKopecks = Math.round(rateRubles * 100);
         set((state) => ({
           gamification: state.gamification
-            ? { ...state.gamification, hourlyRate: rateKopecks }
+            ? { ...state.gamification, hourlyRate: rateRubles }
             : null,
         }));
 
         const { isDemoMode } = useAuthStore.getState();
         if (!isDemoMode) {
           try {
-            await lifeCostService.updateHourlyRate(rateKopecks);
+            await lifeCostService.updateHourlyRate(rateRubles);
           } catch (error) {
             console.error('Failed to save hourly rate to server:', error);
           }
@@ -453,15 +535,15 @@ export const useDataStore = create<DataState>()(
 
           let message = '';
           if (days >= 20) {
-            message = `Это ${Math.round(days)} рабочих дней. Ты готов провести месяц в офисе ради этого?`;
+            message = i18n.t('lifeCost.workDaysMonth', { days: Math.round(days) });
           } else if (days >= 10) {
-            message = `Это ${Math.round(days)} рабочих дней. Две недели твоей жизни.`;
+            message = i18n.t('lifeCost.workDaysTwoWeeks', { days: Math.round(days) });
           } else if (days >= 5) {
-            message = `Это ${Math.round(days)} рабочих дней. Целая неделя.`;
+            message = i18n.t('lifeCost.workDaysWeek', { days: Math.round(days) });
           } else if (days >= 1) {
-            message = `Это ${Math.round(hours)} часов твоей жизни.`;
+            message = i18n.t('lifeCost.hoursLife', { hours: Math.round(hours) });
           } else {
-            message = `Это ${Math.round(hours * 60)} минут твоей жизни.`;
+            message = i18n.t('lifeCost.minutesLife', { minutes: Math.round(hours * 60) });
           }
 
           return { hours, days, message };
@@ -482,38 +564,121 @@ export const useDataStore = create<DataState>()(
         }
       },
 
+      // Budgets
+      budgets: [],
+      isLoadingBudgets: false,
+
+      fetchBudgets: async (month?: string) => {
+        try {
+          set({ isLoadingBudgets: true });
+          const currentMonth = month || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+          const res = await budgetsService.getBudgets(currentMonth);
+          set({ budgets: res.data, isLoadingBudgets: false });
+        } catch (error) {
+          set({ isLoadingBudgets: false });
+        }
+      },
+
+      addBudget: async (data: { categoryId: string; amount: number; month?: string }) => {
+        try {
+          await budgetsService.createBudget(data);
+          await get().fetchBudgets(data.month);
+        } catch (error) {
+          throw error;
+        }
+      },
+
+      updateBudget: async (id: string, amount: number) => {
+        try {
+          await budgetsService.updateBudget(id, amount);
+          await get().fetchBudgets();
+        } catch (error) {
+          throw error;
+        }
+      },
+
+      deleteBudget: async (id: string) => {
+        try {
+          await budgetsService.deleteBudget(id);
+          await get().fetchBudgets();
+        } catch (error) {
+          throw error;
+        }
+      },
+
+      carryForwardBudgets: async () => {
+        try {
+          await budgetsService.carryForward();
+          await get().fetchBudgets();
+        } catch (error) {
+          throw error;
+        }
+      },
+
       // Initialize data from API
       initializeData: async () => {
         const isDemoMode = useAuthStore.getState().isDemoMode;
         if (isDemoMode) {
-          console.log('🎮 Demo mode — skipping API calls');
+          if (__DEV__) console.log('🎮 Demo mode — skipping API calls');
           return;
         }
-        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchHourlyRate, fetchCurrencyRates } = get();
-        await Promise.all([
+
+        // Fetch subscription first to know what features are accessible
+        const { fetchStatus } = useSubscriptionStore.getState();
+        await fetchStatus();
+
+        const isPremium = useSubscriptionStore.getState().isPremium();
+        const check = useSubscriptionStore.getState().checkAccess;
+
+        const { fetchAccounts, fetchCategories, fetchTransactions, fetchGamification, fetchCurrencyRates, fetchArticles } = get();
+
+        const promises: Promise<any>[] = [
           fetchAccounts(),
           fetchCategories(),
           fetchTransactions(),
           fetchGamification(),
-          fetchHourlyRate(),
           fetchCurrencyRates(),
-        ]);
+          fetchArticles(),
+        ];
+
+        // Only fetch premium features if accessible
+        if (check('LIFE_COST')?.allowed) {
+          promises.push(get().fetchHourlyRate());
+        }
+        if (check('WISHLIST_INCUBATOR')?.allowed) {
+          promises.push(get().fetchWishlist());
+        }
+        if (check('GOALS')?.allowed) {
+          promises.push(get().fetchGoals());
+        }
+        if (isPremium) {
+          promises.push(get().fetchBudgets());
+        }
+
+        await Promise.all(promises);
       },
     }),
     {
       name: 'data-storage',
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         accounts: state.accounts,
         transactions: state.transactions,
         categories: state.categories,
-        budgets: state.budgets,
         goals: state.goals,
         gamification: state.gamification,
         earnedAchievements: state.earnedAchievements,
         wishlist: state.wishlist,
+        articles: state.articles,
         userCurrency: state.userCurrency,
         currencySymbol: state.currencySymbol,
+        budgets: state.budgets,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          setCurrencyConfig(state.userCurrency || 'RUB', state.currencySymbol || '₽');
+        }
+      },
     }
   )
 );

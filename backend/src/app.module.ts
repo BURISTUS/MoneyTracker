@@ -10,13 +10,20 @@ import { UsersModule } from './users/users.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AccountsModule } from './accounts/accounts.module';
-import { BudgetModule } from './budget/budget.module';
 import { GoalsModule } from './goals/goals.module';
 import { WishlistModule } from './wishlist/wishlist.module';
-import { GamificationModule } from './gamification/gamification.module';
 import { LifeCostModule } from './life-cost/life-cost.module';
 import { CurrencyModule } from './currency/currency.module';
 import { I18nApiModule } from './i18n-controller/i18n-api.module';
+import { ChatModule } from './chat/chat.module';
+import { AiModule } from './ai/ai.module';
+import { ArticlesModule } from './articles/articles.module';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
+import { SubscriptionModule } from './subscription/subscription.module';
+import { ExportModule } from './export/export.module';
+import { FamilyModule } from './family/family.module';
+import { BudgetModule } from './budget/budget.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -44,13 +51,20 @@ import { I18nApiModule } from './i18n-controller/i18n-api.module';
     TransactionsModule,
     CategoriesModule,
     AccountsModule,
-    BudgetModule,
     GoalsModule,
     WishlistModule,
-    GamificationModule,
     LifeCostModule,
     CurrencyModule,
     I18nApiModule,
+    ChatModule,
+    AiModule,
+    ArticlesModule,
+    RateLimitModule,
+    SubscriptionModule,
+    ExportModule,
+    FamilyModule,
+    BudgetModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

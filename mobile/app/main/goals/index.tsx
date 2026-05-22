@@ -1,139 +1,345 @@
-import React, { useState, useCallback } from 'react';
-import { View, FlatList, Pressable } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import {
+  View,
+  Pressable,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
-import { Screen } from '../../../src/components/ui/Screen';
-import { Text } from '../../../src/components/ui/Text';
-import { Card } from '../../../src/components/ui/Card';
-import { Input } from '../../../src/components/ui/Input';
-import { Button } from '../../../src/components/ui/Button';
-import { Icon } from '../../../src/components/ui/Icon';
-import { GoalCard } from '../../../src/components/features/GoalCard';
-import { BottomSheet } from '../../../src/components/ui/BottomSheet';
-import { Header } from '../../../src/components/layout/Header';
-import { useTheme } from '../../../src/theme';
+import { useTheme } from '../../../src/stores/themeStore';
+import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../../src/utils/formatters';
+import type { Goal } from '../../../src/types';
 
-export default function GoalsScreen() {
-  const { spacing } = useTheme();
-  const goals = useDataStore((s) => s.goals);
-  const addGoal = useDataStore((s) => s.addGoal);
-
-  const [showAdd, setShowAdd] = useState(false);
+function CreateGoalModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
+  const C = useTheme();
+  const MS = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+    sheet: { backgroundColor: C.sheet, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 12, paddingBottom: 34, maxHeight: '90%' },
+    handle: { width: 36, height: 5, borderRadius: 3, backgroundColor: C.handle, alignSelf: 'center', marginBottom: 16 },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+    closeBtn: { width: 32, height: 32, borderRadius: 10, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border },
+    field: { marginBottom: 16, paddingHorizontal: 20 },
+    label: { fontSize: 12, fontWeight: '600', color: C.textSec, marginBottom: 6, textTransform: 'uppercase' },
+    input: { backgroundColor: C.inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, fontSize: 15, color: C.textMain, borderWidth: 1, borderColor: C.border },
+    saveBtn: { marginHorizontal: 20, paddingVertical: 14, borderRadius: 14, alignItems: 'center', backgroundColor: C.primary, marginTop: 4 },
+    saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+    monthInfo: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, marginBottom: 16 },
+    monthInfoText: { fontSize: 13, color: C.textSec },
+    monthInfoValue: { fontSize: 13, fontWeight: '600', color: C.primary },
+  });
+  const createGoal = useDataStore((s) => s.createGoal);
+  const userCurrency = useDataStore((s) => s.userCurrency);
   const [name, setName] = useState('');
   const [target, setTarget] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const totalSaved = goals.reduce((sum, g) => sum + g.currentAmount, 0);
-  const totalTarget = goals.reduce((sum, g) => sum + g.targetAmount, 0);
-  const overallProgress = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
+  React.useEffect(() => {
+    if (visible) { setName(''); setTarget(''); setDeadline(''); setSaving(false); }
+  }, [visible]);
 
-  const handleAdd = useCallback(() => {
-    if (!name || !target) return;
-    addGoal({
-      id: `temp_${Date.now()}`,
-      userId: '',
-      name,
-      targetAmount: Math.round(parseFloat(target) * 100),
-      currentAmount: 0,
-      deadline: deadline || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-      isCompleted: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      progress: 0,
-    });
-    setName('');
-    setTarget('');
-    setDeadline('');
-    setShowAdd(false);
-  }, [name, target, deadline, addGoal]);
+  const canSave = name && target && parseInt(target) > 0;
+
+  const monthNeed = useMemo(() => {
+    if (!target || !deadline) return null;
+    const months = Math.max(1, Math.ceil(
+      (new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)
+    ));
+    return Math.round(parseInt(target) / months);
+  }, [target, deadline]);
+
+  const handleSave = async () => {
+    if (!canSave) return;
+    setSaving(true);
+    try {
+      await createGoal({ name, targetAmount: Math.round(parseFloat(target) * 100), currency: userCurrency, deadline: deadline || undefined });
+      onClose();
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  };
 
   return (
-    <Screen scroll header={<Header title="Цели" showBack />}>
-      <View style={{ gap: spacing.xl }}>
-        <Card variant="glass" padding="xxl">
-          <Text size="sm" style={{ color: '#71717A', marginBottom: 8 }}>
-            Общий прогресс
-          </Text>
-          <Text preset="h1">{formatCurrency(totalSaved)}</Text>
-          <Text size="sm" style={{ color: '#71717A', marginTop: 4 }}>
-            из {formatCurrency(totalTarget)}
-          </Text>
-          <View style={{ marginTop: spacing.lg }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-              <Text size="xs" style={{ color: '#71717A' }}>Прогресс</Text>
-              <Text size="xs" weight="medium" style={{ color: '#818CF8' }}>
-                {Math.round(overallProgress)}%
-              </Text>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={MS.overlay}>
+        <Pressable style={MS.overlay} onPress={onClose}><View style={{ flex: 1 }} /></Pressable>
+        <View style={MS.sheet}>
+          <View style={MS.handle} />
+          <View style={MS.header}>
+            <Text style={MS.headerTitle}>{t('goals.newGoalTitle')}</Text>
+            <Pressable style={MS.closeBtn} onPress={onClose}><Ionicons name="close" size={18} color={C.textSec} /></Pressable>
+          </View>
+          <ScrollView>
+            <View style={MS.field}>
+              <Text style={MS.label}>{t('goals.nameLabel')}</Text>
+              <TextInput style={MS.input} value={name} onChangeText={setName} placeholder={t('goals.namePlaceholder')} placeholderTextColor={C.textMuted} />
             </View>
-            <View
-              style={{
-                height: 6,
-                backgroundColor: 'rgba(255,255,255,0.06)',
-                borderRadius: 3,
-                overflow: 'hidden',
-              }}
-            >
-              <View
-                style={{
-                  width: `${Math.min(100, overallProgress)}%`,
-                  height: '100%',
-                  backgroundColor: '#6366F1',
-                  borderRadius: 3,
-                }}
-              />
+            <View style={MS.field}>
+              <Text style={MS.label}>{t('goals.amountLabel')}</Text>
+              <TextInput style={MS.input} value={target} onChangeText={setTarget} placeholder="100000" placeholderTextColor={C.textMuted} keyboardType="decimal-pad" />
+            </View>
+            <View style={MS.field}>
+              <Text style={MS.label}>{t('goals.deadlineOptional')}</Text>
+              <TextInput style={MS.input} value={deadline} onChangeText={setDeadline} placeholder="2026-12-31" placeholderTextColor={C.textMuted} />
+            </View>
+            {monthNeed !== null && (
+              <View style={MS.monthInfo}>
+                <Ionicons name="calendar-outline" size={14} color={C.textSec} />
+                <Text style={MS.monthInfoText}>{t('goals.needToSave')}</Text>
+                <Text style={MS.monthInfoValue}>{formatCurrency(monthNeed * 100, userCurrency)} / {t('goals.perMonthSuffix')}</Text>
+              </View>
+            )}
+            <TouchableOpacity style={[MS.saveBtn, { opacity: canSave && !saving ? 1 : 0.5 }]} onPress={handleSave} disabled={!canSave || saving}>
+              <Text style={MS.saveText}>{saving ? t('goals.creatingBtn') : t('goals.createGoalBtn')}</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function ContributionModal({ goal, visible, onClose }: { goal: Goal | null; visible: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
+  const C = useTheme();
+  const CS = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+    sheet: { backgroundColor: C.sheet, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 12, paddingBottom: 34 },
+    handle: { width: 36, height: 5, borderRadius: 3, backgroundColor: C.handle, alignSelf: 'center', marginBottom: 16 },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 12 },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+    closeBtn: { width: 32, height: 32, borderRadius: 10, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border },
+    goalInfo: { paddingHorizontal: 20, marginBottom: 16 },
+    goalName: { fontSize: 15, fontWeight: '600', color: C.textMain, marginBottom: 4 },
+    goalMeta: { fontSize: 13, color: C.textSec },
+    field: { marginBottom: 12, paddingHorizontal: 20 },
+    label: { fontSize: 12, fontWeight: '600', color: C.textSec, marginBottom: 6, textTransform: 'uppercase' },
+    input: { backgroundColor: C.inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, fontSize: 18, color: C.textMain, borderWidth: 1, borderColor: C.border },
+    saveBtn: { marginHorizontal: 20, marginTop: 8, paddingVertical: 14, borderRadius: 14, alignItems: 'center', backgroundColor: C.primary },
+    saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+    historyTitle: { fontSize: 12, fontWeight: '600', color: C.textSec, paddingHorizontal: 20, marginTop: 12, marginBottom: 6, textTransform: 'uppercase' },
+    contribItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border },
+    contribAmount: { fontSize: 14, fontWeight: '600', color: C.green },
+    contribDate: { fontSize: 12, color: C.textSec },
+    contribNote: { fontSize: 12, color: C.textSec, marginTop: 2 },
+  });
+  const addGoalContribution = useDataStore((s) => s.addGoalContribution);
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  React.useEffect(() => {
+    if (visible) { setAmount(''); setNote(''); setSaving(false); }
+  }, [visible]);
+
+  if (!goal) return null;
+
+  const canSave = amount && parseFloat(amount) > 0;
+
+  const handleSave = async () => {
+    if (!canSave) return;
+    setSaving(true);
+    try {
+      await addGoalContribution(goal.id, parseFloat(amount), note || undefined);
+      onClose();
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  };
+
+  const percent = goal.percentComplete ?? 0;
+  const barColor = percent >= 100 ? C.green : percent >= 50 ? C.primary : C.orange;
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={CS.overlay}>
+        <Pressable style={CS.overlay} onPress={onClose}><View style={{ flex: 1 }} /></Pressable>
+        <View style={CS.sheet}>
+          <View style={CS.handle} />
+          <View style={CS.header}>
+            <Text style={CS.headerTitle}>{goal.name}</Text>
+            <Pressable style={CS.closeBtn} onPress={onClose}><Ionicons name="close" size={18} color={C.textSec} /></Pressable>
+          </View>
+          <View style={CS.goalInfo}>
+            <Text style={CS.goalMeta}>
+              {formatCurrency(goal.currentAmount, goal.currency)} {t('goals.ofLabel')} {formatCurrency(goal.targetAmount, goal.currency)} · {Math.round(percent)}%
+            </Text>
+            <View style={{ height: 6, borderRadius: 3, backgroundColor: C.divider, marginTop: 8, overflow: 'hidden' }}>
+              <View style={{ height: 6, borderRadius: 3, width: `${Math.min(percent, 100)}%`, backgroundColor: barColor }} />
             </View>
           </View>
-        </Card>
+          <View style={CS.field}>
+            <Text style={CS.label}>{t('goals.contributionAmount')}</Text>
+            <TextInput style={CS.input} value={amount} onChangeText={setAmount} placeholder="0" placeholderTextColor={C.textMuted} keyboardType="decimal-pad" />
+          </View>
+          <View style={CS.field}>
+            <TextInput style={[CS.input, { fontSize: 14 }]} value={note} onChangeText={setNote} placeholder={t('goals.noteOptionalPlaceholder')} placeholderTextColor={C.textMuted} />
+          </View>
+          <TouchableOpacity style={[CS.saveBtn, { opacity: canSave && !saving ? 1 : 0.5 }]} onPress={handleSave} disabled={!canSave || saving}>
+              <Text style={CS.saveText}>{saving ? '...' : `➕ ${t('goals.addBtn')}`}</Text>
+          </TouchableOpacity>
 
-        <FlatList
-          data={goals}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <GoalCard goal={item} style={{ marginBottom: spacing.md }} />
+          {/* Contribution history */}
+          {goal.contributions && goal.contributions.length > 0 && (
+            <>
+              <Text style={CS.historyTitle}>{t('goals.historyTitle')} ({goal._count?.contributions || goal.contributions.length})</Text>
+              {goal.contributions.slice(0, 10).map((c, i) => (
+                <View key={c.id} style={CS.contribItem}>
+                  <View style={{ flex: 1 }}>
+                    {c.note ? <Text style={CS.contribNote}>{c.note}</Text> : null}
+                    <Text style={CS.contribDate}>{new Date(c.date).toLocaleDateString('ru-RU')}</Text>
+                  </View>
+                  <Text style={CS.contribAmount}>+{formatCurrency(c.amount, goal.currency)}</Text>
+                </View>
+              ))}
+            </>
           )}
-          scrollEnabled={false}
-          ListEmptyComponent={
-            <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-              <Icon name="flag-outline" size={48} color="#52525B" />
-              <Text size="md" style={{ color: '#71717A', marginTop: 12 }}>
-                Нет целей
-              </Text>
-            </View>
-          }
-        />
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ---- Main Screen ----
+
+export default function GoalsScreen() {
+  const { t } = useTranslation();
+  const C = useTheme();
+  const S = StyleSheet.create({
+    screen: { flex: 1, backgroundColor: C.bg },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+    title: { fontSize: 22, fontWeight: '800', color: C.textMain },
+    addBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' },
+    list: { paddingHorizontal: 16, paddingBottom: 120 },
+    card: { backgroundColor: C.card, borderRadius: 20, padding: 18, marginBottom: 12, borderWidth: 1, borderColor: C.border },
+    cardCompleted: { opacity: 0.5 },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+    cardName: { fontSize: 17, fontWeight: '700', color: C.textMain, flex: 1 },
+    cardBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginLeft: 8 },
+    cardBadgeText: { fontSize: 11, fontWeight: '700' },
+    progressTrack: { height: 8, borderRadius: 4, backgroundColor: C.divider, marginBottom: 10, overflow: 'hidden' },
+    progressFill: { height: 8, borderRadius: 4 },
+    stats: { flexDirection: 'row', justifyContent: 'space-between' },
+    statItem: { alignItems: 'center' },
+    statValue: { fontSize: 15, fontWeight: '700', color: C.textMain },
+    statLabel: { fontSize: 11, color: C.textSec, marginTop: 2 },
+    statDivider: { width: 1, backgroundColor: C.border },
+    monthNeed: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.border },
+    monthNeedText: { fontSize: 12, color: C.textSec },
+    monthNeedValue: { fontSize: 12, fontWeight: '600', color: C.primary },
+    empty: { alignItems: 'center', paddingVertical: 80 },
+    emptyIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.primaryBg, alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 1, borderColor: C.primaryBorder },
+    emptyTitle: { fontSize: 18, fontWeight: '700', color: C.textMain, marginBottom: 8 },
+    emptySub: { fontSize: 14, color: C.textSec, textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+    emptyCta: { backgroundColor: C.primary, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 28, flexDirection: 'row', alignItems: 'center', gap: 8 },
+    emptyCtaText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+  });
+  const insets = useSafeAreaInsets();
+  const goals = useDataStore((s) => s.goals);
+  const [showCreate, setShowCreate] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+
+  const activeGoals = useMemo(() => goals.filter((g) => !g.isCompleted), [goals]);
+  const completedGoals = useMemo(() => goals.filter((g) => g.isCompleted), [goals]);
+
+  const monthsLeft = useCallback((deadline: string) => {
+    return Math.max(0, Math.ceil((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)));
+  }, []);
+
+  const renderGoal = ({ item: g }: { item: Goal }) => {
+    const percent = g.percentComplete ?? 0;
+    const barColor = percent >= 100 ? C.green : percent >= 50 ? C.primary : C.orange;
+    const remain = g.remaining ?? (g.targetAmount - g.currentAmount);
+    const ml = monthsLeft(g.deadline);
+    const monthlyNeed = ml > 0 ? Math.round(remain / ml) : remain;
+
+    return (
+      <TouchableOpacity
+        style={[S.card, g.isCompleted && S.cardCompleted]}
+        onPress={() => !g.isCompleted && setSelectedGoal(g)}
+        activeOpacity={0.7}
+      >
+        <View style={S.cardHeader}>
+          <Text style={S.cardName} numberOfLines={1}>{g.name}</Text>
+          <View style={[S.cardBadge, { backgroundColor: g.isCompleted ? `${C.green}18` : `${barColor}18` }]}>
+            <Text style={[S.cardBadgeText, { color: g.isCompleted ? C.green : barColor }]}>
+              {g.isCompleted ? `✓ ${t('goals.completedLabel')}` : `${Math.round(percent)}%`}
+            </Text>
+          </View>
+        </View>
+
+        <View style={S.progressTrack}>
+          <View style={[S.progressFill, { width: `${Math.min(percent, 100)}%`, backgroundColor: barColor }]} />
+        </View>
+
+        <View style={S.stats}>
+          <View style={S.statItem}>
+            <Text style={S.statValue}>{formatCurrency(g.currentAmount, g.currency)}</Text>
+            <Text style={S.statLabel}>{t('goals.collectedLabel')}</Text>
+          </View>
+          <View style={S.statDivider} />
+          <View style={S.statItem}>
+            <Text style={S.statValue}>{formatCurrency(g.targetAmount, g.currency)}</Text>
+            <Text style={S.statLabel}>{t('goals.targetLabel')}</Text>
+          </View>
+          <View style={S.statDivider} />
+          <View style={S.statItem}>
+            <Text style={S.statValue}>{ml > 0 ? ml : '—'}</Text>
+            <Text style={S.statLabel}>{t('goals.monthsLabel')}</Text>
+          </View>
+        </View>
+
+        {ml > 0 && monthlyNeed > 0 && (
+          <View style={S.monthNeed}>
+            <Ionicons name="trending-up" size={14} color={C.primary} />
+            <Text style={S.monthNeedText}>{t('goals.needPerMonth')}</Text>
+            <Text style={S.monthNeedValue}>{formatCurrency(monthlyNeed, g.currency)}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  return (
+    <View style={[S.screen, { paddingTop: insets.top }]}>
+      <View style={S.header}>
+        <Text style={S.title}>{t('goals.title')}</Text>
+        <TouchableOpacity style={S.addBtn} onPress={() => setShowCreate(true)}>
+          <Ionicons name="add" size={22} color="#FFF" />
+        </TouchableOpacity>
       </View>
 
-      <Pressable
-        onPress={() => setShowAdd(true)}
-        style={{
-          position: 'absolute',
-          bottom: 100,
-          right: 24,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: '#6366F1',
-          alignItems: 'center',
-          justifyContent: 'center',
-          shadowColor: '#6366F1',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.4,
-          shadowRadius: 8,
-          elevation: 8,
-        }}
-      >
-        <Icon name="add" size={28} color="#FFFFFF" />
-      </Pressable>
-
-      <BottomSheet visible={showAdd} onClose={() => setShowAdd(false)} title="Новая цель">
-        <View style={{ gap: 16 }}>
-          <Input label="Название" value={name} onChangeText={setName} placeholder="На что копим?" />
-          <Input label="Сумма (руб)" value={target} onChangeText={setTarget} placeholder="0" keyboardType="decimal-pad" />
-          <Button onPress={handleAdd} fullWidth size="lg" disabled={!name || !target}>
-            Создать цель
-          </Button>
+      {goals.length === 0 ? (
+        <View style={S.empty}>
+          <View style={S.emptyIcon}>
+            <Ionicons name="flag" size={36} color={C.primary} />
+          </View>
+          <Text style={S.emptyTitle}>{t('goals.noGoalsTitle')}</Text>
+          <Text style={S.emptySub}>{t('goals.noGoalsDesc')}</Text>
+          <TouchableOpacity style={S.emptyCta} onPress={() => setShowCreate(true)}>
+            <Ionicons name="add-circle" size={18} color="#FFF" />
+            <Text style={S.emptyCtaText}>{t('goals.createGoalCta')}</Text>
+          </TouchableOpacity>
         </View>
-      </BottomSheet>
-    </Screen>
+      ) : (
+        <FlatList
+          data={[...activeGoals, ...completedGoals]}
+          keyExtractor={(g) => g.id}
+          renderItem={renderGoal}
+          contentContainerStyle={S.list}
+        />
+      )}
+
+      <CreateGoalModal visible={showCreate} onClose={() => setShowCreate(false)} />
+      <ContributionModal goal={selectedGoal} visible={!!selectedGoal} onClose={() => setSelectedGoal(null)} />
+    </View>
   );
 }

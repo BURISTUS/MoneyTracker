@@ -1,41 +1,63 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { BudgetService } from './budget.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PremiumGuard } from '../common/premium.guard';
+import { BudgetService } from './budget.service';
+import { CreateBudgetDto } from './dto/create-budget.dto';
+import { UpdateBudgetDto } from './dto/update-budget.dto';
 
-@ApiTags('Budget')
-@Controller('budgets')
-@UseGuards(JwtAuthGuard)
+@ApiTags('Budgets')
 @ApiBearerAuth()
+@Controller('budgets')
+@UseGuards(JwtAuthGuard, PremiumGuard)
 export class BudgetController {
-  constructor(private budgetService: BudgetService) {}
+  constructor(private readonly budgetService: BudgetService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all budgets' })
-  async findAll(@Request() req: any) {
-    return this.budgetService.findAll(req.user.id);
-  }
-
-  @Get(':id/progress')
-  @ApiOperation({ summary: 'Get budget progress' })
-  async getProgress(@Param('id') id: string, @Request() req: any) {
-    return this.budgetService.getProgress(id, req.user.id);
+  @ApiOperation({ summary: 'Get budgets for a month with spent amounts' })
+  findByMonth(@Request() req: { user: { id: string } }, @Query('month') month?: string) {
+    const currentMonth =
+      month ||
+      `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+    return this.budgetService.findByMonth(req.user.id, currentMonth);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create budget' })
-  async create(@Request() req: any, @Body() body: { categoryId: string; amount: number; period: string; startDate: string; endDate: string; alertThreshold?: number }) {
-    return this.budgetService.create(req.user.id, {
-      ...body,
-      amount: BigInt(body.amount),
-      startDate: new Date(body.startDate),
-      endDate: new Date(body.endDate),
-    });
+  @ApiOperation({ summary: 'Create a budget' })
+  create(@Request() req: { user: { id: string } }, @Body() dto: CreateBudgetDto) {
+    return this.budgetService.create(req.user.id, dto);
+  }
+
+  @Post('carry-forward')
+  @ApiOperation({ summary: 'Carry budgets from previous month to current' })
+  carryForward(@Request() req: { user: { id: string } }) {
+    return this.budgetService.carryForward(req.user.id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update budget amount' })
+  update(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Body() dto: UpdateBudgetDto,
+  ) {
+    return this.budgetService.update(req.user.id, id, dto.amount);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete budget' })
-  async delete(@Param('id') id: string, @Request() req: any) {
-    return this.budgetService.delete(id, req.user.id);
+  @ApiOperation({ summary: 'Delete a budget' })
+  delete(@Request() req: { user: { id: string } }, @Param('id') id: string) {
+    return this.budgetService.delete(req.user.id, id);
   }
 }

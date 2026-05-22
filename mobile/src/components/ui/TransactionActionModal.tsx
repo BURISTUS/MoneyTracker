@@ -5,259 +5,386 @@ import {
   Modal as RNModal,
   TouchableOpacity,
   TextInput,
-  Alert,
+  ScrollView,
+  StyleSheet,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useDataStore } from '../../stores/dataStore';
-import { Text } from './Text';
+import { useTheme } from '../../stores/themeStore';
+import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from './CategoryIcon';
+import { DatePickerModal } from './DatePickerModal';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { ConfirmModal } from './ConfirmModal';
 import type { Transaction } from '../../types';
 
-interface TransactionActionModalProps {
+interface Props {
   visible: boolean;
   transaction: Transaction | null;
   onClose: () => void;
 }
 
-export function TransactionActionModal({
-  visible,
-  transaction,
-  onClose,
-}: TransactionActionModalProps) {
+export function TransactionActionModal({ visible, transaction, onClose }: Props) {
+  const { t } = useTranslation();
+  const C = useTheme();
+  const transactions = useDataStore((s) => s.transactions);
   const categories = useDataStore((s) => s.categories);
   const accounts = useDataStore((s) => s.accounts);
   const deleteTransaction = useDataStore((s) => s.deleteTransaction);
   const updateTransaction = useDataStore((s) => s.updateTransaction);
   const getHourlyRate = useDataStore((s) => s.getHourlyRate);
 
+  // Local copy that stays in sync with store
+  const [localTx, setLocalTx] = useState<Transaction | null>(null);
+
+  // Sync localTx when opening or when store transactions change
+  React.useEffect(() => {
+    if (visible && transaction) {
+      // Always use the latest from store
+      const fresh = transactions.find(t => t.id === transaction.id);
+      setLocalTx(fresh || transaction);
+    }
+  }, [visible, transaction?.id, transactions]);
+
   const [isEditing, setIsEditing] = useState(false);
   const [editDescription, setEditDescription] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [editAmount, setEditAmount] = useState('');
+  const [editAccountId, setEditAccountId] = useState('');
+  const [editDate, setEditDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const category = useMemo(
-    () => (transaction ? categories.find((c) => c.id === transaction.categoryId) : null),
-    [transaction, categories],
+    () => localTx ? categories.find((c) => c.id === localTx.categoryId) : null,
+    [localTx, categories],
   );
-
   const account = useMemo(
-    () => (transaction ? accounts.find((a) => a.id === transaction.accountId) : null),
-    [transaction, accounts],
+    () => localTx ? accounts.find((a) => a.id === localTx.accountId) : null,
+    [localTx, accounts],
   );
 
   const lifeHours = useMemo(() => {
-    if (!transaction || transaction.type !== 'EXPENSE') return null;
+    if (!localTx || localTx.type !== 'EXPENSE') return null;
     const rate = getHourlyRate();
     if (rate <= 0) return null;
-    const rubles = transaction.amount / 100;
+    const rubles = localTx.amount / 100;
     const hours = rubles / rate;
-    if (hours < 1) return `${Math.round(hours * 60)} мин`;
-    if (hours < 24) return `${hours.toFixed(1)} ч`;
-    return `${(hours / 24).toFixed(1)} дн`;
-  }, [transaction, getHourlyRate]);
-
-  const handleDelete = useCallback(() => {
-    if (!transaction) return;
-    Alert.alert(
-      'Удалить операцию?',
-      `${category?.name || 'Без категории'} — ${formatCurrency(transaction.amount)}`,
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Удалить',
-          style: 'destructive',
-          onPress: async () => {
-            setIsDeleting(true);
-            try {
-              await deleteTransaction(transaction.id);
-              onClose();
-            } catch (error) {
-              console.error('Failed to delete:', error);
-            } finally {
-              setIsDeleting(false);
-            }
-          },
-        },
-      ],
-    );
-  }, [transaction, category, deleteTransaction, onClose]);
+    if (hours < 1) return `${Math.round(hours * 60)} ${t('common.min')}`;
+    if (hours < 100) return `${hours.toFixed(1)} ${t('common.hours')}`;
+    return `${Math.round(hours)} ${t('common.hours')}`;
+  }, [localTx, getHourlyRate]);
 
   const handleEdit = useCallback(() => {
-    if (!transaction) return;
-    setEditDescription(transaction.description || '');
+    if (!localTx) return;
+    setEditDescription(localTx.description || '');
+    setEditAmount(String(localTx.amount / 100));
+    setEditAccountId(localTx.accountId);
+    setEditDate(new Date(localTx.date));
     setIsEditing(true);
-  }, [transaction]);
+  }, [localTx]);
 
   const handleSaveEdit = useCallback(async () => {
-    if (!transaction) return;
+    if (!localTx) return;
     try {
-      await updateTransaction(transaction.id, { description: editDescription });
+      const amountNum = parseFloat(editAmount);
+      await updateTransaction(localTx.id, {
+        description: editDescription || undefined,
+        amount: !isNaN(amountNum) && amountNum > 0 ? Math.round(amountNum * 100) : undefined,
+        accountId: editAccountId !== localTx.accountId ? editAccountId : undefined,
+        date: editDate.toISOString(),
+      });
+      // Refresh local copy from store
+      const fresh = useDataStore.getState().transactions.find(t => t.id === localTx.id);
+      if (fresh) setLocalTx(fresh);
       setIsEditing(false);
     } catch (error) {
       console.error('Failed to update:', error);
     }
-  }, [transaction, editDescription, updateTransaction]);
+  }, [localTx, editDescription, editAmount, editAccountId, editDate, updateTransaction]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!localTx) return;
+    setShowDeleteConfirm(false);
+    try {
+      await deleteTransaction(localTx.id);
+      onClose();
+    } catch (e) { console.error('Delete failed:', e); }
+  }, [localTx, deleteTransaction, onClose]);
 
   const handleClose = useCallback(() => {
     setIsEditing(false);
-    setEditDescription('');
     onClose();
   }, [onClose]);
 
-  if (!transaction) return null;
+  const MONTHS_GEN_KEYS = ['monthsGen.jan','monthsGen.feb','monthsGen.mar','monthsGen.apr','monthsGen.may','monthsGen.jun','monthsGen.jul','monthsGen.aug','monthsGen.sep','monthsGen.oct','monthsGen.nov','monthsGen.dec'] as const;
+  const fmtDate = (d: Date) => `${d.getDate()} ${t(MONTHS_GEN_KEYS[d.getMonth()])} ${d.getFullYear()}`;
 
-  const isExpense = transaction.type === 'EXPENSE';
-  const amountColor = isExpense ? '#FF3B30' : '#34C759';
+  const S = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: C.sheet,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: 12,
+      paddingBottom: 34,
+      maxHeight: '90%',
+    },
+    handle: {
+      width: 36, height: 5, borderRadius: 3,
+      backgroundColor: C.handle,
+      alignSelf: 'center', marginBottom: 16,
+    },
+    header: {
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      paddingHorizontal: 20, marginBottom: 16,
+    },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+    closeBtn: {
+      width: 32, height: 32, borderRadius: 10,
+      backgroundColor: C.card, alignItems: 'center', justifyContent: 'center',
+      borderWidth: 1, borderColor: C.border,
+    },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, marginBottom: 16 },
+    amountText: { fontSize: 22, fontWeight: '800' },
+    metaSection: { paddingHorizontal: 20, marginBottom: 12 },
+    metaRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+    metaLabel: { fontSize: 13, color: C.textSec },
+    metaValue: { fontSize: 13, color: C.textMain, fontWeight: '500' },
+    descBox: {
+      backgroundColor: C.inputBg, borderRadius: 12, padding: 14,
+      marginHorizontal: 20, marginBottom: 16,
+      borderWidth: 1, borderColor: C.border,
+    },
+    descLabel: { fontSize: 11, color: C.textSec, marginBottom: 4, textTransform: 'uppercase' },
+    descText: { fontSize: 14, color: C.textMain, lineHeight: 20 },
+    section: { paddingHorizontal: 20, marginBottom: 14 },
+    sectionTitle: { fontSize: 11, fontWeight: '600', color: C.textSec, marginBottom: 6, textTransform: 'uppercase' },
+    input: {
+      backgroundColor: C.inputBg, borderRadius: 12,
+      paddingHorizontal: 14, paddingVertical: 12,
+      fontSize: 14, color: C.textMain,
+      borderWidth: 1, borderColor: C.border, marginBottom: 8,
+    },
+    btnRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 20 },
+    editBtn: {
+      flex: 1, paddingVertical: 14, borderRadius: 14,
+      alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.primaryBg,
+      borderWidth: 1, borderColor: C.primaryBorder,
+      flexDirection: 'row', gap: 6,
+    },
+    editBtnText: { fontSize: 14, fontWeight: '700', color: C.primary },
+    deleteBtn: {
+      flex: 1, paddingVertical: 14, borderRadius: 14,
+      alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.redBg,
+      borderWidth: 1, borderColor: C.redBorder,
+      flexDirection: 'row', gap: 6,
+    },
+    deleteBtnText: { fontSize: 14, fontWeight: '600', color: C.red },
+    saveBtn: {
+      paddingVertical: 14, borderRadius: 14, alignItems: 'center',
+      backgroundColor: C.primary, marginTop: 4,
+    },
+    saveBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+    cancelBtn: {
+      paddingVertical: 12, borderRadius: 14, alignItems: 'center',
+      backgroundColor: C.inputBg, marginTop: 8,
+      borderWidth: 1, borderColor: C.border,
+    },
+    cancelBtnText: { fontSize: 14, color: C.textSec },
+    lifeCost: {
+      alignItems: 'center', backgroundColor: C.orangeBg,
+      borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10,
+      borderWidth: 1, borderColor: C.orangeBorder,
+    },
+    lifeCostValue: { fontSize: 20, fontWeight: '800', color: C.amber },
+    lifeCostLabel: { fontSize: 11, color: C.amber, opacity: 0.7 },
+  });
+
+  if (!localTx) return null;
+
+  const isExpense = localTx.type === 'EXPENSE';
+  const amountColor = isExpense ? C.red : C.green;
 
   return (
-    <RNModal visible={visible} animationType="slide" onRequestClose={handleClose} transparent>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-        <Pressable style={{ flex: 1 }} onPress={handleClose} />
+    <>
+    <RNModal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+      <View style={S.overlay}>
+        <Pressable style={S.overlay} onPress={handleClose}>
+          <View style={{ flex: 1 }} />
+        </Pressable>
 
-        <View style={{
-          backgroundColor: '#1C1C1E',
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-        }}>
-          <View style={{ width: 36, height: 4, backgroundColor: '#3A3A3C', borderRadius: 2, alignSelf: 'center', marginTop: 8, marginBottom: 16 }} />
+        <View style={S.sheet}>
+          <View style={S.handle} />
 
-          <View style={{ paddingHorizontal: 20 }}>
-            {/* Category + Amount */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+          <View style={S.header}>
+            <Text style={S.headerTitle}>
+              {isEditing ? t('transactions.editing') : t('components.operation')}
+            </Text>
+            <Pressable style={S.closeBtn} onPress={handleClose}>
+              <Ionicons name="close" size={18} color={C.textSec} />
+            </Pressable>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Header with icon + amount */}
+            <View style={S.row}>
               <CategoryIcon
                 icon={category?.icon || ''}
-                color={category?.color || (isExpense ? '#FF3B30' : '#34C759')}
-                size={28}
+                color={category?.color || amountColor}
+                size={30}
               />
               <View style={{ flex: 1 }}>
-                <Text size="lg" weight="semibold" style={{ color: '#FFFFFF' }}>
-                  {category?.name || 'Без категории'}
+                <Text style={{ fontSize: 15, color: C.textMain, fontWeight: '600' }}>
+                  {category?.name || t('transactions.noCategoryFallback')}
                 </Text>
-                <Text size="xl" weight="bold" style={{ color: amountColor }}>
-                  {isExpense ? '− ' : '+ '}{formatCurrency(transaction.amount)}
-                </Text>
-              </View>
-            </View>
-
-            {/* Details */}
-            <View style={{ gap: 8, marginBottom: 20 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text size="sm" style={{ color: '#8E8E93' }}>Дата</Text>
-                <Text size="sm" style={{ color: '#FFFFFF' }}>
-                  {formatDate(new Date(transaction.date))}
+                <Text style={[S.amountText, { color: amountColor }]}>
+                  {isExpense ? '− ' : '+ '}{formatCurrency(localTx.amount, account?.currency)}
                 </Text>
               </View>
-              {account && (
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text size="sm" style={{ color: '#8E8E93' }}>Счёт</Text>
-                  <Text size="sm" style={{ color: '#FFFFFF' }}>{account.name}</Text>
-                </View>
-              )}
               {lifeHours && (
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text size="sm" style={{ color: '#8E8E93' }}>Время работы</Text>
-                  <Text size="sm" style={{ color: '#FBBF24' }}>⏱ {lifeHours}</Text>
+                <View style={S.lifeCost}>
+                  <Text style={S.lifeCostValue}>{lifeHours}</Text>
+                  <Text style={S.lifeCostLabel}>{t('common.workUnit')}</Text>
                 </View>
               )}
             </View>
 
-            {/* Description / Edit */}
             {isEditing ? (
-              <View style={{ marginBottom: 16 }}>
-                <TextInput
-                  value={editDescription}
-                  onChangeText={setEditDescription}
-                  placeholder="Добавить заметку..."
-                  placeholderTextColor="#8E8E93"
-                  autoFocus
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    borderRadius: 12,
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    color: '#FFFFFF',
-                    fontSize: 16,
-                    marginBottom: 8,
-                  }}
-                />
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TouchableOpacity
-                    onPress={() => setIsEditing(false)}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 12,
-                      borderRadius: 12,
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Text size="md" style={{ color: '#8E8E93' }}>Отмена</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleSaveEdit}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 12,
-                      borderRadius: 12,
-                      backgroundColor: '#6366F1',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Text size="md" weight="semibold" style={{ color: '#FFFFFF' }}>Сохранить</Text>
-                  </TouchableOpacity>
+              <>
+                {/* Edit: Amount */}
+                <View style={S.section}>
+                  <Text style={S.sectionTitle}>{t('transactions.amount')}</Text>
+                  <TextInput
+                    style={S.input}
+                    value={editAmount}
+                    onChangeText={setEditAmount}
+                    keyboardType="decimal-pad"
+                    placeholderTextColor={C.textMuted}
+                  />
                 </View>
-              </View>
-            ) : (
-              transaction.description && (
-                <View style={{
-                  backgroundColor: 'rgba(255,255,255,0.03)',
-                  borderRadius: 12,
-                  padding: 14,
-                  marginBottom: 16,
-                }}>
-                  <Text size="xs" style={{ color: '#8E8E93', marginBottom: 4 }}>Заметка</Text>
-                  <Text size="md" style={{ color: '#FFFFFF' }}>{transaction.description}</Text>
-                </View>
-              )
-            )}
 
-            {/* Action buttons */}
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity
-                onPress={handleEdit}
-                style={{
-                  flex: 1,
-                  paddingVertical: 14,
-                  borderRadius: 14,
-                  backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                  alignItems: 'center',
-                }}
-              >
-                <Text size="md" weight="semibold" style={{ color: '#6366F1' }}>
-                  📝 Редактировать
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleDelete}
-                disabled={isDeleting}
-                style={{
-                  flex: 1,
-                  paddingVertical: 14,
-                  borderRadius: 14,
-                  backgroundColor: 'rgba(255, 59, 48, 0.15)',
-                  alignItems: 'center',
-                  opacity: isDeleting ? 0.5 : 1,
-                }}
-              >
-                <Text size="md" weight="semibold" style={{ color: '#FF3B30' }}>
-                  {isDeleting ? 'Удаление...' : '🗑 Удалить'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                {/* Edit: Account */}
+                <View style={S.section}>
+                  <Text style={S.sectionTitle}>{t('transactions.account')}</Text>                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                    {accounts.map((acc) => (
+                      <TouchableOpacity
+                        key={acc.id}
+                        onPress={() => setEditAccountId(acc.id)}
+                        style={{
+                          paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10,
+                          backgroundColor: editAccountId === acc.id ? amountColor + '18' : C.inputBg,
+                          borderWidth: 1,
+                          borderColor: editAccountId === acc.id ? amountColor : C.border,
+                        }}
+                      >
+                        <Text style={{ fontSize: 13, color: editAccountId === acc.id ? amountColor : C.textMain }}>
+                          {acc.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                {/* Edit: Date */}
+                <View style={S.section}>
+                  <Text style={S.sectionTitle}>{t('transactions.date')}</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowDatePicker(true)}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', gap: 8,
+                      backgroundColor: C.inputBg, borderRadius: 12,
+                      paddingHorizontal: 14, paddingVertical: 12,
+                      borderWidth: 1, borderColor: C.border,
+                    }}
+                  >
+                    <Ionicons name="calendar-outline" size={16} color={C.textSec} />
+                    <Text style={{ fontSize: 14, color: C.textMain }}>{fmtDate(editDate)}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Edit: Description */}
+                <View style={S.section}>
+                  <Text style={S.sectionTitle}>{t('transactions.note')}</Text>
+                  <TextInput
+                    style={[S.input, { minHeight: 80 }]}
+                    value={editDescription}
+                    onChangeText={setEditDescription}
+                    placeholder={t('transactions.notePlaceholder')}
+                    placeholderTextColor={C.textMuted}
+                    multiline
+                  />
+                </View>
+
+                <View style={{ paddingHorizontal: 20 }}>
+                  <TouchableOpacity style={S.saveBtn} onPress={handleSaveEdit}>
+                    <Text style={S.saveBtnText}>{t('common.save')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={S.cancelBtn} onPress={() => setIsEditing(false)}>
+                    <Text style={S.cancelBtnText}>{t('common.cancel')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                {/* View: Meta */}
+                <View style={S.metaSection}>
+                  <View style={S.metaRow}>
+                    <Text style={S.metaLabel}>{t('transactions.date')}</Text>
+                    <Text style={S.metaValue}>{formatDate(new Date(localTx.date))}</Text>
+                  </View>
+                  {account && (
+                    <View style={S.metaRow}>
+                      <Text style={S.metaLabel}>{t('transactions.account')}</Text>
+                      <Text style={S.metaValue}>{account.name}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* View: Description */}
+                {localTx.description && !isEditing && (
+                  <View style={S.descBox}>
+                    <Text style={S.descLabel}>{t('transactions.note')}</Text>
+                    <Text style={S.descText}>{localTx.description}</Text>
+                  </View>
+                )}
+
+                {/* View: Buttons */}
+                <View style={S.btnRow}>
+                  <TouchableOpacity style={S.editBtn} onPress={handleEdit}>
+                    <Ionicons name="create-outline" size={16} color={C.primary} />
+                    <Text style={S.editBtnText}>{t('common.edit')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={S.deleteBtn} onPress={() => setShowDeleteConfirm(true)}>
+                    <Ionicons name="trash-outline" size={16} color={C.red} />
+                    <Text style={S.deleteBtnText}>{t('common.delete')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </ScrollView>
         </View>
       </View>
     </RNModal>
+
+    <DatePickerModal
+      visible={showDatePicker}
+      currentDate={editDate}
+      onSelect={(d) => { setEditDate(d); setShowDatePicker(false); }}
+      onClose={() => setShowDatePicker(false)}
+    />
+
+    <ConfirmModal
+      visible={showDeleteConfirm}
+      title={t('components.confirmDelete')}
+      message={localTx ? `${category?.name || t('transactions.noCategoryFallback')} — ${formatCurrency(localTx.amount, account?.currency)}` : ''}
+      confirmText={t('common.delete')}
+      onConfirm={confirmDelete}
+      onCancel={() => setShowDeleteConfirm(false)}
+    />
+    </>
   );
 }

@@ -1,462 +1,1054 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, Pressable, FlatList, Alert, TouchableOpacity, TextInput } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import {
+  View,
+  Pressable,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  Animated,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 import { useDataStore } from '../../../src/stores/dataStore';
 import { useAuthStore } from '../../../src/stores/authStore';
-import { Screen } from '../../../src/components/ui/Screen';
-import { Text } from '../../../src/components/ui/Text';
-import { Icon } from '../../../src/components/ui/Icon';
-import { useTheme } from '../../../src/theme';
+import { useTheme } from '../../../src/stores/themeStore';
+import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../../src/utils/formatters';
-import type { WishlistStatus } from '../../../src/types';
+import { useToast } from '../../../src/components/ui/Toast';
+import { ConfirmModal } from '../../../src/components/ui/ConfirmModal';
 import { WishlistStatus as WishlistStatusEnum } from '../../../src/types';
+import { useSubscriptionStore } from '../../../src/stores/subscriptionStore';
+import { PremiumBadge } from '../../../src/components/ui/PremiumBadge';
+import type { FeatureKey } from '../../../src/types';
+import wishlistService from '../../../src/services/wishlist';
+import type { WishlistItem } from '../../../src/types';
+import type { ThemeColors } from '../../../src/stores/themeStore';
 
-type TabType = 'all' | 'pending' | 'history';
+/* ─── Helpers ─── */
 
-export default function WishlistScreen() {
-  const router = useRouter();
-  const { spacing } = useTheme();
-  const wishlist = useDataStore((s) => s.wishlist);
-  const updateWishlistItem = useDataStore((s) => s.updateWishlistItem);
-  const addTransaction = useDataStore((s) => s.addTransaction);
-  const accounts = useDataStore((s) => s.accounts);
-  const user = useAuthStore((s) => s.user);
-  const getHourlyRate = useDataStore((s) => s.getHourlyRate);
+function formatLifeHours(amountKopecks: number, hourlyRateRubles: number): string | null {
+  if (hourlyRateRubles <= 0) return null;
+  const rubles = amountKopecks / 100;
+  const hours = rubles / hourlyRateRubles;
 
-  const [tab, setTab] = useState<TabType>('all');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newPrice, setNewPrice] = useState('');
-  const [newDescription, setNewDescription] = useState('');
+  if (hours < 1) return `${Math.round(hours * 60)} мин`;
+  if (hours < 100) return `${hours.toFixed(1)} ч`;
+  return `${Math.round(hours)} ч`;
+}
 
-  const hourlyRate = useMemo(() => {
-    const rate = getHourlyRate();
-    return rate > 0 ? rate : (user?.hourlyRate ? user.hourlyRate / 100 : 0);
-  }, [getHourlyRate, user?.hourlyRate]);
+function getDaysLeft(cooldownEndsAt: string): number {
+  return Math.max(
+    0,
+    Math.ceil(
+      (new Date(cooldownEndsAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+    ),
+  );
+}
 
-  const filteredItems = useMemo(() => {
-    if (tab === 'all') return wishlist;
-    if (tab === 'pending') {
-      return wishlist.filter((item) => item.status === 'PENDING' || item.status === 'READY');
-    }
-    return wishlist.filter(
-      (item) => item.status === 'REJECTED' || item.status === 'PURCHASED',
-    );
-  }, [wishlist, tab]);
+function getDaysPassed(createdAt: string, cooldownDays: number): number {
+  const end = new Date(createdAt);
+  end.setDate(end.getDate() + cooldownDays);
+  const passedMs = new Date().getTime() - new Date(createdAt).getTime();
+  const passedDays = passedMs / (1000 * 60 * 60 * 24);
+  return Math.max(0, Math.min(cooldownDays, Math.floor(passedDays)));
+}
 
-  const handleBuy = useCallback(
-    async (id: string, name: string, price: number) => {
-      Alert.alert(
-        `Купить ${name}?`,
-        `На сумму: ${formatCurrency(price)}${hourlyRate > 0 ? `\n⏱ ${(price / 100 / hourlyRate).toFixed(1)} часов работы` : ''}`,
-        [
-          { text: 'Отмена', style: 'cancel' },
-          {
-            text: 'Купить',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await updateWishlistItem(id, {
-                  status: WishlistStatusEnum.PURCHASED,
-                  purchasedAt: new Date().toISOString(),
-                });
-                Alert.alert('Успешно!', 'Покупка добавлена в историю');
-              } catch {
-                Alert.alert('Ошибка', 'Не удалось отметить покупку');
-              }
-            },
-          },
-        ],
-      );
+/* ─── Status Config (takes theme colors) ─── */
+
+function getStatusConfig(status: string, C: ThemeColors, t: (key: string) => string) {
+  const map = {
+    PENDING: {
+      label: t('wishlist.inProgress'),
+      icon: 'snow' as const,
+      color: C.primary,
+      bg: C.primaryBg,
+      cardBg: C.card,
+      border: C.primaryBorder,
     },
-    [updateWishlistItem, hourlyRate],
+    READY: {
+      label: t('wishlist.readyLabel'),
+      icon: 'flame' as const,
+      color: C.orange,
+      bg: C.orangeBg,
+      cardBg: C.card,
+      border: C.orangeBorder,
+    },
+    REJECTED: {
+      label: t('wishlist.rejectedLabel'),
+      icon: 'trending-up' as const,
+      color: C.green,
+      bg: C.greenBg,
+      cardBg: C.card,
+      border: C.greenBorder,
+    },
+    PURCHASED: {
+      label: t('wishlist.purchasedLabel'),
+      icon: 'cart' as const,
+      color: C.red,
+      bg: C.redBg,
+      cardBg: C.card,
+      border: C.redBorder,
+    },
+    EXPIRED: {
+      label: t('wishlist.overdueLabel'),
+      icon: 'time' as const,
+      color: C.textSec,
+      bg: C.divider,
+      cardBg: C.card,
+      border: C.border,
+    },
+  };
+  return map[status as keyof typeof map] ?? map.EXPIRED;
+}
+
+type FilterTab = 'all' | 'PENDING' | 'READY' | 'REJECTED' | 'PURCHASED';
+
+/* ─── Sub-components ─── */
+
+function StatusIcon({ status, size = 22 }: { status: string; size?: number }) {
+  const C = useTheme();
+  const { t } = useTranslation();
+  const cfg = getStatusConfig(status, C, t);
+  return (
+    <View style={{ width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: cfg.bg }}>
+      <Ionicons name={cfg.icon as any} size={size} color={cfg.color} />
+    </View>
+  );
+}
+
+function HeroLifeCost({ hoursCost, price }: { hoursCost: string | null; price: number }) {
+  const { t } = useTranslation();
+  const C = useTheme();
+  return (
+    <View style={{ backgroundColor: C.orangeBg, borderRadius: 16, padding: 16, marginTop: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+        <Ionicons name="time-outline" size={14} color={C.orange} />
+        <Text style={{ fontSize: 13, color: C.textSec }}>{t("wishlist.hoursOfWork")}</Text>
+      </View>
+      <Text style={{ fontSize: 28, fontWeight: '800', color: C.orange, letterSpacing: -0.5 }}>{hoursCost ?? '—'}</Text>
+      <Text style={{ fontSize: 14, color: C.textSec, marginTop: 4 }}>{formatCurrency(price)}</Text>
+    </View>
+  );
+}
+
+function Timeline({ daysPassed, totalDays }: { daysPassed: number; totalDays: number }) {
+  const C = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 14, gap: 4 }}>
+      {Array.from({ length: totalDays }).map((_, i) => {
+        const filled = i < daysPassed;
+        const isLast = i === totalDays - 1;
+        return (
+          <View
+            key={i}
+            style={{
+              flex: 1,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: filled ? (isLast ? C.orange : C.primary) : C.divider,
+              opacity: filled ? 1 : 0.5,
+            }}
+          />
+        );
+      })}
+    </View>
+  );
+}
+
+function FilterChips({
+  counts,
+  active,
+  onChange,
+}: {
+  counts: Record<FilterTab, number>;
+  active: FilterTab;
+  onChange: (f: FilterTab) => void;
+}) {
+  const C = useTheme();
+  const { t } = useTranslation();
+  const tabs: { key: FilterTab; label: string; icon: string; color: string }[] = [
+    { key: 'all', label: t('wishlist.allLabel'), icon: 'grid-outline', color: C.textSec },
+    { key: 'PENDING', label: t('wishlist.inProgress'), icon: 'snow', color: C.primary },
+    { key: 'READY', label: t('wishlist.readyLabel'), icon: 'flame', color: C.orange },
+    { key: 'REJECTED', label: t('wishlist.rejectedLabel'), icon: 'trending-up', color: C.green },
+    { key: 'PURCHASED', label: t('wishlist.purchasedLabel'), icon: 'cart', color: C.red },
+  ];
+
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 4, paddingVertical: 0 }}>
+      {tabs.map((tab) => {
+        const isActive = active === tab.key;
+        const count = counts[tab.key];
+        if (count === 0 && tab.key !== 'all') return null;
+
+        return (
+          <TouchableOpacity
+            key={tab.key}
+            onPress={() => onChange(tab.key)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 3,
+              paddingHorizontal: 8,
+              height: 28,
+              borderRadius: 8,
+              backgroundColor: isActive ? tab.color : C.card,
+              borderWidth: 1,
+              borderColor: isActive ? tab.color : C.border,
+            }}
+          >
+            <Ionicons name={tab.icon as any} size={12} color={isActive ? '#FFF' : tab.color} />
+            <Text style={{ fontSize: 11, fontWeight: '600', color: isActive ? '#FFF' : C.textMain, lineHeight: 13 }}>{tab.label}</Text>
+            <View style={{
+              minWidth: 14, height: 14, borderRadius: 7,
+              backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : C.divider,
+              alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2,
+            }}>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: isActive ? '#FFF' : C.textSec, lineHeight: 11 }}>{count}</Text>
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+/* ─── Add Modal ─── */
+
+type AddWishlistModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  hourlyRate: number;
+  userId?: string;
+  insetsTop: number;
+};
+
+function AddWishlistModal({ visible, onClose, hourlyRate, userId, insetsTop }: AddWishlistModalProps) {
+  const { t } = useTranslation();
+  const C = useTheme();
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
+  const [description, setDescription] = useState('');
+  const nameRef = useRef<TextInput>(null);
+  const { showError } = useToast();
+
+  useEffect(() => {
+    if (visible) {
+      setName('');
+      setPrice('');
+      setDescription('');
+      const t = setTimeout(() => nameRef.current?.focus(), 500);
+      return () => clearTimeout(t);
+    }
+  }, [visible]);
+
+  const lifePreview = useMemo(
+    () => (price && hourlyRate > 0 ? formatLifeHours(Math.round(parseFloat(price) * 100), hourlyRate) : null),
+    [price, hourlyRate],
   );
 
-  const handleReject = useCallback(
-    async (id: string, name: string) => {
-      Alert.alert(
-        `Отказаться от ${name}?`,
-        'Вы экономите деньги! Это добавит XP.',
-        [
-          { text: 'Отмена', style: 'cancel' },
-          {
-            text: 'Отказаться',
-            onPress: async () => {
-              try {
-                await updateWishlistItem(id, {
-                  status: WishlistStatusEnum.REJECTED,
-                  decidedAt: new Date().toISOString(),
-                });
-                Alert.alert('Умный выбор! 💪', 'Вы сэкономили деньги');
-              } catch {
-                Alert.alert('Ошибка', 'Не удалось обновить');
-              }
-            },
-          },
-        ],
-      );
-    },
-    [updateWishlistItem],
-  );
+  const canSubmit = name && price && description.trim().length >= 10;
 
-  const handleAddItem = useCallback(() => {
-    if (!newName || !newPrice || !newDescription.trim()) {
-      Alert.alert('Ошибка', 'Заполните все поля');
-      return;
-    }
+  const handleSubmit = useCallback(async () => {
+    if (!canSubmit) return;
 
-    const price = Math.round(parseFloat(newPrice) * 100);
-    if (isNaN(price) || price <= 0) {
-      Alert.alert('Ошибка', 'Введите корректную цену');
+    const priceNum = Math.round(parseFloat(price) * 100);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      showError(t('wishlist.enterValidPrice'));
       return;
     }
 
     const cooldownDays = 7;
-    const cooldownEnds = new Date();
-    cooldownEnds.setDate(cooldownEnds.getDate() + cooldownDays);
+    const ends = new Date();
+    ends.setDate(ends.getDate() + cooldownDays);
 
-    useDataStore.getState().addWishlistItem({
+    await useDataStore.getState().addWishlistItem({
       id: `wish_${Date.now()}`,
-      userId: user?.id || '',
-      name: newName,
-      price,
-      description: newDescription.trim(),
+      userId: userId || '',
+      name,
+      price: priceNum,
+      description: description.trim(),
       imageUrl: null,
       category: null,
       status: WishlistStatusEnum.PENDING,
       cooldownDays,
       createdAt: new Date().toISOString(),
-      cooldownEnds: cooldownEnds.toISOString(),
+      cooldownEnds: ends.toISOString(),
       decidedAt: null,
       purchasedAt: null,
     });
 
-    setNewName('');
-    setNewPrice('');
-    setNewDescription('');
-    setShowAddModal(false);
-    Alert.alert('Добавлено!', `Подождите ${cooldownDays} дней перед покупкой`);
-  }, [newName, newPrice, user?.id]);
+    onClose();
+  }, [canSubmit, name, price, description, userId, onClose]);
+
+  const MS = StyleSheet.create({
+    modalOverlay: { flex: 1, backgroundColor: C.bg },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    modalClose: { padding: 4 },
+    modalTitle: { fontSize: 17, fontWeight: '700', color: C.textMain },
+    form: { padding: 16, paddingBottom: 320 },
+    field: { marginBottom: 18 },
+    fieldLabel: { fontSize: 13, color: C.textSec, marginBottom: 8, fontWeight: '500' },
+    input: {
+      backgroundColor: C.card,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: C.border,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      color: C.textMain,
+      fontSize: 17,
+    },
+    inputMultiline: {
+      backgroundColor: C.card,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: C.border,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      color: C.textMain,
+      fontSize: 15,
+      minHeight: 100,
+      textAlignVertical: 'top' as any,
+    },
+    previewBox: {
+      backgroundColor: C.orangeBg,
+      borderRadius: 12,
+      padding: 12,
+      marginTop: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    previewText: { fontSize: 13, color: C.orange },
+    charCount: { fontSize: 12 },
+    submitBtn: {
+      borderRadius: 16,
+      paddingVertical: 18,
+      alignItems: 'center',
+    },
+    submitText: { fontSize: 17, fontWeight: '800' },
+    lockRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 10 },
+    lockText: { fontSize: 12, color: C.textSec },
+  });
+
+  if (!visible) return null;
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={[MS.modalOverlay, { paddingTop: insetsTop }]}>
+        <View style={MS.modalHeader}>
+          <TouchableOpacity onPress={onClose} style={MS.modalClose}>
+            <Ionicons name="close" size={26} color={C.textSec} />
+          </TouchableOpacity>
+          <Text style={MS.modalTitle}>{t("wishlist.newWish")}</Text>
+          <View style={{ width: 34 }} />
+        </View>
+
+        <ScrollView contentContainerStyle={MS.form} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <View style={MS.field}>
+            <Text style={MS.fieldLabel}>{t("wishlist.whatDoYouWant")}</Text>
+            <TextInput
+              ref={nameRef}
+              value={name}
+              onChangeText={setName}
+              placeholder={t('wishlist.namePlaceholder')}
+              placeholderTextColor={C.textMuted}
+              returnKeyType="next"
+              style={MS.input}
+            />
+          </View>
+
+          <View style={MS.field}>
+            <Text style={MS.fieldLabel}>{t("wishlist.howMuch")}</Text>
+            <TextInput
+              value={price}
+              onChangeText={(t) => setPrice(t.replace(/[^0-9]/g, ''))}
+              placeholder="25000"
+              placeholderTextColor={C.textMuted}
+              keyboardType="decimal-pad"
+              returnKeyType="next"
+              style={MS.input}
+            />
+            {lifePreview && (
+              <View style={MS.previewBox}>
+                <Ionicons name="time-outline" size={14} color={C.orange} />
+                <Text style={MS.previewText}>{t('wishlist.thisIsWorkValue', { hours: lifePreview })}</Text>
+              </View>
+            )}
+          </View>
+
+          <View style={MS.field}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={MS.fieldLabel}>{t("wishlist.whyYouNeed")}</Text>
+              <Text style={[MS.charCount, { color: description.trim().length < 10 ? C.red : C.textSec }]}>
+                {description.trim().length}/200 {t('wishlist.minLengthSuffix')}
+              </Text>
+            </View>
+            <TextInput
+              value={description}
+              onChangeText={setDescription}
+              placeholder={t('wishlist.descriptionPlaceholder')}
+              placeholderTextColor={C.textMuted}
+              multiline
+              numberOfLines={4}
+              maxLength={200}
+              style={MS.inputMultiline}
+            />
+          </View>
+
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={!canSubmit}
+            activeOpacity={0.8}
+            style={[MS.submitBtn, { backgroundColor: canSubmit ? C.primary : C.primaryBg }]}
+          >
+            <Text style={[MS.submitText, { color: canSubmit ? '#FFF' : C.textMuted }]}>{t("wishlist.freezeFor7Days")}</Text>
+          </TouchableOpacity>
+          <View style={MS.lockRow}>
+            <Ionicons name="lock-closed" size={12} color={C.textSec} />
+            <Text style={MS.lockText}>{t("wishlist.decisionCountdown")}</Text>
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+/* ─── Main Screen ─── */
+
+export default function WishlistScreen() {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const C = useTheme();
+  const wishlist = useDataStore((s) => s.wishlist);
+  const updateWishlistItem = useDataStore((s) => s.updateWishlistItem);
+  const user = useAuthStore((s) => s.user);
+  const getHourlyRate = useDataStore((s) => s.getHourlyRate);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+  const [decisionItem, setDecisionItem] = useState<WishlistItem | null>(null);
+  const [rejectConfirm, setRejectConfirm] = useState<WishlistItem | null>(null);
+  const [buyConfirm, setBuyConfirm] = useState<WishlistItem | null>(null);
+
+  const [rewardItem, setRewardItem] = useState<WishlistItem | null>(null);
+  const rewardFade = useRef(new Animated.Value(0)).current;
+  const rewardSlide = useRef(new Animated.Value(20)).current;
+  const rewardScale = useRef(new Animated.Value(0.6)).current;
+
+  const { showError } = useToast();
+
+  const hourlyRate = useMemo(() => {
+    const rate = getHourlyRate();
+    return rate > 0 ? rate : (user?.hourlyRate ?? 0);
+  }, [getHourlyRate, user?.hourlyRate]);
+
+  const counts = useMemo(() => {
+    return {
+      all: wishlist.length,
+      PENDING: wishlist.filter((i) => i.status === 'PENDING').length,
+      READY: wishlist.filter((i) => i.status === 'READY').length,
+      REJECTED: wishlist.filter((i) => i.status === 'REJECTED').length,
+      PURCHASED: wishlist.filter((i) => i.status === 'PURCHASED').length,
+    };
+  }, [wishlist]);
+
+  const filteredItems = useMemo(() => {
+    const now = Date.now();
+    const isExpired = (i: WishlistItem) => new Date(i.cooldownEnds).getTime() <= now;
+
+    const ready = wishlist.filter(i => (i.status === 'READY' || (i.status === 'PENDING' && isExpired(i))));
+    const pending = wishlist.filter(i => i.status === 'PENDING' && !isExpired(i));
+    const history = wishlist.filter(i => i.status === 'REJECTED' || i.status === 'PURCHASED');
+
+    if (activeFilter === 'READY') return ready;
+    if (activeFilter === 'PENDING') return pending;
+    if (activeFilter === 'REJECTED') return wishlist.filter(i => i.status === 'REJECTED');
+    if (activeFilter === 'PURCHASED') return wishlist.filter(i => i.status === 'PURCHASED');
+
+    return [...ready, ...pending, ...history];
+  }, [wishlist, activeFilter]);
+
+  /* ─── Actions ─── */
+
+  const runRewardAnimation = useCallback((item: WishlistItem) => {
+    setRewardItem(item);
+    rewardFade.setValue(0);
+    rewardSlide.setValue(20);
+    rewardScale.setValue(0.6);
+
+    Animated.parallel([
+      Animated.timing(rewardFade, { toValue: 1, duration: 350, useNativeDriver: true }),
+      Animated.timing(rewardSlide, { toValue: 0, duration: 350, useNativeDriver: true }),
+      Animated.spring(rewardScale, { toValue: 1, friction: 6, useNativeDriver: true }),
+    ]).start();
+  }, [rewardFade, rewardSlide, rewardScale]);
+
+  const handleBuy = useCallback(
+    async (item: WishlistItem) => {
+      setBuyConfirm(null);
+      try {
+        const isDemoMode = useAuthStore.getState().isDemoMode;
+        if (!isDemoMode) await wishlistService.purchase(item.id);
+        updateWishlistItem(item.id, {
+          status: WishlistStatusEnum.PURCHASED,
+          purchasedAt: new Date().toISOString(),
+          decidedAt: new Date().toISOString(),
+        });
+      } catch {
+        showError(t('wishlist.markFailed'));
+      }
+    },
+    [updateWishlistItem, showError],
+  );
+
+  const handleReject = useCallback(
+    async (item: WishlistItem) => {
+      setRejectConfirm(null);
+      try {
+        const isDemoMode = useAuthStore.getState().isDemoMode;
+        if (!isDemoMode) await wishlistService.reject(item.id);
+        runRewardAnimation(item);
+        setTimeout(() => {
+          updateWishlistItem(item.id, {
+            status: WishlistStatusEnum.REJECTED,
+            decidedAt: new Date().toISOString(),
+          });
+        }, 400);
+      } catch {
+        showError(t('wishlist.updateFailed'));
+      }
+    },
+    [updateWishlistItem, runRewardAnimation, showError],
+  );
+
+  /* ─── Styles ─── */
+
+  const S = StyleSheet.create({
+    flex: { flex: 1 },
+    screen: { backgroundColor: C.bg },
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    headerTitle: { fontSize: 22, fontWeight: '800', color: C.textMain },
+    headerSub: { fontSize: 13, color: C.textSec, marginTop: 0 },
+    addBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: C.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    listContent: { paddingTop: 0, paddingBottom: 120 },
+    card: {
+      borderRadius: 20,
+      borderWidth: 1,
+      padding: 18,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 14,
+    },
+    cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    cardTitle: { fontSize: 17, fontWeight: '700', color: C.textMain },
+    cardDesc: { fontSize: 14, color: '#C4C4C4', marginTop: 4, fontStyle: 'italic', lineHeight: 20 },
+    statusRow: { marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
+    statusText: { fontSize: 12, fontWeight: '600' },
+    btnRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
+    btnReject: {
+      flex: 1.25,
+      backgroundColor: C.green,
+      borderRadius: 14,
+      paddingVertical: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 3,
+    },
+    btnRejectRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    btnRejectText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+    btnRejectSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
+    btnBuy: {
+      flex: 1,
+      borderRadius: 14,
+      paddingVertical: 14,
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    btnBuyText: { fontSize: 15, fontWeight: '600' },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+    metaText: { fontSize: 12, color: C.textSec },
+    metaDot: { fontSize: 12, color: C.textMuted },
+    xpRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+    xpText: { fontSize: 12, color: '#FFD700', fontWeight: '700' },
+    emptyWrap: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 32 },
+    emptyIconWrap: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: C.primaryBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: C.primaryBorder,
+    },
+    emptyTitle: { fontSize: 20, fontWeight: '700', color: C.textMain, marginBottom: 8, textAlign: 'center' },
+    emptySub: { fontSize: 14, color: C.textSec, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+    emptyCta: {
+      backgroundColor: C.primary,
+      borderRadius: 16,
+      paddingVertical: 14,
+      paddingHorizontal: 28,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    emptyCtaText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  });
+
+  /* ─── Renderers ─── */
 
   const renderItem = useCallback(
-    ({ item }: { item: any }) => {
-      const priceRub = item.price / 100;
-      const hoursCost = hourlyRate > 0 ? (priceRub / hourlyRate).toFixed(1) : null;
-      const daysLeft = Math.max(
-        0,
-        Math.ceil(
-          (new Date(item.cooldownEnds).getTime() - new Date().getTime()) /
-            (1000 * 60 * 60 * 24),
-        ),
-      );
-      const isPending = item.status === 'PENDING' || item.status === 'READY';
+    ({ item }: { item: WishlistItem }) => {
+      const hoursCost = formatLifeHours(item.price, hourlyRate);
+      const daysLeft = getDaysLeft(item.cooldownEnds);
+      const isReady = item.status === 'READY' || (item.status === 'PENDING' && daysLeft === 0);
+      const isPending = item.status === 'PENDING';
+      const isRejected = item.status === 'REJECTED';
+      const isPurchased = item.status === 'PURCHASED';
+      const daysPassed = getDaysPassed(item.createdAt, item.cooldownDays);
+
+      const cfg = getStatusConfig(isReady && isPending ? 'READY' : item.status, C, t);
+      const isActive = item.status === 'PENDING' || item.status === 'READY';
 
       return (
         <View
-          style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.04)',
-            borderRadius: 16,
-            padding: 16,
-            marginHorizontal: spacing.md,
-            marginBottom: 12,
-          }}
+          style={[
+            S.card,
+            {
+              backgroundColor: cfg.cardBg,
+              borderColor: cfg.border,
+              opacity: isPurchased ? 0.7 : 1,
+            },
+          ]}
         >
-          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-            <View
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 16,
-                backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text size="xxxl">🎁</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text size="lg" weight="semibold" style={{ color: '#FFFFFF' }}>
-                {item.name}
-              </Text>
+          <View style={S.cardHeader}>
+            <StatusIcon status={(isReady && isPending ? 'READY' : item.status)} size={20} />
+            <View style={S.flex}>
+              <Text style={S.cardTitle} numberOfLines={1}>{item.name}</Text>
               {item.description ? (
-                <Text size="sm" style={{ color: '#8E8E93', marginTop: 2 }} numberOfLines={2}>
-                  {item.description}
-                </Text>
+                <Text style={S.cardDesc}>"{item.description}"</Text>
               ) : null}
-              <Text size="xl" weight="bold" style={{ color: '#6366F1', marginTop: 4 }}>
-                {formatCurrency(item.price)}
-              </Text>
-              {hoursCost && (
-                <Text size="xs" style={{ color: '#FBBF24', marginTop: 2 }}>
-                  ⏱ {hoursCost} ч работы
-                </Text>
-              )}
             </View>
           </View>
 
-          {isPending && (
-            <>
-              {item.status === 'READY' ? (
-                <View style={{ backgroundColor: 'rgba(52, 211, 153, 0.15)', borderRadius: 12, padding: 12, marginBottom: 12 }}>
-                  <Text size="md" style={{ color: '#34D399' }}>
-                    ✅ Готово к покупке!
-                  </Text>
-                </View>
-              ) : (
-                <View style={{ backgroundColor: 'rgba(251, 191, 36, 0.15)', borderRadius: 12, padding: 12, marginBottom: 12 }}>
-                  <Text size="md" style={{ color: '#FBBF24' }}>
-                    ⏳ {daysLeft === 0 ? 'Сегодня можно купить!' : `${daysLeft} дн. до покупки`}
-                  </Text>
-                </View>
-              )}
+          <HeroLifeCost hoursCost={hoursCost} price={item.price} />
 
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity
-                  onPress={() => handleReject(item.id, item.name)}
-                  style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    borderRadius: 12,
-                    paddingVertical: 14,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text size="md" weight="semibold" style={{ color: '#F4F4F5' }}>
-                    Отказаться
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleBuy(item.id, item.name, item.price)}
-                  disabled={item.status !== 'READY'}
-                  style={{
-                    flex: 1,
-                    backgroundColor: item.status === 'READY' ? '#34D399' : 'rgba(52, 211, 153, 0.3)',
-                    borderRadius: 12,
-                    paddingVertical: 14,
-                    alignItems: 'center',
-                    opacity: item.status !== 'READY' ? 0.5 : 1,
-                  }}
-                >
-                  <Text size="md" weight="semibold" style={{ color: '#FFFFFF' }}>
-                    Купить
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </>
+          {isActive && <Timeline daysPassed={daysPassed} totalDays={item.cooldownDays} />}
+
+          <View style={S.statusRow}>
+            <Ionicons name={cfg.icon as any} size={12} color={cfg.color} />
+            <Text style={[S.statusText, { color: cfg.color }]}>
+              {isReady && isPending
+                ? t('wishlist.coolingComplete')
+                : isPending
+                  ? t('wishlist.coolingDaysLeft', { days: daysLeft })
+                  : cfg.label}
+            </Text>
+          </View>
+
+          {isActive && (
+            <View style={S.btnRow}>
+              <TouchableOpacity onPress={() => setRejectConfirm(item)} style={S.btnReject}>
+                <View style={S.btnRejectRow}>
+                  <Ionicons name="close-circle" size={16} color="#FFF" />
+                  <Text style={S.btnRejectText}>{t("wishlist.reject")}</Text>
+                </View>
+                <Text style={S.btnRejectSub}>{t("wishlist.saveMoneyColon")} {formatCurrency(item.price)}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => (isReady ? setDecisionItem(item) : undefined)}
+                disabled={!isReady}
+                style={[
+                  S.btnBuy,
+                  {
+                    backgroundColor: isReady ? C.redBg : C.inputBg,
+                    borderWidth: isReady ? 1 : 0,
+                    borderColor: isReady ? C.redBorder : 'transparent',
+                    opacity: isReady ? 1 : 0.35,
+                  },
+                ]}
+              >
+                <Ionicons name="cart-outline" size={16} color={isReady ? C.red : C.textSec} />
+                <Text style={[S.btnBuyText, { color: isReady ? C.red : C.textSec }]}>{t("wishlist.buy")}</Text>
+              </TouchableOpacity>
+            </View>
           )}
 
-          {!isPending && (
-            <View style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: 12, padding: 12 }}>
-              <Text size="md" style={{ color: item.status === 'PURCHASED' ? '#34D399' : '#71717A' }}>
-                {item.status === 'PURCHASED' ? '✅ Куплено' : '🚫 Отказались'} — экономия {formatCurrency(item.price)}
-              </Text>
+          {!isActive && (
+            <View style={S.metaRow}>
+              <Text style={S.metaText}>{formatCurrency(item.price)}</Text>
+              <Text style={S.metaDot}>·</Text>
+              <Text style={S.metaText}>{hoursCost}</Text>
             </View>
           )}
         </View>
       );
     },
-    [spacing.md, handleBuy, handleReject, hourlyRate],
+    [handleReject, hourlyRate, C],
   );
 
+  /* ─── Decision Modal ─── */
+
+  const DS = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: C.bg,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      maxHeight: '92%',
+    },
+    drag: { width: 36, height: 4, borderRadius: 2, backgroundColor: C.handle, alignSelf: 'center', marginBottom: 16 },
+    badge: {
+      alignSelf: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: C.orange,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      marginBottom: 16,
+    },
+    badgeText: { fontSize: 11, fontWeight: '800', color: '#FFF', letterSpacing: 0.5 },
+    title: { fontSize: 24, fontWeight: '800', color: C.textMain, textAlign: 'center', marginBottom: 8 },
+    desc: { fontSize: 16, color: C.textSec, textAlign: 'center', fontStyle: 'italic', marginBottom: 20, lineHeight: 22 },
+    hero: {
+      backgroundColor: C.orangeBg,
+      borderRadius: 20,
+      padding: 24,
+      marginBottom: 24,
+      alignItems: 'center',
+    },
+    heroLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
+    heroLabel: { fontSize: 13, color: C.orange },
+    heroValue: { fontSize: 36, fontWeight: '800', color: C.orange },
+    heroPrice: { fontSize: 16, color: C.textSec, marginTop: 8 },
+    btnReject: {
+      backgroundColor: C.green,
+      borderRadius: 16,
+      paddingVertical: 18,
+      alignItems: 'center',
+      marginBottom: 4,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    btnRejectText: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
+    btnBuy: {
+      backgroundColor: 'transparent',
+      borderRadius: 16,
+      paddingVertical: 14,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: C.redBorder,
+      marginBottom: 4,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    btnBuyText: { fontSize: 16, fontWeight: '600', color: C.red },
+    subText: { fontSize: 12, color: C.textSec, textAlign: 'center', marginBottom: 8 },
+    cancel: { alignSelf: 'center', marginTop: 8, padding: 8 },
+    cancelText: { fontSize: 14, color: C.textSec },
+  });
+
+  const DecisionModal = useCallback(() => {
+    if (!decisionItem) return null;
+    const item = decisionItem;
+    const hoursCost = formatLifeHours(item.price, hourlyRate);
+    const daysPassed = getDaysPassed(item.createdAt, item.cooldownDays);
+
+    return (
+      <Modal visible transparent animationType="slide" onRequestClose={() => setDecisionItem(null)}>
+        <View style={DS.overlay}>
+          <Pressable style={S.flex} onPress={() => setDecisionItem(null)} />
+          <View style={[DS.sheet, { paddingBottom: Math.max(insets.bottom, 24) + 20 }]}>
+            <View style={DS.drag} />
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={DS.badge}>
+                <Ionicons name="flame" size={12} color="#FFF" />
+                <Text style={DS.badgeText}>{t("wishlist.readyToDecide")}</Text>
+              </View>
+
+              <Timeline daysPassed={daysPassed} totalDays={item.cooldownDays} />
+              <Text style={[S.statusText, { textAlign: 'center', marginTop: 8, marginBottom: 20, color: C.textSec }]}>
+                {t("wishlist.frozenDaysAgo", { days: daysPassed })}
+              </Text>
+
+              <Text style={DS.title}>{item.name}</Text>
+              {item.description ? <Text style={DS.desc}>"{item.description}"</Text> : null}
+
+              <View style={DS.hero}>
+                <View style={DS.heroLabelRow}>
+                  <Ionicons name="time-outline" size={14} color={C.orange} />
+                  <Text style={DS.heroLabel}>{t("wishlist.thisTakes")}</Text>
+                </View>
+                <Text style={DS.heroValue}>{hoursCost ?? '—'}</Text>
+                <Text style={DS.heroPrice}>{formatCurrency(item.price)}</Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => { setDecisionItem(null); setRejectConfirm(item); }}
+                style={DS.btnReject}
+              >
+                <Ionicons name="close-circle" size={20} color="#FFF" />
+                <Text style={DS.btnRejectText}>{t("wishlist.reject")}</Text>
+              </TouchableOpacity>
+              <Text style={DS.subText}>{t("wishlist.saveMoneyColon")} {formatCurrency(item.price)} · +50 XP</Text>
+
+              <TouchableOpacity
+                onPress={() => { setDecisionItem(null); setBuyConfirm(item); }}
+                style={DS.btnBuy}
+              >
+                <Ionicons name="cart-outline" size={18} color={C.red} />
+                <Text style={DS.btnBuyText}>{t("wishlist.buy")}</Text>
+              </TouchableOpacity>
+              <Text style={DS.subText}>{t("wishlist.spendLabel")} {hoursCost ?? "—"}</Text>
+
+              <TouchableOpacity onPress={() => setDecisionItem(null)} style={DS.cancel}>
+                <Text style={DS.cancelText}>{t("common.cancel")}</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  }, [decisionItem, hourlyRate, insets.bottom, handleReject, handleBuy, C]);
+
+  /* ─── Reward Modal ─── */
+
+  const RS = StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: C.overlay,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    checkWrap: {
+      width: 90,
+      height: 90,
+      borderRadius: 45,
+      backgroundColor: C.greenBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+      borderWidth: 2,
+      borderColor: C.greenBorder,
+    },
+    title: { fontSize: 24, fontWeight: '800', color: C.green, marginBottom: 6 },
+    sub: { fontSize: 15, color: C.textSec, textAlign: 'center', marginBottom: 24 },
+    cardsRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+    card: {
+      backgroundColor: C.card,
+      borderRadius: 14,
+      padding: 16,
+      alignItems: 'center',
+      minWidth: 130,
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+    cardLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+    cardLabelText: { fontSize: 11, color: C.textSec },
+    cardValue: { fontSize: 18, fontWeight: '800' },
+    xpBox: {
+      backgroundColor: C.orangeBg,
+      borderRadius: 14,
+      paddingVertical: 10,
+      paddingHorizontal: 24,
+      marginBottom: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    xpText: { fontSize: 18, fontWeight: '800', color: C.yellow },
+    investBox: {
+      backgroundColor: C.card,
+      borderRadius: 16,
+      padding: 18,
+      marginTop: 6,
+      borderWidth: 1,
+      borderColor: C.border,
+      alignItems: 'center',
+    },
+    closeBtn: {
+      backgroundColor: C.primary,
+      borderRadius: 16,
+      paddingVertical: 16,
+      paddingHorizontal: 40,
+      alignItems: 'center',
+      marginTop: 24,
+      minWidth: 200,
+    },
+    closeText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  });
+
+  const RewardModal = useCallback(() => {
+    if (!rewardItem) return null;
+    const item = rewardItem;
+    const hoursCost = formatLifeHours(item.price, hourlyRate);
+
+    return (
+      <Modal visible transparent animationType="fade" onRequestClose={() => setRewardItem(null)}>
+        <Animated.View style={[RS.overlay, { opacity: rewardFade }]}>
+          <Animated.View style={{ alignItems: 'center', transform: [{ translateY: rewardSlide }] }}>
+            <Animated.View style={{ transform: [{ scale: rewardScale }] }}>
+              <View style={RS.checkWrap}>
+                <Ionicons name="checkmark-circle" size={44} color={C.green} />
+              </View>
+            </Animated.View>
+
+            <Text style={RS.title}>{t("wishlist.consciousChoice")}</Text>
+            <Text style={RS.sub}>{t("wishlist.youSaved")} {formatCurrency(item.price)}</Text>
+
+            <View style={RS.cardsRow}>
+              <View style={RS.card}>
+                <View style={RS.cardLabel}>
+                  <Ionicons name="wallet-outline" size={12} color={C.textSec} />
+                  <Text style={RS.cardLabelText}>{t("goals.amount")}</Text>
+                </View>
+                <Text style={[RS.cardValue, { color: C.green }]}>{formatCurrency(item.price)}</Text>
+              </View>
+              <View style={RS.card}>
+                <View style={RS.cardLabel}>
+                  <Ionicons name="time-outline" size={12} color={C.textSec} />
+                  <Text style={RS.cardLabelText}>{t("wishlist.time")}</Text>
+                </View>
+                <Text style={[RS.cardValue, { color: C.orange }]}>{hoursCost}</Text>
+              </View>
+            </View>
+
+            <View style={RS.xpBox}>
+              <Ionicons name="star" size={16} color={C.yellow} />
+              <Text style={RS.xpText}>+50 XP</Text>
+            </View>
+
+            <TouchableOpacity onPress={() => setRewardItem(null)} style={RS.closeBtn}>
+              <Text style={RS.closeText}>{t("common.continue")}</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </Animated.View>
+      </Modal>
+    );
+  }, [rewardItem, rewardFade, rewardSlide, rewardScale, hourlyRate, C]);
+
+  /* ─── Empty state ─── */
+
+  const EmptyState = useCallback(
+    () => (
+      <View style={S.emptyWrap}>
+        <View style={S.emptyIconWrap}>
+          <Ionicons name="snow" size={36} color={C.primary} />
+        </View>
+        <Text style={S.emptyTitle}>{t("wishlist.emptyIncubator")}</Text>
+        <Text style={S.emptySub}>{t("wishlist.freezeDescription")}</Text>
+        <TouchableOpacity onPress={() => setShowAddModal(true)} style={S.emptyCta}>
+          <Ionicons name="add-circle" size={18} color="#FFF" />
+          <Text style={S.emptyCtaText}>{t("wishlist.freezeFirstWish")}</Text>
+        </TouchableOpacity>
+      </View>
+    ),
+    [C],
+  );
+
+  /* ─── Main render ─── */
+
   return (
-    <Screen scroll={false}>
-      <View style={{ flex: 1 }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 }}>
-          <Text size="xl" weight="bold" style={{ color: '#FFFFFF' }}>
-            Инкубатор желаний
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowAddModal(true)}
-            style={{
-              width: 44, height: 44, borderRadius: 22,
-              backgroundColor: 'rgba(99, 102, 241, 0.2)',
-              alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <Text size="xxl" style={{ color: '#6366F1' }}>+</Text>
+    <View style={[S.flex, S.screen, { paddingTop: insets.top }]}>
+      <View style={{ position: 'relative' }}>
+        <View style={S.headerRow}>
+          <View>
+            <Text style={S.headerTitle}>{t("wishlist.incubatorTitle")}</Text>
+            <Text style={S.headerSub}>{t("wishlist.freezeImpulse")}</Text>
+          </View>
+          <TouchableOpacity onPress={() => {
+            const access = useSubscriptionStore.getState().checkAccess('WISHLIST_INCUBATOR');
+            if (access?.limit) {
+              const current = filteredItems.filter(i => i.status !== 'PURCHASED' && i.status !== 'REJECTED').length;
+              if (current >= access.limit) {
+                useSubscriptionStore.getState().showPaywall('WISHLIST_INCUBATOR');
+                return;
+              }
+            }
+            setShowAddModal(true);
+          }} style={S.addBtn}>
+            <Ionicons name="add" size={22} color="#FFF" />
           </TouchableOpacity>
         </View>
-
-        {/* Hourly rate info */}
-        {hourlyRate > 0 && (
-          <View style={{
-            marginHorizontal: 16,
-            marginBottom: 12,
-            backgroundColor: 'rgba(251, 191, 36, 0.1)',
-            borderRadius: 12,
-            padding: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-          }}>
-            <Text size="md">⏱</Text>
-            <Text size="sm" style={{ color: '#FBBF24' }}>
-              Ваша ставка: {hourlyRate.toFixed(0)} ₽/ч
-            </Text>
-          </View>
-        )}
-
-        {/* Tabs */}
-        <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 16 }}>
-          {(['all', 'pending', 'history'] as TabType[]).map((t) => (
-            <Pressable
-              key={t}
-              onPress={() => setTab(t)}
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                alignItems: 'center',
-                borderRadius: 12,
-                backgroundColor: tab === t ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                borderWidth: tab === t ? 2 : 0,
-                borderColor: tab === t ? '#6366F1' : 'transparent',
-              }}
-            >
-              <Text size="sm" weight={tab === t ? 'semibold' : 'regular'} style={{ color: tab === t ? '#FFFFFF' : '#8E8E93' }}>
-                {t === 'all' ? 'Все' : t === 'pending' ? 'Ожидание' : 'История'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {/* List */}
-        {filteredItems.length === 0 ? (
-          <View style={{ alignItems: 'center', paddingVertical: 80 }}>
-            <Text size="xxxl" style={{ marginBottom: 16 }}>🎁</Text>
-            <Text size="lg" style={{ color: '#FFFFFF', marginBottom: 8 }}>
-              {tab === 'history' ? 'Пока нет истории' : 'Нет желаний'}
-            </Text>
-            <Text size="md" style={{ color: '#8E8E93', marginBottom: 24 }}>
-              {tab === 'history' ? 'Здесь будет история' : 'Добавьте желание и подождите 7 дней'}
-            </Text>
-            {tab === 'all' && (
-              <TouchableOpacity
-                onPress={() => setShowAddModal(true)}
-                style={{
-                  paddingHorizontal: 24,
-                  paddingVertical: 12,
-                  backgroundColor: '#6366F1',
-                  borderRadius: 12,
-                }}
-              >
-                <Text size="md" weight="bold" style={{ color: '#FFFFFF' }}>Добавить желание</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ) : (
-          <FlatList
-            data={filteredItems}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            contentContainerStyle={{ paddingBottom: 20 }}
-          />
-        )}
       </View>
 
-      {/* Add Modal */}
-      {showAddModal && (
-        <View style={{
-          position: 'absolute',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: '#0A0A0F',
-        }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 }}>
-            <TouchableOpacity onPress={() => setShowAddModal(false)}>
-              <Text size="lg" style={{ color: '#8E8E93' }}>← Назад</Text>
-            </TouchableOpacity>
-            <Text size="lg" weight="bold" style={{ color: '#FFFFFF' }}>Новое желание</Text>
-            <View style={{ width: 60 }} />
-          </View>
-
-          <View style={{ padding: 16, gap: 20 }}>
-            <View>
-              <Text size="sm" style={{ color: '#8E8E93', marginBottom: 8 }}>Что хотите?</Text>
-              <TextInput
-                value={newName}
-                onChangeText={setNewName}
-                placeholder="Например: AirPods Pro"
-                placeholderTextColor="#8E8E93"
-                autoFocus
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  color: '#FFFFFF',
-                  fontSize: 18,
-                }}
-              />
-            </View>
-
-            <View>
-              <Text size="sm" style={{ color: '#8E8E93', marginBottom: 8 }}>Сколько стоит? (₽)</Text>
-              <TextInput
-                value={newPrice}
-                onChangeText={setNewPrice}
-                placeholder="25000"
-                placeholderTextColor="#8E8E93"
-                keyboardType="decimal-pad"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  color: '#FFFFFF',
-                  fontSize: 18,
-                }}
-              />
-              {newPrice && hourlyRate > 0 && (
-                <Text size="sm" style={{ color: '#FBBF24', marginTop: 8 }}>
-                  ⏱ Это {(parseFloat(newPrice) / hourlyRate).toFixed(1)} часов вашей работы
-                </Text>
-              )}
-            </View>
-
-            <View>
-              <Text size="sm" style={{ color: '#8E8E93', marginBottom: 8 }}>Зачем вам это? *</Text>
-              <TextInput
-                value={newDescription}
-                onChangeText={setNewDescription}
-                placeholder="Объясните, почему эта покупка важна..."
-                placeholderTextColor="#8E8E93"
-                multiline
-                numberOfLines={3}
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  color: '#FFFFFF',
-                  fontSize: 16,
-                  minHeight: 80,
-                  textAlignVertical: 'top',
-                }}
-              />
-            </View>
-
-            <TouchableOpacity
-              onPress={handleAddItem}
-              disabled={!newName || !newPrice || !newDescription.trim()}
-              style={{
-                paddingVertical: 16,
-                borderRadius: 16,
-                backgroundColor: !newName || !newPrice || !newDescription.trim() ? 'rgba(255,255,255,0.1)' : '#6366F1',
-                alignItems: 'center',
-                marginTop: 20,
-              }}
-            >
-              <Text size="lg" weight="bold" style={{ color: '#FFFFFF' }}>
-                Добавить в инкубатор
-              </Text>
-            </TouchableOpacity>
-
-            <Text size="xs" style={{ color: '#8E8E93', textAlign: 'center', marginTop: 8 }}>
-              Перед покупкой нужно подождать 7 дней — чтобы точно решить, нужно ли это вам
-            </Text>
-          </View>
-        </View>
+      {filteredItems.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ListHeaderComponent={<FilterChips counts={counts} active={activeFilter} onChange={setActiveFilter} />}
+          contentContainerStyle={S.listContent}
+        />
       )}
-    </Screen>
+
+      <AddWishlistModal visible={showAddModal} onClose={() => setShowAddModal(false)} hourlyRate={hourlyRate} userId={user?.id} insetsTop={insets.top} />
+      <DecisionModal />
+      <RewardModal />
+      <ConfirmModal
+        visible={rejectConfirm !== null}
+        title={t('wishlist.rejectPurchaseTitle')}
+        message={rejectConfirm ? `${rejectConfirm.name} — ${formatCurrency(rejectConfirm.price)}` : ''}
+        variant="confirm"
+        confirmText={t('wishlist.rejectBtn')}
+        onConfirm={() => rejectConfirm && handleReject(rejectConfirm)}
+        onCancel={() => setRejectConfirm(null)}
+      />
+      <ConfirmModal
+        visible={buyConfirm !== null}
+        title={t('wishlist.confirmPurchaseTitle')}
+        message={
+          buyConfirm
+            ? t('wishlist.spendConfirm', {
+                hours: formatLifeHours(buyConfirm.price, hourlyRate) ?? formatCurrency(buyConfirm.price),
+                price: formatCurrency(buyConfirm.price),
+                name: buyConfirm.name,
+              })
+            : ''
+        }
+        variant="destructive"
+        confirmText={t('wishlist.buy')}
+        onConfirm={() => buyConfirm && handleBuy(buyConfirm)}
+        onCancel={() => setBuyConfirm(null)}
+      />
+    </View>
   );
 }

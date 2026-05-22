@@ -1,0 +1,76 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+context: |
+  ## MoneyTracker — Full-stack financial management application
+
+  ### Architecture
+  - **Backend**: NestJS with TypeScript
+  - **Database**: PostgreSQL with Prisma ORM
+  - **Cache**: Redis for caching and rate limiting
+  - **Authentication**: JWT with Passport
+  - **API Documentation**: Swagger/OpenAPI
+  - **Mobile**: React Native with Expo
+  - **UI Library**: Gluestack UI
+  - **State Management**: Zustand
+  - **Navigation**: React Navigation
+  - **i18n**: Custom internationalization system
+
+  ### Technology Stack
+  - Backend: `@nestjs/common`, `@nestjs/core`, `@nestjs/platform-express`, `@nestjs/passport`, `@nestjs/jwt`, `@nestjs/config`, `@nestjs/schedule`, `@prisma/client`, `passport-jwt`, `class-validator`, `class-transformer`, `redis`, `i18n`
+  - Mobile: `react`, `react-native`, `expo-router`, `@gluestack-ui/themed`, `zustand`, `@react-navigation/native`, `recharts`, `date-fns`
+
+  ### Database Schema
+  - Users with hourly rate and life-cost settings
+  - Accounts with balances and currency
+  - Categories (personal and system)
+  - Transactions with accounts and categories
+  - Budgets with periods and alerts
+  - Goals with progress tracking
+  - Wishlist items with cooldowns (7 days)
+  - Exchange rates
+
+  ### API Structure
+  - `/auth` - Authentication endpoints
+  - `/users` - User management
+  - `/accounts` - Account CRUD
+  - `/categories` - Category management
+  - `/transactions` - Transaction CRUD and filtering
+  - `/budgets` - Budget management
+  - `/goals` - Financial goals
+  - `/wishlist` - Wishlist/Incubator management
+  - `/life-cost` - Life cost calculations (hours worked)
+  - `/currency` - Currency rates
+  - `/i18n` - Translations
+
+  ### Internationalization
+  Supported languages: English (en), Russian (ru), Spanish (es), Portuguese (pt), French (fr), German (de), Japanese (ja), Chinese (zh)
+
+  ### Development Conventions
+  - TypeScript strict mode
+  - All public functions and classes must have explicit argument and return types
+  - camelCase for variables/functions, PascalCase for classes/interfaces
+  - Booleans prefixed with is/has/should
+  - Use undefined instead of null (except Prisma returns null)
+  - Always async/await, no .then() chains
+  - NestJS: Module structure `src/modules/<name>/`, business logic in services, DTOs with class-validator
+  - Prisma: All schema changes via migrations, single PrismaClient instance, UTC dates
+  - Redis: Colon-separated namespaces, always set TTL, graceful fallback
+  - React Native: `src/screens/`, `src/components/`, `src/api/`, `src/hooks/`, `src/types/`
+  - Spec-driven workflow: specs live in openspec/specs/, changes in openspec/changes/
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+rules:
+  proposal:
+    - Keep proposals under 500 words
+    - Always include a "Non-goals" section
+  tasks:
+    - Break tasks into chunks of max 2 hours
+    - Reference the specific spec file being implemented
+  spec:
+    - Use GIVEN/WHEN/THEN format for scenarios
+    - Keep requirements atomic and testable
+    - Reference API endpoints and DTOs where applicable

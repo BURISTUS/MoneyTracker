@@ -5,12 +5,18 @@ export interface User {
   name: string;
   hourlyRate: number | null;
   monthlyHours: number;
+  currency?: string;
+  language?: string;
+  plan?: 'FREE' | 'PREMIUM';
+  isPremium?: boolean;
+  subscriptionExpiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface AuthResponse {
   token: string;
+  refreshToken: string;
   user: User;
 }
 
@@ -36,6 +42,7 @@ export interface Account {
   balance: number;
   currency: string;
   isDefault: boolean;
+  includeInTotal: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,6 +65,8 @@ export interface Category {
   color: string | null;
   isSystem: boolean;
   isBaseNeed: boolean;
+  excludeFromTotal: boolean;
+  monthlyLimit: number | null;
   images: string[];
   createdAt: string;
   updatedAt: string;
@@ -97,112 +106,43 @@ export interface TransactionSummary {
   byCategory: Array<{ categoryId: string; categoryName: string; amount: number }>;
 }
 
-// Budget Types
-export interface Budget {
-  id: string;
-  userId: string;
-  categoryId: string;
-  amount: number;
-  period: BudgetPeriod;
-  startDate: string;
-  endDate: string;
-  alertThreshold: number;
-  createdAt: string;
-  updatedAt: string;
-  category?: Category;
-  spent?: number;
-  remaining?: number;
-  progress?: number;
-}
-
-export enum BudgetPeriod {
-  WEEKLY = 'WEEKLY',
-  MONTHLY = 'MONTHLY',
-  YEARLY = 'YEARLY',
-}
-
 // Goal Types
+export interface GoalContribution {
+  id: string;
+  goalId: string;
+  amount: number;
+  note?: string | null;
+  date: string;
+  createdAt: string;
+}
+
 export interface Goal {
   id: string;
   userId: string;
   name: string;
   targetAmount: number;
   currentAmount: number;
+  currency: string;
   deadline: string;
   isCompleted: boolean;
   createdAt: string;
   updatedAt: string;
   progress?: number;
+  percentComplete?: number;
+  remaining?: number;
+  contributions?: GoalContribution[];
+  _count?: { contributions: number };
 }
 
-// Gamification Types
+// Life-Cost Types
 export interface UserGamification {
   id: string;
   userId: string;
-  xp: number;
-  level: number;
-  savedAmount: number;
-  status: GamificationStatus;
+  hourlyRate?: number;
   createdAt: string;
   updatedAt: string;
-  hourlyRate?: number; // Stored in kopecks, for life cost calculation
 }
 
-export enum GamificationStatus {
-  CONSUMER_DRONE = 'CONSUMER_DRONE',
-  AWAKENED = 'AWAKENED',
-  ASCETIC = 'ASCETIC',
-  STRATEGIST = 'STRATEGIST',
-  CAPITALIST = 'CAPITALIST',
-  FINANCIAL_ARCHITECT = 'FINANCIAL_ARCHITECT',
-}
-
-export const GAMIFICATION_STATUS_LABELS: Record<GamificationStatus, string> = {
-  [GamificationStatus.CONSUMER_DRONE]: 'Потребитель',
-  [GamificationStatus.AWAKENED]: 'Просыпающийся',
-  [GamificationStatus.ASCETIC]: 'Аскет',
-  [GamificationStatus.STRATEGIST]: 'Стратег',
-  [GamificationStatus.CAPITALIST]: 'Капиталист',
-  [GamificationStatus.FINANCIAL_ARCHITECT]: 'Архитектор',
-};
-
-// Achievement Types
-export interface Achievement {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  iconUrl: string | null;
-  xpReward: number;
-  conditionType: AchievementCondition;
-  conditionValue: Record<string, unknown>;
-  tier: AchievementTier;
-}
-
-export interface UserAchievement {
-  id: string;
-  userId: string;
-  achievementId: string;
-  earnedAt: string;
-  achievement?: Achievement;
-}
-
-export enum AchievementCondition {
-  NO_SPEND_CATEGORY_DAYS = 'NO_SPEND_CATEGORY_DAYS',
-  WISHLIST_REJECTED = 'WISHLIST_REJECTED',
-  BUDGET_UNDER_LIMIT = 'BUDGET_UNDER_LIMIT',
-  STREAK_DAYS = 'STREAK_DAYS',
-  TOTAL_SAVED_AMOUNT = 'TOTAL_SAVED_AMOUNT',
-}
-
-export enum AchievementTier {
-  BRONZE = 'BRONZE',
-  SILVER = 'SILVER',
-  GOLD = 'GOLD',
-  PLATINUM = 'PLATINUM',
-}
-
-// Wishlist Types
 export interface WishlistItem {
   id: string;
   userId: string;
@@ -424,8 +364,96 @@ export interface Notification {
 export enum NotificationType {
   WISHLIST_READY = 'WISHLIST_READY',
   BUDGET_ALERT = 'BUDGET_ALERT',
-  CHALLENGE_INVITE = 'CHALLENGE_INVITE',
-  LEVEL_UP = 'LEVEL_UP',
-  ACHIEVEMENT_EARNED = 'ACHIEVEMENT_EARNED',
-  STREAK_WARNING = 'STREAK_WARNING',
+  GOAL_COMPLETED = 'GOAL_COMPLETED',
+  MONTHLY_SUMMARY = 'MONTHLY_SUMMARY',
+}
+
+// Chat Types
+export type PresetType = 'SPENDING_REPORT' | 'BUDGET_ANALYSIS' | 'SAVINGS_TIPS' | 'DYNAMICS';
+
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  role: 'USER' | 'ASSISTANT';
+  content: string;
+  presetType: PresetType | null;
+  createdAt: string;
+}
+
+// Article Types
+export interface Article {
+  id: string;
+  slug: string;
+  tag: string;
+  isPremium: boolean;
+  viewCount: number;
+  title: string;
+  content: string;
+  readTime: string;
+  language: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// === Budget ===
+
+export interface Budget {
+  id: string;
+  categoryId: string;
+  category?: {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+    type: string;
+  };
+  amount: number;
+  month: string;
+  spent: number;
+  percentUsed: number;
+  isOverBudget: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// === Subscription & Features ===
+
+export type FeatureKey =
+  | 'AI_CHAT'
+  | 'AI_VOICE'
+  | 'AI_RECEIPT'
+  | 'ACCOUNTS'
+  | 'ACCOUNT_CREDIT'
+  | 'ACCOUNT_INVESTMENT'
+  | 'ACCOUNT_DEBT'
+  | 'PERSONAL_CATEGORIES'
+  | 'GOALS'
+  | 'WISHLIST_INCUBATOR'
+  | 'LIFE_COST'
+  | 'ANALYTICS_BASIC'
+  | 'ANALYTICS_COMPARISON'
+  | 'ANALYTICS_TRENDS'
+  | 'EXPORT'
+  | 'ARTICLES'
+  | 'FAMILY';
+
+export interface FeatureAccess {
+  allowed: boolean;
+  limit?: number;
+  limitUnit?: string;
+}
+
+export interface SubscriptionStatus {
+  plan: 'free' | 'premium' | 'premium_family';
+  isPremium: boolean;
+  expiresAt: string | null;
+  startedAt: string;
+  cancelledAt: string | null;
+  allowedAccountTypes: string[];
+  accountLimit: number;
+  features: Record<string, FeatureAccess>;
+  familyId?: string;
+  familyName?: string;
+  familyCode?: string;
+  familyRole?: 'OWNER' | 'MEMBER';
 }

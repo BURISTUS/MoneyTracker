@@ -1,0 +1,21 @@
+{
+  "insufficientFunds": "Onvoldoende saldo. Beschikbaar {{available}} ₽, nodig {{needed}} ₽",
+  "negativeBalance": "Kan niet overmaken van \"{{account}}\" — saldo {{balance}}",
+  "accountNotFound": "Rekening niet gevonden",
+  "categoryNotFound": "Categorie niet gevonden",
+  "transactionNotFound": "Transactie niet gevonden",
+  "sameAccount": "Kan niet naar dezelfde rekening overmaken",
+  "unauthorized": "Authenticatie vereist",
+  "forbidden": "Toegang geweigerd",
+  "validationError": "Validatiefout",
+  "internalError": "Interne serverfout",
+  "sessionExpired": "Sessie verlopen. Log opnieuw in.",
+  "budgetNotFound": "Budget niet gevonden",
+  "goalNotFound": "Doel niet gevonden",
+  "wishlistNotFound": "Wens niet gevonden",
+  "invalidCredentials": "Ongeldige e-mail of wachtwoord",
+  "emailExists": "Gebruiker met dit e-mailadres bestaat al",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
+}

@@ -1,0 +1,21 @@
+{
+  "insufficientFunds": "अपर्याप्त धनराशि। उपलब्ध {{available}} ₽, आवश्यक {{needed}} ₽",
+  "negativeBalance": "\"{{account}}\" से स्थानांतरण असंभव — शेष {{balance}}",
+  "accountNotFound": "खाता नहीं मिला",
+  "categoryNotFound": "श्रेणी नहीं मिली",
+  "transactionNotFound": "लेन-देन नहीं मिला",
+  "sameAccount": "उसी खाते में स्थानांतरण असंभव",
+  "unauthorized": "प्रमाणीकरण आवश्यक",
+  "forbidden": "पहुँच अस्वीकृत",
+  "validationError": "सत्यापन त्रुटि",
+  "internalError": "आंतरिक सर्वर त्रुटि",
+  "sessionExpired": "सत्र समाप्त। कृपया पुनः लॉगिन करें।",
+  "budgetNotFound": "बजट नहीं मिला",
+  "goalNotFound": "लक्ष्य नहीं मिला",
+  "wishlistNotFound": "इच्छा-सूची आइटम नहीं मिला",
+  "invalidCredentials": "अमान्य ईमेल या पासवर्ड",
+  "emailExists": "इस ईमेल वाला उपयोगकर्ता पहले से मौजूद है",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
+}

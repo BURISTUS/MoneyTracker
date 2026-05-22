@@ -1,75 +1,95 @@
-# Журнал технических решений
+# Журнал решений
 
-## 2026-04-17: Инициализация Memory Bank
+## 2026-05-19: Refresh-token механизм
 
-### Решение: Копейки (BigInt) для хранения сумм
-**Почему:** Все суммы хранятся в копейках (BigInt) для точности. На фронте делим на 100 для отображения. Исключает ошибки округления float.
+### D-18: Refresh token — серверная ротация
+- **Решение**: Каждый refresh обменяет старый refresh token на новую пару (access + refresh). Старый помечается isRevoked=true.
+- **Причина**: Prevents token replay attacks. Если злоумышленник получит старый refresh, он будет уже отозван.
+- **Revoke all on reuse**: Если обнаружен попытка использовать отозванный refresh → все токены юзера отзываются (защита от кражи).
 
-### Решение: react-native-reanimated и react-native-gesture-handler запрещены в компонентах
-**Почему:** Вызывают NullPointerException на Android при неправильной конфигурации. Используем стандартные RN Modal, TouchableOpacity, Pressable.
+### D-19: Refresh token — crypto.randomBytes вместо JWT
+- **Решение**: Refresh token = `crypto.randomBytes(64).toString('hex')`, хранится в БД
+- **Причина**: JWT для refresh не нужен — нет payload. Random opaque token нельзя декодировать, нельзя подделать. Проще отзывать.
+- **Альтернатива**: JWT для refresh (отклонено — сложнее отзыв, больше payload)
 
-### Решение: SVG без LinearGradient и stop
-**Почему:** Элемент `<stop>` внутри `<LinearGradient>` из react-native-svg крашит Android с "View config getter callback for component stop must be a function". DonutChart использует plain stroke colors.
+### D-20: Race condition — refreshSubscribers queue
+- **Решение**: При 401 — первый запрос инициирует refresh, остальные подписываются в очередь. После refresh все получают новый токен и повторяют свои запросы.
+- **Причина**: Без очереди — N параллельных 401 → N refresh запросов → N новых токенов → N-1 отозваны.
+- **Реализация**: `isRefreshing` флаг + `refreshSubscribers` массив callbacks
 
-### Решение: Системные категории (userId: null)
-**Почему:** Категории по умолчанию создаются с userId: null. При запросе используем OR: [{userId}, {userId: null}] чтобы показать системные + личные.
+### D-21: PIN хэш — simpleHash вместо bcrypt
+- **Решение**: Простой хэш `simpleHash()` для PIN-кода (не cryptographic)
+- **Причина**: PIN 4 цифры — даже с bcrypt брутфорс тривиален (10K комбинаций). Основная защита — device lock + secure enclave. Нет смысла тратить CPU на bcrypt на мобильном.
+- **Альтернатива**: bcrypt/scrypt (отклонено — overkill для 4-digit PIN, замедляет UX)
 
-### Решение: Демо-режим через isDemoMode флаг
-**Почему:** loginMock() не создаёт JWT-токен. Без флага initializeData() вызывает API → 401 → redirect loop. Флаг isDemoMode (persisted) пропускает API-вызовы.
+## 2026-05-16: Бэкенд-рефакторинг (61 проблема из аудита)
 
-### Решение: expo-router file-based routing
-**Почему:** Стандартный подход для Expo SDK 54+. Каждый .tsx в app/ — маршрут. Layout файлы _layout.tsx определяют навигацию.
+### D-01: DTOs с class-validator для ВСЕХ endpoints
+- **Решение**: Создать class-validator DTO классы для каждого POST/PATCH endpoint
+- **Причина**: ValidationPipe с `whitelist: true` работает ТОЛЬКО с class-validator DTO. TypeScript интерфейсы дают нулевую runtime защиту. Все inline body types заменены на DTO.
+- **Альтернатива**: Zod схемы (отклонено — project convention: class-validator + NestJS)
 
-### Решение: Zustand + React Query
-**Почему:** Zustand — простой клиентский state (auth, data cache). React Query — server state (hooks). Разделение ответственности.
+### D-02: Transaction atomicity через `prisma.$transaction()`
+- **Решение**: Обернуть create/update/delete в interactive transactions
+- **Причина**: Без $transaction — краш между операциями (insert transaction + update balance) оставляет неконсистентные данные. Финансовые данные требуют атомарности.
 
-### Решение: DatePickerModal вместо DateTimePicker
-**Почему:** Нативный DateTimePicker даёт разный UX на iOS/Android. Кастомный bottom-sheet с пресетами (Сегодня/Вчера/Позавчера) + инпуты ДД/ММ с автофокусом — единообразный UX. Год всегда текущий.
+### D-03: Error handling — единый AppException
+- **Решение**: Заменить все raw Error, HttpException, BadRequestException на AppException с i18n ключами
+- **Причина**: Единый формат ошибок `{ success: false, statusCode, error, message }` с i18n. HttpExceptionFilter обрабатывает AppException и переводит ключи.
 
-### Решение: Калькулятор с мат.операциями в numpad
-**Почему:** Пользователь может ввести выражение типа "1000 + 500" прямо при добавлении транзакции. Операции +−×÷ встроены в сетку 4×4. Кнопка = вычисляет результат.
+### D-04: Redis graceful degradation
+- **Решение**: Все методы RedisService обёрнуты в try/catch, возвращают null/0/{} при ошибке
+- **Причина**: Redis — вспомогательный сервис (cache, rate limiting). Его недоступность не должна крашить основной функционал.
 
-### Решение: 401 interceptor с debounce
-**Почему:** При отсутствии токена 5 параллельных запросов возвращают 401 одновременно → 5 redirect на login. isRedirecting флаг предотвращает каскад.
+### D-05: ConfigService вместо process.env
+- **Решение**: Inject ConfigService во все модули, использовать get<T>()
+- **Причина**: Конвенция NestJS — ConfigService для env vars. Прямой доступ к process.env не позволяет тестировать и нарушает DI.
 
-### Решение: getHourlyRate() всегда возвращает рубли
-**Почему:** В БД hourlyRate хранится в копейках. `getHourlyRate()` делает `/100` и возвращает рубли. Все расчёты life-hours должны: (сумма_в_рублях) / (rate_в_рублях). Баг был в life-cost/index.tsx — делил копейки на рубли. Конвенция: `getHourlyRate()` → рубли, `transaction.amount` → копейки, `transaction.amount / 100` → рубли.
+### D-06: JWT payload расширен
+- **Решение**: Добавить `currency` в validate() JwtStrategy
+- **Причина**: `req.user.currency` использовался в accounts controller, но всегда был undefined — JWT payload содержал только `{ id, email, name }`.
 
-### Решение: Калькулятор ставки на Life-Cost странице
-**Почему:** Пользователь не всегда знает свою часовую ставку. На странице Life-Cost упрощённый калькулятор: toggle (час/неделя/месяц/год) + одно поле ввода зарплаты → рассчитывает ₽/час. Формулы: час=1, неделя=40ч, месяц=164ч (8ч×5д×4.33нед), год=1971ч (164×12). Кнопка «Применить эту ставку» сохраняет в dataStore (локально, через setHourlyRate → gamification.hourlyRate в копейках).
+### D-07: CORS через env
+- **Решение**: `CORS_ORIGINS` env variable для production, `true` для development
+- **Причина**: `origin: true` безусловно — security risk в production.
 
-### Решение: Обязательное описание в Wishlist
-**Почему:** Пользователь должен объяснить, зачем ему покупка. Это ключевой элемент механики «Инкубатор желаний» — через 7 дней он перечитает своё обоснование и примет осознанное решение. Без описания невозможно добавить желание.
+### D-08: Goals DTOs подключены к контроллеру
+- **Решение**: Использовать CreateGoalDto, UpdateGoalDto, UpdateGoalProgressDto в GoalsController
+- **Причина**: DTOs существовали в `goals/dto/` но не были подключены — контроллер использовал inline типы. `BigInt(undefined)` крашил.
 
-### Решение: setHourlyRate в dataStore — сохранение на сервер через API
-**Почему:** `PATCH /users/hourly-rate` уже существовал на бэкенде. `dataStore.setHourlyRate()` сначала обновляет локальный Zustand state (для мгновенного UI), затем вызывает `lifeCostService.updateHourlyRate(rateKopecks)` для сохранения на сервер. В демо-режиме API-вызов пропускается. Конвенция: в API часовая ставка отправляется в копейках, `lifeCostService` получает рубли и конвертирует.
+### D-09: Pagination для GET /transactions
+- **Решение**: Добавить page/limit параметры, возвращать `{ items, total, page, limit, totalPages }`
+- **Причина**: Без пагинации — OOM при больших объёмах. Frontend должен адаптироваться.
 
-### Решение: Wishlist description — поле в БД (Prisma)
-**Почему:** Описание желания хранится в БД (`description String @default("")`). Это позволяет пользователю перечитать своё обоснование через 7 дней на любом устройстве. Backend `wishlist.controller.ts` и `wishlist.service.ts` принимают `description` в `POST /wishlist`. Миграция `20260417121332_add_wishlist_description`.
+### D-10: Goal deadline default = +6 месяцев
+- **Решение**: Вместо `new Date()` (сразу просрочено) — `new Date() + 6 месяцев`
+- **Причина**: `new Date()` как deadline = цель сразу «просрочена» — плохой UX.
 
-### Решение: Vector icons (MaterialCommunityIcons) вместо emoji для категорий
-**Почему:** Emoji рендерятся по-разному на iOS/Android, выглядят непрофессионально. MaterialCommunityIcons имеет 7000+ векторных иконок, единообразный стиль. Формат сериализации: `family:name` (например `material:food`). `CategoryIcon` компонент десериализует и рендерит. Системные категории в seed обновлены на `material:xxx` формат, upsert обновляет icon у существующих записей.
+### D-12: Устранение хардкодов — English как lingua franca бэкенда
+- **Решение**: Все hardcoded Russian строки в бэкенде заменены на English. AI prompts переведены на English. Preset prompts — bilingual map (en/ru). Пользовательские данные (имена счетов, категорий) — English.
+- **Причина**: Бэкенд — multi-language API (20 языков). Russian хардкоды ломают UX для non-Russian пользователей. English — universal, AI модели понимают English лучше. System prompt на English + "respond in user's language" — работает корректно для любого языка.
+- **Альтернатива**: Backend i18n service (отклонено — over-engineering для текущего масштаба, translations уже на фронте)
 
-### Решение: Минималистичный дашборд (стиль 1Money)
-**Почему:** Предыдущая версия перегружала экран метриками (геймификация, прогнозы, % сбережений, дни работы, топ категорий) — всё сливалось, ничего нельзя было прочитать. 1Money-стиль: чистый баланс по центру, две карточки доход/расход, список последних операций. Просто и читаемо.
+### D-14: i18n мобильного приложения — EN+RU полные переводы
+- **Решение**: Заменить 200+ захардкоженных строк на t() вызовы, добавить 14 новых секций в backend common.json, полностью переписать RU переводы, EN fallback для остальных 18 языков
+- **Причина**: ~36 файлов содержали Russian/English хардкод вместо i18n. Месяцы, дни недели, лейблы форм, кнопки, ошибки, премиум-фичи — всё было захардкожено. Существующие переводы в de/fr/pt/it содержали испанский текст вместо целевого языка.
+- **Альтернатива**: Только EN fallback для всех языков (отклонено по запросу PM — нужны полные EN+RU)
 
-### Решение: SpendingChart (bar chart) вместо DonutChart на главной
-**Почему:** DonutChart показывала структуру расходов по категориям — это дублировало экран транзакций. Пользователь спрашивал «нахуя она нужна». Bar chart по дням месяца показывает динамику: когда тратил больше/меньше, дни доходов vs расходов. Как в Mint/Spendee/Toshl. SVG Rect для столбцов, зелёный=доход, красный=расход. DonutChart убрана с главной и транзакций, осталась только на categories/chart.
+### D-15: Node.js скрипт для генерации переводов
+- **Решение**: Создан /tmp/kilo/fix-i18n.js — скрипт глубокого слияния новых ключей в существующие файлы
+- **Причина**: 20 файлов × 556+ строк = 11K+ строк JSON. Ручное редактирование нецелесообразно. Скрипт с deepMerge позволяет добавить новые ключи не затирая существующие переводы.
 
-### Решение: Summary + category chips вместо DonutChart на транзакциях
-**Почему:** DonutChart занимала много места и не добавляла информации поверх списка операций. Заменена на крупную сумму за период + горизонтальные chip-теги категорий с %. Чипы кликабельны — фильтруют список.
+### D-16: Jest + jest-expo для unit тестов mobile
+- **Решение**: Jest 29 + jest-expo preset + jest.setup.js для RN module mocks
+- **Причина**: jest-expo обеспечивает совместимость с Expo SDK 54 и React Native трансформациями. Jest 30 несовместим с jest-expo (peer dep конфликт).
+- **Альтернатива**: Vitest (отклонено — хуже интеграция с React Native)
+- **Сложность**: i18n mock требует `__esModule: true` в factory из-за babel `interopRequireDefault` трансформации. Dynamic `import()` не поддерживается в Jest без `--experimental-vm-modules`.
 
-### Решение: «Осознанный пульт управления» — концепция главного экрана
-**Почему:** Пользователь wants цельный дашборд, а не набор разрозненных виджетов. Концепция: экран ведёт от общей картины к действию. 4 зоны: (1) Баланс времени — потрачено vs сохранено в часах жизни, (2) Зона решений — READY wishlist карточки требуют действия, кнопка «Не нужно» крупнее и зелёнее чем «Купить», (3) Морозильная камера — горизонтальная карусель PENDING с обратным отсчётом, (4) Быстрые действия. Ключевая метрика — ЧАСЫ ЖИЗНИ, не рубли. savedHours из rejected wishlist items.
-
-### Решение: i18n — бэкенд как единственный источник истины
-**Почему:** Валидация и ошибки на бэкенде тоже нужно переводить. Все тексты хранятся на бэкенде в JSON-файлах (`src/i18n/{lang}/common.json`). Бэкенд использует `nestjs-i18n` для собственных ответов. Мобильное приложение скачивает переводы через `GET /api/i18n/translations/:lang` при старте, локальный fallback для оффлайна. `Accept-Language` header на каждый API-запрос. 8 языков: en, ru, es, pt, fr, de, ja, zh. Пакеты: `i18next`, `react-i18next`, `expo-localization` на фронте, `nestjs-i18n` на бэкенде.
-
-### Решение: CurrencyModule — мультивалютность с User.currency
-**Почему:** Пользователь выбирает основную валюту (User.currency, по умолчанию RUB). Каждый счёт имеет свою валюту (Account.currency). Общий баланс: счета одной валюты складываем, остальные конвертируем через `CurrencyRate.rateToUsd`. USD — только технический хаб для формулы `A → USD → B`, пользователь его не видит. `formatCurrency()` на фронте берёт символ из `setCurrencyConfig()`. Life-cost считает от основной валюты. `PATCH /users/profile` принимает `currency` и `language`. `GET /accounts/total-balance` — сконвертированный баланс. 24 валюты, Redis cache 24ч.
-
-### Решение: ExchangeRate — ежедневное обновление через cron + @fawazahmed0/exchange-api
-**Почему:** Модель `ExchangeRate` с полем `rate` (1 USD = X валюты) и `date` (YYYY-MM-DD из API). Cron `0 6 * * *` ежедневно обновляет все курсы. API: jsdelivr primary + cloudflare fallback. Формула кросс-курса: `(amount / from.rate) * to.rate`. USD — технический хаб, пользователь его не видит. `refreshRates()` использует `upsert` — все ~300+ валют из API сохраняются в БД. Batch upsert по 50 записей параллельно. `GET /currency/list` с пагинацией и поиском для мобильного CurrencyPicker.
-
-### Решение: CurrencyPicker — модальный пикер валют с поиском и табами
-**Почему:** 300+ валют в БД требуют удобного поиска. CurrencyPicker — модальный BottomSheet-style компонент с поиском по коду/названию (дебаунс 300мс), табами Все/Фиат/Крипто/Металлы, пагинацией (50 на страницу). Используется в Profile для выбора основной валюты (userCurrency → PATCH /users/profile) и при создании счёта (filterType="FIAT"). `setCurrencyConfig()` теперь принимает символ динамически из API.
+### D-17: Unit тесты — мок authStore в dataStore тестах
+- **Решение**: Мокать `../authStore` целиком вместо мокания отдельных сервисов
+- **Причина**: dataStore → authStore → services/auth → services/api → Toast → gluestack-ui — длинная цепочка импортов достигает ESM-only пакетов. Мокание authStore разрывает цепь и изолирует dataStore.
+- **Альтернатива**: Добавлять все ESM-пакеты в transformIgnorePatterns (отклонено — хрупкое решение, растущий список)
+- **Решение**: Экспортировать `KNOWN_SYMBOLS` из currency.service.ts и импортировать в chat.service.ts
+- **Причина**: Карта символов валют дублировалась (5 валют в chat vs 60+ в currency). DRY принцип.
+- **Решение**: Оставить `POST /subscription/toggle` для dev/test/demo
+- **Причина**: Endpoint нужен для E2E тестов и демо-режима. В production нужно добавить payment validation guard.

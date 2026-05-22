@@ -1,10 +1,9 @@
 import React from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
-import { useTheme } from '../../theme';
-import { Text } from '../ui/Text';
-import { Card } from '../ui/Card';
-import { Icon } from '../ui/Icon';
+import { Ionicons } from '@expo/vector-icons';
+import { Text } from '../../../components/ui/text';
 import { formatCurrency } from '../../utils/formatters';
+import { useTheme } from '../../stores/themeStore';
 import type { Account, AccountType } from '../../types';
 
 interface AccountCardProps {
@@ -12,45 +11,32 @@ interface AccountCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-const accountIcons: Record<AccountType, { icon: React.ComponentProps<typeof Icon>['name']; color: string }> = {
-  CASH: { icon: 'wallet', color: '#34D399' },
-  BANK: { icon: 'card', color: '#6366F1' },
-  CREDIT: { icon: 'card-outline', color: '#F87171' },
-  INVESTMENT: { icon: 'trending-up', color: '#FBBF24' },
-  DEBT: { icon: 'alert-circle', color: '#FB923C' },
-};
-
 export const AccountCard: React.FC<AccountCardProps> = React.memo(({ account, style }) => {
-  const { spacing, borderRadius: br } = useTheme();
+  const C = useTheme();
+  const accountIcons: Record<AccountType, { icon: keyof typeof Ionicons.glyphMap; color: string }> = {
+    CASH: { icon: 'wallet-outline', color: C.green },
+    BANK: { icon: 'card-outline', color: C.primary },
+    CREDIT: { icon: 'card-outline', color: C.red },
+    INVESTMENT: { icon: 'trending-up-outline', color: C.yellow },
+    DEBT: { icon: 'alert-circle-outline', color: C.orange },
+  };
   const config = accountIcons[account.type] || accountIcons.CASH;
 
   return (
-    <Card variant="glass" padding="md" style={[{ gap: spacing.sm }, style]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+    <View className="bg-background-50 rounded-2xl border border-outline-200 p-4 gap-2" style={style}>
+      <View className="flex-row items-center gap-2">
         <View
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: br.md,
-            backgroundColor: `${config.color}15`,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          className="w-9 h-9 rounded-xl items-center justify-center"
+          style={{ backgroundColor: `${config.color}15` }}
         >
-          <Icon name={config.icon} size={18} color={config.color} />
+          <Ionicons name={config.icon} size={18} color={config.color} />
         </View>
-        <View style={{ flex: 1 }}>
-          <Text size="sm" weight="medium" numberOfLines={1}>
-            {account.name}
-          </Text>
-          <Text size="xs" style={{ color: '#71717A' }}>
-            {account.type}
-          </Text>
+        <View className="flex-1">
+          <Text className="text-sm font-medium" numberOfLines={1}>{account.name}</Text>
+          <Text className="text-xs text-typography-400">{account.type}</Text>
         </View>
       </View>
-      <Text size="xl" weight="bold">
-        {formatCurrency(account.balance)}
-      </Text>
-    </Card>
+      <Text className="text-xl font-bold">{formatCurrency(account.balance)}</Text>
+    </View>
   );
 });

@@ -1,0 +1,21 @@
+{
+  "insufficientFunds": "Недостатньо коштів. Доступно {{available}} ₽, потрібно {{needed}} ₽",
+  "negativeBalance": "Неможливо переказати з \"{{account}}\" — баланс {{balance}}",
+  "accountNotFound": "Рахунок не знайдено",
+  "categoryNotFound": "Категорію не знайдено",
+  "transactionNotFound": "Транзакцію не знайдено",
+  "sameAccount": "Не можна переказати на той самий рахунок",
+  "unauthorized": "Потрібна авторизація",
+  "forbidden": "Доступ заборонено",
+  "validationError": "Помилка валідації",
+  "internalError": "Внутрішня помилка сервера",
+  "sessionExpired": "Сесія закінчилася. Увійдіть знову.",
+  "budgetNotFound": "Бюджет не знайдено",
+  "goalNotFound": "Ціль не знайдено",
+  "wishlistNotFound": "Бажання не знайдено",
+  "invalidCredentials": "Невірний email або пароль",
+  "emailExists": "Користувач з таким email вже існує",
+  "invalidRefreshToken": "Invalid refresh token",
+  "refreshTokenRevoked": "Refresh token has been revoked. Please log in again.",
+  "refreshTokenExpired": "Refresh token has expired. Please log in again."
+}

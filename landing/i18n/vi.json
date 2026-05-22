@@ -1,0 +1,208 @@
+{
+  "nav": {
+    "download": "Tải Về"
+  },
+  "hero": {
+    "badge": "Cuộc Cách Mạng Tài Chính Cá Nhân",
+    "title1": "Ngừng Đổi",
+    "title2": "Cuộc Đời",
+    "title3": " Lấy Đồ Đạc",
+    "subtitle": "Nhìn thấy mỗi khoản mua sắm bằng giờ cuộc đời bạn. Tiêu diệt mua sắm bốc đồng với Lồng Ươm Mong Muốn 7 ngày. Lấy lại quyền kiểm soát.",
+    "cta": "Tải Miễn Phí",
+    "learn": "Xem Tính Năng",
+    "phone": {
+      "balance": "Số dư",
+      "today": "Hôm nay",
+      "hours": "giờ cuộc đời",
+      "t1": "-$15",
+      "t1cat": "Cà phê",
+      "t2": "-$120",
+      "t2cat": "Tạp hóa",
+      "t3": "-$250",
+      "t3cat": "Mua sắm"
+    }
+  },
+  "lc": {
+    "badge": "Tính Năng Đỉnh Cao",
+    "title": "Giá Thực Sự",
+    "subtitle": "Mỗi mức giá trong ứng dụng được hiển thị hai lần — bằng tiền tệ của bạn và bằng giờ cuộc đời bạn.",
+    "card": {
+      "label": "Mua sắm hôm nay",
+      "item": "PlayStation 5",
+      "hours": "31 giờ cuộc đời bạn",
+      "detail": "Máy chơi game $400 — gần 4 ngày làm việc trọn vẹn. 40% mua sắm bốc đồng bị hối hận. Vẫn đáng chứ?",
+      "coffee": "Latte $5 Hàng Ngày",
+      "coffeeHours": "18 phút/ngày = 110 giờ/năm"
+    },
+    "how": "Cách Hoạt Động",
+    "s1": {
+      "t": "Nhập thu nhập của bạn",
+      "d": "Cho chúng tôi biết lương và giờ làm việc của bạn. Chúng tôi tính mức lương theo giờ thực sự của bạn."
+    },
+    "s2": {
+      "t": "Nhìn thấy sự thật",
+      "d": "Mỗi giao dịch hiển thị giờ cuộc đời. Danh mục, biểu đồ, danh sách mong muốn — ở mọi nơi."
+    },
+    "s3": {
+      "t": "Đưa ra quyết định tốt hơn",
+      "d": "Khi bạn thấy \"40 giờ làm việc\" thay vì \"$600\", quyết định trở nên dễ dàng hơn."
+    }
+  },
+  "ai": {
+    "badge": "Được Mạnh Hóa Bởi AI",
+    "title": "Cố Vấn Tài Chính AI Của Bạn",
+    "subtitle": "AI tích hợp sẵn hiểu mô hình chi tiêu của bạn và đưa ra lời khuyên cá nhân hóa.",
+    "q1": "Tháng này tôi đã chi bao nhiêu cho đồ ăn?",
+    "a1": "Bạn đã chi $280 cho đồ ăn tháng này, chiếm 30% ngân sách. Ít hơn tháng trước $60!",
+    "q2": "Tôi có thể mua guitar $499 không?",
+    "a2": "Guitar $499 tương đương 40 giờ cuộc đời bạn. Bạn còn $1,840 trong ngân sách tháng này.",
+    "f1": {
+      "t": "Phân Tích Thông Minh",
+      "d": "AI phân tích mô hình chi tiêu và xác định nơi bạn có thể tiết kiệm."
+    },
+    "f2": {
+      "t": "Ngôn Ngữ Tự Nhiên",
+      "d": "Đặt câu hỏi bằng ngôn ngữ tự nhiên. Không cần menu phức tạp hay bộ lọc."
+    },
+    "f3": {
+      "t": "Nhập Liệu Bằng Giọng Nói",
+      "d": "Nói giao dịch của bạn. SpendWise hiểu và phân loại chúng."
+    },
+    "f4": {
+      "t": "Quét Hóa Đơn",
+      "d": "Chụp ảnh hóa đơn. AI trích xuất mặt hàng, giá và danh mục."
+    }
+  },
+  "inc": {
+    "badge": "Kẻ Tiêu Diệt Bốc Đồng",
+    "title": "Lồng Ươm Mong Muốn",
+    "subtitle": "Thời gian chờ 7 ngày trước mọi khoản mua. Hầu hết ham muốn đều chết trước ngày thứ 7.",
+    "s1": {
+      "t": "Muốn Cái Gì?",
+      "d": "Thêm vào Lồng Ươm với lý do: \"Tại sao mình cần thứ này?\""
+    },
+    "s2": {
+      "t": "Đóng Băng 7 Ngày",
+      "d": "Nút Mua bị khóa. Xem đồng hồ đếm ngược từng giây."
+    },
+    "s3": {
+      "t": "Vẫn Muốn?",
+      "d": "Ngày thứ 7 — quyết định đi. Mua hoặc tự hào từ chối. Xem bạn đã tiết kiệm được bao nhiêu cuộc đời."
+    },
+    "r": {
+      "t": "Bạn đã nói \"Mình không cần thứ này\"",
+      "d": "Bạn vừa tiết kiệm 40 giờ cuộc đời. Đầu tư ở mức 10%, đó là $2,400 trong 10 năm."
+    }
+  },
+  "an": {
+    "badge": "Phân Tích Thông Minh",
+    "title": "Hiểu Tiền Của Bạn",
+    "subtitle": "Biểu đồ và báo cáo mạnh mẽ tiết lộ câu chuyện tài chính của bạn.",
+    "f1": {
+      "t": "Chi Tiết Chi Tiêu",
+      "d": "$12,480 chi tiêu năm nay — 70% cho nhu cầu, 30% cho mong muốn. Biểu đồ tròn đẹp mắt theo danh mục."
+    },
+    "f2": {
+      "t": "Xu Hướng và Quy luật",
+      "d": "Theo dõi xu hướng chi tiêu qua tuần, tháng và năm. Phát hiện quy luật bạn chưa từng thấy."
+    },
+    "f3": {
+      "t": "Báo Cáo Giờ Cuộc Đời",
+      "d": "Mọi báo cáo đều hiển thị chi phí bằng giờ cuộc đời. Gói đăng ký $67.50/tháng đáng giá 5 giờ cuộc đời bạn."
+    },
+    "f4": {
+      "t": "Theo Dõi Ngân Sách",
+      "d": "Đặt giới hạn theo danh mục. Nhận cảnh báo ở mức 80% và giữ đúng hướng cả tháng."
+    },
+    "f5": {
+      "t": "Phân Tích Thu Nhập",
+      "d": "Theo dõi mọi nguồn thu nhập. Thu nhập $3,200/tháng của bạn, được trực quan hóa. Xem tỷ lệ tiết kiệm."
+    },
+    "f6": {
+      "t": "Xuất và Chia Sẻ",
+      "d": "Xuất báo cáo dưới dạng CSV. Chia sẻ tóm tắt tài chính với đối tác hoặc cố vấn."
+    }
+  },
+  "feat": {
+    "badge": "Bộ Công Cụ Đầy Đủ",
+    "title": "Mọi Thứ Bạn Cần",
+    "subtitle": "Một hệ thống quản lý tài chính hoàn chỉnh, không chỉ là ứng dụng theo dõi chi tiêu.",
+    "f1": {
+      "t": "Nhiều Tài Khoản",
+      "d": "Tiền mặt, ngân hàng, thẻ tín dụng, đầu tư. Theo dõi tất cả tài khoản tại một nơi với hỗ trợ đa tiền tệ."
+    },
+    "f2": {
+      "t": "Danh Mục Thông Minh",
+      "d": "Tự động phân loại chi tiêu với biểu đồ tròn đẹp mắt. Thấy rõ tiền của bạn đi đâu — bằng tiền và giờ cuộc đời."
+    },
+    "f3": {
+      "t": "Giới Hạn Ngân Sách",
+      "d": "Đặt giới hạn hàng tháng theo danh mục. Nhận cảnh báo khi sắp vượt mức. Giữ đúng hướng mà không căng thẳng."
+    },
+    "f4": {
+      "t": "Mục Tiêu & Giấc Mơ",
+      "d": "Đặt mục tiêu tài chính với thời hạn. Theo dõi tiến độ. Thấy bạn ở gần đâu — bằng tiền và giờ cuộc đời."
+    },
+    "f5": {
+      "t": "Trợ Lý AI",
+      "d": "Chat AI tích hợp sẵn cho tư vấn tài chính. Nhập liệu bằng giọng nói cho giao dịch nhanh. Quét hóa đơn bằng AI."
+    },
+    "f6": {
+      "t": "300+ Tiền Tệ",
+      "d": "Tỷ giá thời gian thực cho tiền pháp định, tiền điện tử và kim loại. Chuyển đổi giữa bất kỳ tiền tệ nào ngay lập tức."
+    }
+  },
+  "how": {
+    "badge": "Bắt Đầu",
+    "title": "Sẵn Sàng Trong 2 Phút",
+    "s1": {
+      "t": "Tải Về & Đăng Ký",
+      "d": "Tạo tài khoản hoặc dùng thử ứng dụng đầy đủ trong chế độ demo. Không cần thẻ tín dụng."
+    },
+    "s2": {
+      "t": "Thiết Lập Thu Nhập",
+      "d": "Nhập lương và lịch làm việc — dù là $3,200/tháng hay nhiều hơn. Ứng dụng tự động tính mức lương theo giờ thực sự."
+    },
+    "s3": {
+      "t": "Theo Dõi Mọi Thứ",
+      "d": "Thêm giao dịch thủ công, bằng giọng nói hoặc quét hóa đơn. Ngay cả mua $5 cũng hiện chi phí thực bằng giờ cuộc đời."
+    },
+    "s4": {
+      "t": "Nhìn Cuộc Đời Thay Đổi",
+      "d": "Tiết kiệm $150/tháng từ mua sắm bốc đồng. Tiết kiệm nhiều hơn. Mục tiêu tài chính rõ ràng. Tự do thực sự."
+    }
+  },
+  "prem": {
+    "badge": "Premium",
+    "title": "Mở Khóa Toàn Bộ Tiềm Năng",
+    "subtitle": "Phiên bản miễn phí đã mạnh mẽ. Premium biến nó thành không thể ngăn cản — chỉ $14.99/tháng.",
+    "p1": "Lồng Ươm Mong Muốn không giới hạn với phân tích",
+    "p2": "Cố vấn tài chính AI — chat không giới hạn",
+    "p3": "Quét hóa đơn bằng AI",
+    "p4": "Nhập giao dịch bằng giọng nói",
+    "p5": "Chia sẻ ngân sách gia đình",
+    "p6": "Phân tích và dự báo nâng cao",
+    "cta": "Thử Premium Miễn Phí"
+  },
+  "cta": {
+    "title": "Sẵn Sàng Ngừng Đổi Cuộc Đời Lấy Đồ Đạc?",
+    "subtitle": "Tham gia cùng hàng ngàn người đang kiểm soát tài chính của mình.",
+    "as": "Tải về trên App Store",
+    "gp": "Tải về trên Google Play"
+  },
+  "footer": {
+    "tag": "Đừng đổi cuộc đời lấy đồ đạc.",
+    "product": "Sản Phẩm",
+    "features": "Tính Năng",
+    "premium": "Premium",
+    "download": "Tải Về",
+    "company": "Công Ty",
+    "about": "Về Chúng Tôi",
+    "blog": "Blog",
+    "contact": "Liên Hệ",
+    "legal": "Pháp Lý",
+    "privacy": "Chính Sách Bảo Mật",
+    "terms": "Điều Khoản Sử Dụng",
+    "rights": "Mọi quyền được bảo lưu."
+  }
+}

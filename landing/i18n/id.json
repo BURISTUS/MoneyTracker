@@ -1,0 +1,208 @@
+{
+  "nav": {
+    "download": "Unduh"
+  },
+  "hero": {
+    "badge": "Revolusi Keuangan Pribadi",
+    "title1": "Berhenti Menukar",
+    "title2": "Hidupmu",
+    "title3": " dengan Barang",
+    "subtitle": "Lihat setiap pembelian dalam jam hidupmu. Basmi pembelian impulsif dengan Inkubator Keinginan 7 hari. Ambil kembali kendali.",
+    "cta": "Dapatkan Gratis",
+    "learn": "Lihat Fitur",
+    "phone": {
+      "balance": "Saldo",
+      "today": "Hari ini",
+      "hours": "jam-hidup",
+      "t1": "-$15",
+      "t1cat": "Kopi",
+      "t2": "-$120",
+      "t2cat": "Belanja",
+      "t3": "-$250",
+      "t3cat": "Shopping"
+    }
+  },
+  "lc": {
+    "badge": "Fitur Unggulan",
+    "title": "Harga Asli yang Tersembunyi",
+    "subtitle": "Setiap harga di aplikasi ditampilkan dua kali — dalam mata uangmu dan dalam jam hidupmu.",
+    "card": {
+      "label": "Pembelian hari ini",
+      "item": "PlayStation 5",
+      "hours": "31 jam hidupmu",
+      "detail": "Konsol $400 — hampir 4 hari kerja penuh. 40% pembelian impulsif disesali. Masih worth it?",
+      "coffee": "Latte $5 Harian",
+      "coffeeHours": "18 menit/hari = 110 jam/tahun"
+    },
+    "how": "Cara Kerjanya",
+    "s1": {
+      "t": "Masukkan penghasilanmu",
+      "d": "Beritahu gaji dan jam kerjamu. Kami hitung tarif per jam aslimu."
+    },
+    "s2": {
+      "t": "Lihat kenyataannya",
+      "d": "Setiap transaksi menampilkan jam-hidup. Kategori, grafik, wishlist — di mana saja."
+    },
+    "s3": {
+      "t": "Buat keputusan yang lebih baik",
+      "d": "Saat kamu melihat \"40 jam kerja\" bukan \"$600\", keputusan jadi lebih mudah."
+    }
+  },
+  "ai": {
+    "badge": "Ditenagai AI",
+    "title": "Penasihat Keuangan AI-mu",
+    "subtitle": "AI bawaan yang memahami pola pengeluaranmu dan memberi saran personal.",
+    "q1": "Berapa banyak uang yang kuhabiskan untuk makan bulan ini?",
+    "a1": "Kamu menghabiskan $280 untuk makan bulan ini, itu 30% dari budgetmu. Itu $60 lebih sedikit dari bulan lalu!",
+    "q2": "Bisakah aku beli gitar $499?",
+    "a2": "Gitar $499 setara 40 jam hidupmu. Kamu punya sisa $1,840 di budget bulan ini.",
+    "f1": {
+      "t": "Wawasan Cerdas",
+      "d": "AI menganalisis pola pengeluaranmu dan mengidentifikasi di mana kamu bisa hemat."
+    },
+    "f2": {
+      "t": "Bahasa Alami",
+      "d": "Ajukan pertanyaan dalam bahasa sehari-hari. Tanpa menu rumit atau filter."
+    },
+    "f3": {
+      "t": "Input Suara",
+      "d": "Ucapkan transaksimu. SpendWise mengerti dan mengkategorikannya."
+    },
+    "f4": {
+      "t": "Pindai Struk",
+      "d": "Foto strukmu. AI mengekstrak item, harga, dan kategori."
+    }
+  },
+  "inc": {
+    "badge": "Pembasmi Impulsif",
+    "title": "Inkubator Keinginan",
+    "subtitle": "Masa pendinginan 7 hari sebelum setiap pembelian. Sebagian besar keinginan mati sebelum hari ke-7.",
+    "s1": {
+      "t": "Mau Sesuatu?",
+      "d": "Tambahkan ke Inkubator dengan alasan: \"Kenapa saya butuh ini?\""
+    },
+    "s2": {
+      "t": "Bekukan 7 Hari",
+      "d": "Tombol Beli terkunci. Saksikan hitung mundur berjalan."
+    },
+    "s3": {
+      "t": "Masih Mau?",
+      "d": "Hari ke-7 — putuskan. Beli atau tolak dengan bangga. Lihat berapa banyak hidup yang kamu selamatkan."
+    },
+    "r": {
+      "t": "Kamu bilang \"Saya tidak butuh ini\"",
+      "d": "Kamu baru saja menghemat 40 jam hidupmu. Diinvestasikan dengan 10%, itu setara $2,400 dalam 10 tahun."
+    }
+  },
+  "an": {
+    "badge": "Analitik Cerdas",
+    "title": "Pahami Uangmu",
+    "subtitle": "Grafik dan laporan powerful yang mengungkap kisah keuanganmu.",
+    "f1": {
+      "t": "Rincian Pengeluaran",
+      "d": "$12,480 terpakai tahun ini — 70% untuk kebutuhan, 30% untuk keinginan. Grafik donat cantik per kategori."
+    },
+    "f2": {
+      "t": "Tren dan Pola",
+      "d": "Lacak tren pengeluaran selama berminggu-minggu, berbulan-bulan, dan bertahun-tahun. Temukan pola yang tak pernah kamu perhatikan."
+    },
+    "f3": {
+      "t": "Laporan Jam-Hidup",
+      "d": "Setiap laporan menunjukkan biaya dalam jam-hidup. Langganan $67.50/bulan itu setara 5 jam hidupmu."
+    },
+    "f4": {
+      "t": "Pelacakan Anggaran",
+      "d": "Tetapkan batas per kategori. Dapatkan peringatan di 80% dan tetap on track sepanjang bulan."
+    },
+    "f5": {
+      "t": "Analisis Pendapatan",
+      "d": "Lacak semua sumber pendapatan. Pendapatan $3,200/bulanmu, divisualisasikan. Lihat rasio tabunganmu."
+    },
+    "f6": {
+      "t": "Ekspor & Bagikan",
+      "d": "Ekspor laporan sebagai CSV. Bagikan ringkasan keuangan dengan pasangan atau penasihatmu."
+    }
+  },
+  "feat": {
+    "badge": "Perlengkapan Lengkap",
+    "title": "Semua yang Kamu Butuhkan",
+    "subtitle": "Sistem manajemen keuangan lengkap, bukan sekadar pencatat pengeluaran.",
+    "f1": {
+      "t": "Multi-Akun",
+      "d": "Tunai, bank, kartu kredit, investasi. Lacak semua akunmu di satu tempat dengan dukungan multi-mata uang."
+    },
+    "f2": {
+      "t": "Kategori Cerdas",
+      "d": "Pengeluaran otomatis dikategorikan dengan grafik donat yang indah. Lihat tepat ke mana uangmu pergi — dalam uang dan jam-hidup."
+    },
+    "f3": {
+      "t": "Batas Anggaran",
+      "d": "Tetapkan batas bulanan per kategori. Dapatkan peringatan saat mendekati batas. Tetap on track tanpa stres."
+    },
+    "f4": {
+      "t": "Tujuan & Mimpi",
+      "d": "Tetapkan tujuan keuangan dengan tenggat waktu. Lacak kemajuan. Lihat seberapa dekat kamu — dalam uang dan jam-hidup."
+    },
+    "f5": {
+      "t": "Asisten AI",
+      "d": "Chat AI bawaan untuk saran keuangan. Input suara untuk transaksi cepat. Pindai struk ditenagai AI."
+    },
+    "f6": {
+      "t": "300+ Mata Uang",
+      "d": "Kurs real-time untuk fiat, kripto, dan logam. Konversi antar mata uang apa pun secara instan."
+    }
+  },
+  "how": {
+    "badge": "Mulai Sekarang",
+    "title": "Siap Pakai dalam 2 Menit",
+    "s1": {
+      "t": "Unduh & Daftar",
+      "d": "Buat akun atau coba aplikasi lengkap dalam mode demo. Tanpa perlu kartu kredit."
+    },
+    "s2": {
+      "t": "Atur Penghasilanmu",
+      "d": "Masukkan gaji dan jadwal kerjamu — apakah $3,200/bulan atau lebih. Aplikasi menghitung tarif per jam aslimu otomatis."
+    },
+    "s3": {
+      "t": "Lacak Semuanya",
+      "d": "Tambahkan transaksi secara manual, dengan suara, atau dengan memindai struk. Bahkan pembelian $5 menunjukkan biaya aslinya dalam jam-hidup."
+    },
+    "s4": {
+      "t": "Saksikan Hidupmu Berubah",
+      "d": "Hemat $150/bulan dari belanja impulsif. Lebih banyak tabungan. Tujuan keuangan yang jelas. Kebebasan nyata."
+    }
+  },
+  "prem": {
+    "badge": "Premium",
+    "title": "Buka Potensi Penuhmu",
+    "subtitle": "Versi gratis sudah powerful. Premium membuatnya tak terhenti — cuma $14.99/bulan.",
+    "p1": "Inkubator Keinginan tak terbatas dengan analitik",
+    "p2": "Penasihat keuangan AI — chat tanpa batas",
+    "p3": "Pindai struk dengan AI",
+    "p4": "Input transaksi suara",
+    "p5": "Berbagi anggaran keluarga",
+    "p6": "Analitik & prakiraan lanjutan",
+    "cta": "Coba Premium Gratis"
+  },
+  "cta": {
+    "title": "Siap Berhenti Menukar Hidup dengan Barang?",
+    "subtitle": "Bergabunglah dengan ribuan orang yang mengendalikan keuangan mereka.",
+    "as": "Unduh di App Store",
+    "gp": "Dapatkan di Google Play"
+  },
+  "footer": {
+    "tag": "Jangan tukar hidupmu dengan barang.",
+    "product": "Produk",
+    "features": "Fitur",
+    "premium": "Premium",
+    "download": "Unduh",
+    "company": "Perusahaan",
+    "about": "Tentang",
+    "blog": "Blog",
+    "contact": "Kontak",
+    "legal": "Legal",
+    "privacy": "Kebijakan Privasi",
+    "terms": "Ketentuan Layanan",
+    "rights": "Hak cipta dilindungi."
+  }
+}

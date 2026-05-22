@@ -1,0 +1,208 @@
+{
+  "nav": {
+    "download": "Descargar"
+  },
+  "hero": {
+    "badge": "Revolución en Finanzas Personales",
+    "title1": "Deja de Cambiar",
+    "title2": "Tu Vida",
+    "title3": " por Cosas",
+    "subtitle": "Ve cada compra en horas de tu vida. Elimina las compras impulsivas con el Incubador de Deseos de 7 días. Recupera el control.",
+    "cta": "Consíguelo Gratis",
+    "learn": "Ver Funciones",
+    "phone": {
+      "balance": "Saldo",
+      "today": "Hoy",
+      "hours": "horas-vida",
+      "t1": "-$15",
+      "t1cat": "Café",
+      "t2": "-$120",
+      "t2cat": "Comestibles",
+      "t3": "-$250",
+      "t3cat": "Compras"
+    }
+  },
+  "lc": {
+    "badge": "Función Estrella",
+    "title": "El Precio Real",
+    "subtitle": "Cada precio en la app se muestra dos veces: en tu moneda y en horas de tu vida.",
+    "card": {
+      "label": "Compra de hoy",
+      "item": "PlayStation 5",
+      "hours": "31 horas de tu vida",
+      "detail": "Una consola de $400 — casi 4 días completos de trabajo. El 40% de las compras impulsivas se lamentan. ¿Todavía vale la pena?",
+      "coffee": "Latte Diario de $5",
+      "coffeeHours": "18 min/día = 110 hrs/año"
+    },
+    "how": "Cómo Funciona",
+    "s1": {
+      "t": "Ingresa tus ingresos",
+      "d": "Dinos tu salario y horas de trabajo. Calculamos tu tarifa horaria real."
+    },
+    "s2": {
+      "t": "Ve la verdad",
+      "d": "Cada transacción muestra horas de vida. Categorías, gráficos, lista de deseos — en todas partes."
+    },
+    "s3": {
+      "t": "Toma mejores decisiones",
+      "d": "Cuando ves \"40 horas de trabajo\" en lugar de \"$600\", las decisiones se vuelven más fáciles."
+    }
+  },
+  "ai": {
+    "badge": "Impulsado por IA",
+    "title": "Tu Asesor Financiero con IA",
+    "subtitle": "IA integrada que comprende tus patrones de gasto y ofrece consejos personalizados.",
+    "q1": "¿Cuánto gasté en comida este mes?",
+    "a1": "Has gastado $280 en comida este mes, que es el 30% de tu presupuesto. ¡Eso es $60 menos que el mes pasado!",
+    "q2": "¿Puedo permitirme una guitarra de $499?",
+    "a2": "Una guitarra de $499 cuesta 40 horas de tu vida. Te quedan $1,840 en tu presupuesto este mes.",
+    "f1": {
+      "t": "Análisis Inteligente",
+      "d": "La IA analiza tus patrones de gasto e identifica dónde puedes ahorrar."
+    },
+    "f2": {
+      "t": "Lenguaje Natural",
+      "d": "Haz preguntas en lenguaje natural. Sin menús complicados ni filtros."
+    },
+    "f3": {
+      "t": "Entrada de Voz",
+      "d": "Habla tus transacciones. SpendWise las entiende y categoriza."
+    },
+    "f4": {
+      "t": "Escaneo de Recibos",
+      "d": "Toma una foto de tu recibo. La IA extrae artículos, precios y categorías."
+    }
+  },
+  "inc": {
+    "badge": "Eliminador de Impulsos",
+    "title": "El Incubador de Deseos",
+    "subtitle": "7 días de espera antes de cualquier compra. La mayoría de los deseos mueren antes del día 7.",
+    "s1": {
+      "t": "¿Quieres algo?",
+      "d": "Añádelo al Incubador con una razón: \"¿Por qué necesito esto?\""
+    },
+    "s2": {
+      "t": "Congélate 7 Días",
+      "d": "El botón de Comprar está bloqueado. Mira cómo la cuenta regresiva avanza."
+    },
+    "s3": {
+      "t": "¿Todavía lo quieres?",
+      "d": "Día 7 — decide. Cómpralo o recházalo con orgullo. Ve cuánta vida ahorraste."
+    },
+    "r": {
+      "t": "Dijiste \"No necesito esto\"",
+      "d": "Acabas de ahorrar 40 horas de tu vida. Invertido al 10%, eso son $2,400 en 10 años."
+    }
+  },
+  "an": {
+    "badge": "Análisis Inteligente",
+    "title": "Entiende tu Dinero",
+    "subtitle": "Gráficos e informes potentes que revelan tu historia financiera.",
+    "f1": {
+      "t": "Desglose de Gastos",
+      "d": "$12,480 gastados este año — 70% en necesidades, 30% en caprichos. Hermosos gráficos de dona por categoría."
+    },
+    "f2": {
+      "t": "Tendencias y Patrones",
+      "d": "Sigue las tendencias de gasto durante semanas, meses y años. Descubre patrones que nunca notaste."
+    },
+    "f3": {
+      "t": "Informes en Horas de Vida",
+      "d": "Cada informe muestra costos en horas de vida. Esa suscripción de $67.50/mes cuesta 5 horas de tu vida."
+    },
+    "f4": {
+      "t": "Seguimiento de Presupuesto",
+      "d": "Establece límites por categoría. Recibe alertas al 80% y mantente en camino todo el mes."
+    },
+    "f5": {
+      "t": "Análisis de Ingresos",
+      "d": "Rastrea todas tus fuentes de ingresos. Tus $3,200 de ingreso mensual, visualizados. Ve tu tasa de ahorro."
+    },
+    "f6": {
+      "t": "Exportar y Compartir",
+      "d": "Exporta informes como CSV. Comparte resúmenes financieros con tu pareja o asesor."
+    }
+  },
+  "feat": {
+    "badge": "Kit Completo",
+    "title": "Todo lo que Necesitas",
+    "subtitle": "Un sistema completo de gestión financiera, no solo un rastreador de gastos.",
+    "f1": {
+      "t": "Multicuenta",
+      "d": "Efectivo, banco, tarjetas de crédito, inversiones. Rastrea todas tus cuentas en un solo lugar con soporte multidivisa."
+    },
+    "f2": {
+      "t": "Categorías Inteligentes",
+      "d": "Gastos auto-categorizados con hermosos gráficos de dona. Ve exactamente a dónde va tu dinero — en dinero y horas de vida."
+    },
+    "f3": {
+      "t": "Límites de Presupuesto",
+      "d": "Establece límites mensuales por categoría. Recibe alertas cuando estés cerca del límite. Mantente en camino sin estrés."
+    },
+    "f4": {
+      "t": "Metas y Sueños",
+      "d": "Establece metas financieras con plazos. Rastrea el progreso. Ve qué tan cerca estás — en dinero y horas de vida."
+    },
+    "f5": {
+      "t": "Asistente IA",
+      "d": "Chat IA integrado para consejos financieros. Entrada de voz para transacciones rápidas. Escaneo de recibos con IA."
+    },
+    "f6": {
+      "t": "300+ Monedas",
+      "d": "Tipos de cambio en tiempo real para monedas fiat, criptomonedas y metales. Convierte entre cualquier moneda al instante."
+    }
+  },
+  "how": {
+    "badge": "Comienza Ahora",
+    "title": "Listo en 2 Minutos",
+    "s1": {
+      "t": "Descarga y Regístrate",
+      "d": "Crea una cuenta o prueba la app completa en modo demo. No necesitas tarjeta de crédito."
+    },
+    "s2": {
+      "t": "Configura tus Ingresos",
+      "d": "Ingresa tu salario y horario de trabajo — sean $3,200/mes o más. La app calcula tu tarifa horaria real."
+    },
+    "s3": {
+      "t": "Rastrea Todo",
+      "d": "Añade transacciones manualmente, con voz o escaneando recibos. Incluso una compra de $5 muestra su costo real en horas de vida."
+    },
+    "s4": {
+      "t": "Mira cómo Cambia tu Vida",
+      "d": "Ahorra $150/mes en compras impulsivas. Más ahorros. Metas financieras claras. Libertad real."
+    }
+  },
+  "prem": {
+    "badge": "Premium",
+    "title": "Desbloquea Todo tu Potencial",
+    "subtitle": "La versión gratis es poderosa. Premium la hace imparable — solo $14.99/mes.",
+    "p1": "Incubador de Deseos ilimitado con analíticas",
+    "p2": "Asesor financiero con IA — chat ilimitado",
+    "p3": "Escaneo de recibos con IA",
+    "p4": "Entrada de transacciones por voz",
+    "p5": "Presupuesto familiar compartido",
+    "p6": "Analíticas avanzadas y pronósticos",
+    "cta": "Prueba Premium Gratis"
+  },
+  "cta": {
+    "title": "¿Listo para Dejar de Cambiar tu Vida por Cosas?",
+    "subtitle": "Únete a miles de personas que toman el control de sus finanzas.",
+    "as": "Descargar en el App Store",
+    "gp": "Disponible en Google Play"
+  },
+  "footer": {
+    "tag": "No cambies tu vida por cosas.",
+    "product": "Producto",
+    "features": "Funciones",
+    "premium": "Premium",
+    "download": "Descargar",
+    "company": "Empresa",
+    "about": "Acerca de",
+    "blog": "Blog",
+    "contact": "Contacto",
+    "legal": "Legal",
+    "privacy": "Política de Privacidad",
+    "terms": "Términos de Servicio",
+    "rights": "Todos los derechos reservados."
+  }
+}

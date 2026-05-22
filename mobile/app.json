@@ -5,22 +5,30 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "scheme": "moneytracker",
     "newArchEnabled": true,
     "android": {
       "jsEngine": "jsc",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#007AFF"
       },
       "package": "com.escape.moneytracker",
-      "permissions": ["RECEIVE_NOTIFICATIONS"]
+      "permissions": [
+        "RECEIVE_NOTIFICATIONS",
+        "RECORD_AUDIO"
+      ]
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.escape.moneytracker",
       "infoPlist": {
-        "CFBundleDisplayName": "Money Tracker"
+        "CFBundleDisplayName": "Money Tracker",
+        "NSSpeechRecognitionUsageDescription": "Allow Money Tracker to use speech recognition for voice input of transactions.",
+        "NSMicrophoneUsageDescription": "Allow Money Tracker to use the microphone for voice input of transactions."
       }
     },
     "web": {
@@ -29,7 +37,8 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      "expo-speech-recognition"
     ]
   }
 }

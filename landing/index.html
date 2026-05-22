@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpendWise — Financial Tracker</title>
+  <meta name="description" content="AI-powered financial tracker. See every purchase in hours of your life. Fight impulse buying with the 7-day Wish Incubator.">
+  <meta name="theme-color" content="#0A0A0F">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand">
+        <div class="nav-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <span class="nav-title">SpendWise</span>
+      </a>
+      <div class="nav-actions">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <div class="lang-wrap" id="langWrap">
+          <button class="lang-btn" id="langBtn">
+            <span id="langFlag">🇺🇸</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          <div class="lang-menu" id="langMenu">
+            <button data-lang="en" class="active">🇺🇸 English</button>
+            <button data-lang="ru">🇷🇺 Русский</button>
+            <button data-lang="es">🇪🇸 Español</button>
+            <button data-lang="pt">🇧🇷 Português</button>
+            <button data-lang="fr">🇫🇷 Français</button>
+            <button data-lang="de">🇩🇪 Deutsch</button>
+            <button data-lang="ja">🇯🇵 日本語</button>
+            <button data-lang="zh">🇨🇳 中文</button>
+            <button data-lang="ko">🇰🇷 한국어</button>
+            <button data-lang="ar">🇸🇦 العربية</button>
+            <button data-lang="hi">🇮🇳 हिन्दी</button>
+            <button data-lang="it">🇮🇹 Italiano</button>
+            <button data-lang="nl">🇳🇱 Nederlands</button>
+            <button data-lang="pl">🇵🇱 Polski</button>
+            <button data-lang="tr">🇹🇷 Türkçe</button>
+            <button data-lang="uk">🇺🇦 Українська</button>
+            <button data-lang="th">🇹🇭 ไทย</button>
+            <button data-lang="vi">🇻🇳 Tiếng Việt</button>
+            <button data-lang="id">🇮🇩 Indonesia</button>
+            <button data-lang="bn">🇧🇩 বাংলা</button>
+          </div>
+        </div>
+        <a href="#download" class="btn btn-primary" data-i18n="nav.download">Download</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="hero-grid">
+          <div class="hero-text">
+            <div class="hero-tag" data-i18n="hero.badge">Financial Tracker</div>
+            <h1 class="hero-title">
+              <span data-i18n="hero.title1">Stop trading</span><br>
+              <span class="accent" data-i18n="hero.title2">your life</span>
+              <span data-i18n="hero.title3"> for stuff</span>
+            </h1>
+            <p class="hero-desc" data-i18n="hero.subtitle">AI financial advisor in your pocket. Every purchase in hours of your life. Kill impulse buying with the 7-day Wish Incubator.</p>
+            <div class="hero-btns">
+              <a href="#download" class="btn btn-primary btn-lg" data-i18n="hero.cta">Get It Free</a>
+              <a href="#ai" class="btn btn-secondary btn-lg" data-i18n="hero.learn">Meet Your AI</a>
+            </div>
+          </div>
+          <div class="hero-phone">
+            <div class="phone">
+              <div class="phone-status">
+                <span>9:41</span>
+                <div class="phone-notch"></div>
+                <span>100%</span>
+              </div>
+              <div class="phone-body">
+                <div class="phone-card phone-balance">
+                  <span class="phone-label" data-i18n="hero.phone.balance">Total Balance</span>
+                  <span class="phone-amount">$12,480</span>
+                  <div class="phone-row">
+                    <div class="phone-chip phone-chip-green">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                      <span>$3,200</span>
+                    </div>
+                    <div class="phone-chip phone-chip-red">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                      <span>$1,840</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="phone-card phone-life">
+                  <span class="phone-life-label" data-i18n="hero.phone.today">Today's spending</span>
+                  <div class="phone-life-value">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    <span>3.5h</span>
+                  </div>
+                  <span class="phone-life-detail" data-i18n="hero.phone.hours">of your life today</span>
+                </div>
+                <div class="phone-transactions">
+                  <div class="phone-tx">
+                    <div class="phone-tx-icon" style="background:rgba(251,149,84,0.12);color:#FB9554">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </div>
+                    <div class="phone-tx-info">
+                      <span class="phone-tx-name" data-i18n="hero.phone.t1">Notifications</span>
+                      <span class="phone-tx-cat" data-i18n="hero.phone.t1cat">Subscriptions</span>
+                    </div>
+                    <span class="phone-tx-amount phone-tx-expense">-$14.99</span>
+                  </div>
+                  <div class="phone-tx">
+                    <div class="phone-tx-icon" style="background:rgba(52,199,89,0.1);color:#34C759">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    </div>
+                    <div class="phone-tx-info">
+                      <span class="phone-tx-name" data-i18n="hero.phone.t2">Salary</span>
+                      <span class="phone-tx-cat" data-i18n="hero.phone.t2cat">Income</span>
+                    </div>
+                    <span class="phone-tx-amount phone-tx-income">+$3,200</span>
+                  </div>
+                  <div class="phone-tx">
+                    <div class="phone-tx-icon" style="background:rgba(99,102,241,0.1);color:#6366F1">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18"/></svg>
+                    </div>
+                    <div class="phone-tx-info">
+                      <span class="phone-tx-name" data-i18n="hero.phone.t3">Groceries</span>
+                      <span class="phone-tx-cat" data-i18n="hero.phone.t3cat">Food</span>
+                    </div>
+                    <span class="phone-tx-amount phone-tx-expense">-$67.50</span>
+                  </div>
+                </div>
+              </div>
+              <div class="phone-tabbar">
+                <div class="phone-tab active">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/></svg>
+                </div>
+                <div class="phone-tab">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+                </div>
+                <div class="phone-tab">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                </div>
+                <div class="phone-tab">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                </div>
+                <div class="phone-tab">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="lifecost">
+      <div class="container">
+        <div class="section-header">
+          <div class="tag tag-primary" data-i18n="lc.badge">Killer Feature</div>
+          <h2 class="section-title" data-i18n="lc.title">The Real Price Tag</h2>
+          <p class="section-desc" data-i18n="lc.subtitle">Every price shown twice — in your currency and in hours of your life.</p>
+        </div>
+        <div class="lc-layout">
+          <div class="lc-cards">
+            <div class="lc-card">
+              <div class="lc-card-top">
+                <span class="lc-card-tag" data-i18n="lc.card.label">Today's purchase</span>
+              </div>
+              <div class="lc-card-body">
+                <div class="lc-item">
+                  <span class="lc-item-emoji">&#127918;</span>
+                  <div>
+                    <div class="lc-item-name" data-i18n="lc.card.item">PlayStation 5</div>
+                    <div class="lc-item-price">$499</div>
+                  </div>
+                </div>
+                <div class="lc-divider"></div>
+                <div class="lc-hours">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                  <span class="lc-hours-value" data-i18n="lc.card.hours">31h of your life</span>
+                </div>
+                <div class="lc-note" data-i18n="lc.card.detail">Almost 4 full work days. Still worth it?</div>
+              </div>
+            </div>
+            <div class="lc-card lc-card-sm">
+              <div class="lc-item">
+                <span class="lc-item-emoji">&#9749;</span>
+                <div>
+                  <div class="lc-item-name" data-i18n="lc.card.coffee">Daily Latte</div>
+                  <div class="lc-item-price">$5</div>
+                </div>
+              </div>
+              <div class="lc-hours lc-hours-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <span data-i18n="lc.card.coffeeHours">18 min/day = 110 hrs/year</span>
+              </div>
+            </div>
+          </div>
+          <div class="lc-steps">
+            <h3 data-i18n="lc.how">How It Works</h3>
+            <div class="lc-step">
+              <div class="lc-step-n">1</div>
+              <div>
+                <strong data-i18n="lc.s1.t">Enter your income</strong>
+                <p data-i18n="lc.s1.d">Salary + work hours → real hourly rate calculated automatically.</p>
+              </div>
+            </div>
+            <div class="lc-step">
+              <div class="lc-step-n">2</div>
+              <div>
+                <strong data-i18n="lc.s2.t">See the truth</strong>
+                <p data-i18n="lc.s2.d">Every transaction shows life-hours. Categories, charts, wishlist — everywhere.</p>
+              </div>
+            </div>
+            <div class="lc-step">
+              <div class="lc-step-n">3</div>
+              <div>
+                <strong data-i18n="lc.s3.t">Make better choices</strong>
+                <p data-i18n="lc.s3.d">"40 hours of work" hits different from "$600". Decisions get easier.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="ai">
+      <div class="container">
+        <div class="section-header">
+          <div class="tag tag-cyan" data-i18n="ai.badge">AI-Powered</div>
+          <h2 class="section-title" data-i18n="ai.title">Your Personal Financial Advisor</h2>
+          <p class="section-desc" data-i18n="ai.subtitle">Built-in AI that knows your spending habits, answers questions, and helps you make smarter decisions — 24/7.</p>
+        </div>
+        <div class="ai-grid">
+          <div class="ai-chat">
+            <div class="ai-msg ai-msg-user">
+              <div class="ai-bubble ai-bubble-user" data-i18n="ai.q1">I spent $400 on dining out this month. Is that too much?</div>
+            </div>
+            <div class="ai-msg ai-msg-bot">
+              <div class="ai-avatar">AI</div>
+              <div class="ai-bubble ai-bubble-bot" data-i18n="ai.a1">That's 25 hours of your life on restaurants. Your dining budget was $250 — you're $150 over. Last month you spent $280. Trend is going up. Want tips to cut back?</div>
+            </div>
+            <div class="ai-msg ai-msg-user">
+              <div class="ai-bubble ai-bubble-user" data-i18n="ai.q2">Yes, what can I do?</div>
+            </div>
+            <div class="ai-msg ai-msg-bot">
+              <div class="ai-avatar">AI</div>
+              <div class="ai-bubble ai-bubble-bot" data-i18n="ai.a2">3 quick tips: 1) Meal prep on Sundays — saves ~$120/month. 2) Set a $60/week dining limit — I'll track it. 3) Use the Incubator for restaurant cravings — 70% of urges pass in 7 days.</div>
+            </div>
+          </div>
+          <div class="ai-features">
+            <div class="ai-feat">
+              <div class="ai-feat-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="ai.f1.t">Smart Chat</strong>
+                <p data-i18n="ai.f1.d">Ask anything about your finances. AI analyzes your real data and gives personalized advice.</p>
+              </div>
+            </div>
+            <div class="ai-feat">
+              <div class="ai-feat-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="ai.f2.t">Voice Input</strong>
+                <p data-i18n="ai.f2.d">Say "Spent 15 bucks on coffee" — AI parses amount, category, and creates the transaction.</p>
+              </div>
+            </div>
+            <div class="ai-feat">
+              <div class="ai-feat-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="ai.f3.t">Receipt Scanner</strong>
+                <p data-i18n="ai.f3.d">Snap a photo of your receipt. AI reads items, amounts, dates — creates transactions automatically.</p>
+              </div>
+            </div>
+            <div class="ai-feat">
+              <div class="ai-feat-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="ai.f4.t">Spending Insights</strong>
+                <p data-i18n="ai.f4.d">AI spots patterns you miss: "You spend 40% more on weekends" or "Subscription costs doubled in 3 months."</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="incubator">
+      <div class="container">
+        <div class="section-header">
+          <div class="tag tag-orange" data-i18n="inc.badge">Impulse Killer</div>
+          <h2 class="section-title" data-i18n="inc.title">The Wish Incubator</h2>
+          <p class="section-desc" data-i18n="inc.subtitle">7-day cooling period. Most desires die before day 7.</p>
+        </div>
+        <div class="inc-flow">
+          <div class="inc-step">
+            <div class="inc-icon inc-icon-pink">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </div>
+            <span class="inc-num">01</span>
+            <h3 data-i18n="inc.s1.t">Want Something?</h3>
+            <p data-i18n="inc.s1.d">Add it with a reason: "Why do I need this?"</p>
+          </div>
+          <div class="inc-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="inc-step">
+            <div class="inc-icon inc-icon-indigo">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <span class="inc-num">02</span>
+            <h3 data-i18n="inc.s2.t">Freeze for 7 Days</h3>
+            <p data-i18n="inc.s2.d">Buy button locked. Countdown timer ticking.</p>
+          </div>
+          <div class="inc-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="inc-step">
+            <div class="inc-icon inc-icon-green">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <span class="inc-num">03</span>
+            <h3 data-i18n="inc.s3.t">Still Want It?</h3>
+            <p data-i18n="inc.s3.d">Decide on day 7. Buy or proudly reject.</p>
+          </div>
+        </div>
+        <div class="inc-reward">
+          <div class="inc-reward-inner">
+            <span class="inc-reward-emoji">&#127881;</span>
+            <div>
+              <strong data-i18n="inc.r.t">"I don't need this"</strong>
+              <p data-i18n="inc.r.d">You saved 40 hours of your life. Invested at 10% → $2,400 in 10 years.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="analytics">
+      <div class="container">
+        <div class="section-header">
+          <div class="tag tag-green" data-i18n="an.badge">Deep Analytics</div>
+          <h2 class="section-title" data-i18n="an.title">Know Where Every Cent Goes</h2>
+          <p class="section-desc" data-i18n="an.subtitle">Detailed breakdowns, trends, category insights — all visualized in beautiful charts.</p>
+        </div>
+        <div class="an-grid">
+          <div class="an-card">
+            <div class="an-icon an-icon-chart">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 112 12"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>
+            </div>
+            <h3 data-i18n="an.f1.t">Donut Charts</h3>
+            <p data-i18n="an.f1.d">Beautiful donut charts per period — day, week, month, year. Tap any category for life-hours breakdown.</p>
+          </div>
+          <div class="an-card">
+            <div class="an-icon an-icon-trend">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <h3 data-i18n="an.f2.t">Trend Analysis</h3>
+            <p data-i18n="an.f2.d">Compare spending across months. See which categories grow, which shrink. Spot patterns before they become problems.</p>
+          </div>
+          <div class="an-card">
+            <div class="an-icon an-icon-cat">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </div>
+            <h3 data-i18n="an.f3.t">Category Insights</h3>
+            <p data-i18n="an.f3.d">Drill into any category. See top merchants, average transaction, life-hours cost, and month-over-month changes.</p>
+          </div>
+          <div class="an-card">
+            <div class="an-icon an-icon-period">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <h3 data-i18n="an.f4.t">Period Navigation</h3>
+            <p data-i18n="an.f4.d">Swipe through days, weeks, months, years. Full calendar date range picker for custom periods.</p>
+          </div>
+          <div class="an-card">
+            <div class="an-icon an-icon-budget">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            </div>
+            <h3 data-i18n="an.f5.t">Budget Tracking</h3>
+            <p data-i18n="an.f5.d">Set limits per category with color-coded progress bars. Get warnings at 80%. See remaining budget in real-time while adding transactions.</p>
+          </div>
+          <div class="an-card">
+            <div class="an-icon an-icon-export">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            </div>
+            <h3 data-i18n="an.f6.t">Data Export</h3>
+            <p data-i18n="an.f6.d">Export transactions to CSV with one tap. Full data portability — your data is yours.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-header">
+          <div class="tag tag-primary" data-i18n="feat.badge">Full Toolkit</div>
+          <h2 class="section-title" data-i18n="feat.title">Everything You Need</h2>
+          <p class="section-desc" data-i18n="feat.subtitle">A complete financial system, not just an expense tracker.</p>
+        </div>
+        <div class="features">
+          <div class="feat-card">
+            <div class="feat-icon feat-blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+            <h3 data-i18n="feat.f1.t">Multi-Account</h3>
+            <p data-i18n="feat.f1.d">Cash, bank, cards, investments, debts. All in one place with multi-currency support and auto-balance updates.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon feat-green"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 112 12M22 12A10 10 0 0012 2v10z"/></svg></div>
+            <h3 data-i18n="feat.f2.t">Smart Categories</h3>
+            <p data-i18n="feat.f2.d">16 built-in categories with custom icons and colors. Create your own. Donut charts show spending in money and life-hours.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon feat-orange"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></div>
+            <h3 data-i18n="feat.f3.t">Transfers</h3>
+            <p data-i18n="feat.f3.d">Move money between accounts with auto-conversion. Cash to card, USD to EUR — all tracked instantly.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon feat-purple"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
+            <h3 data-i18n="feat.f4.t">300+ Currencies</h3>
+            <p data-i18n="feat.f4.d">Real-time rates for fiat, crypto, and precious metals. Convert anything instantly. Works offline with cached rates.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon feat-cyan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+            <h3 data-i18n="feat.f5.t">Biometric Lock</h3>
+            <p data-i18n="feat.f5.d">Fingerprint, Face ID, or PIN code. Your financial data stays private — auto-locks after 30 seconds in background.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon feat-amber"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <h3 data-i18n="feat.f6.t">Demo Mode</h3>
+            <p data-i18n="feat.f6.d">Try the full app instantly — no sign-up needed. Explore all features with sample data before creating an account.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="how">
+      <div class="container">
+        <div class="section-header">
+          <div class="tag tag-green" data-i18n="how.badge">Get Started</div>
+          <h2 class="section-title" data-i18n="how.title">Ready in 2 Minutes</h2>
+        </div>
+        <div class="how-steps">
+          <div class="how-card">
+            <div class="how-n">1</div>
+            <h3 data-i18n="how.s1.t">Download & Sign Up</h3>
+            <p data-i18n="how.s1.d">Create an account or try demo mode. No credit card needed.</p>
+          </div>
+          <div class="how-card">
+            <div class="how-n">2</div>
+            <h3 data-i18n="how.s2.t">Set Your Income</h3>
+            <p data-i18n="how.s2.d">Enter salary and work hours. Hourly rate calculated automatically.</p>
+          </div>
+          <div class="how-card">
+            <div class="how-n">3</div>
+            <h3 data-i18n="how.s3.t">Track Everything</h3>
+            <p data-i18n="how.s3.d">Add transactions manually, by voice, or scan receipts. Life-hours everywhere.</p>
+          </div>
+          <div class="how-card">
+            <div class="how-n">4</div>
+            <h3 data-i18n="how.s4.t">Watch Your Life Change</h3>
+            <p data-i18n="how.s4.d">Fewer impulse buys. More savings. AI-powered insights. Real freedom.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="premium">
+      <div class="container">
+        <div class="prem-card">
+          <div class="section-header">
+            <div class="tag tag-amber" data-i18n="prem.badge">Premium</div>
+            <h2 class="section-title" data-i18n="prem.title">Unlock Full Potential</h2>
+            <p class="section-desc" data-i18n="prem.subtitle">Free is powerful. Premium makes it unstoppable.</p>
+          </div>
+          <div class="prem-list">
+            <div class="prem-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="prem.p1">Unlimited Wish Incubator with analytics</span></div>
+            <div class="prem-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="prem.p2">AI financial advisor — unlimited chat</span></div>
+            <div class="prem-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="prem.p3">Receipt scanning with AI</span></div>
+            <div class="prem-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="prem.p4">Voice transaction input</span></div>
+            <div class="prem-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="prem.p5">Family budget sharing</span></div>
+            <div class="prem-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="prem.p6">Advanced analytics & forecasts</span></div>
+          </div>
+          <a href="#download" class="btn btn-premium btn-lg" data-i18n="prem.cta">Try Premium Free</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta-section" id="download">
+      <div class="container">
+        <div class="cta-inner">
+          <h2 data-i18n="cta.title">Ready to take back control?</h2>
+          <p data-i18n="cta.subtitle">Join thousands of people taking control of their finances.</p>
+          <div class="cta-btns">
+            <a href="#" class="store-btn">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+              <div><small data-i18n="cta.as">Download on the</small><strong>App Store</strong></div>
+            </a>
+            <a href="#" class="store-btn">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 010 1.38l-2.302 2.302L15.4 12l2.298-2.492zM5.864 2.658L16.8 9.29l-2.302 2.302L5.864 2.658z"/></svg>
+              <div><small data-i18n="cta.gp">Get it on</small><strong>Google Play</strong></div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="nav-brand">
+            <div class="nav-logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+            <span class="nav-title">SpendWise</span>
+          </div>
+          <p data-i18n="footer.tag">Don't trade your life for stuff.</p>
+        </div>
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h4 data-i18n="footer.product">Product</h4>
+            <a href="#features" data-i18n="footer.features">Features</a>
+            <a href="#premium" data-i18n="footer.premium">Premium</a>
+            <a href="#download" data-i18n="footer.download">Download</a>
+          </div>
+          <div class="footer-col">
+            <h4 data-i18n="footer.company">Company</h4>
+            <a href="#" data-i18n="footer.about">About</a>
+            <a href="#" data-i18n="footer.blog">Blog</a>
+            <a href="#" data-i18n="footer.contact">Contact</a>
+          </div>
+          <div class="footer-col">
+            <h4 data-i18n="footer.legal">Legal</h4>
+            <a href="#" data-i18n="footer.privacy">Privacy Policy</a>
+            <a href="#" data-i18n="footer.terms">Terms of Service</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 SpendWise. <span data-i18n="footer.rights">All rights reserved.</span></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

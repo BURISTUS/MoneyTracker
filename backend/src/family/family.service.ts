@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AppException } from '../common/app-exception';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -7,8 +8,11 @@ export class FamilyService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, name: string) {
-    const inviteCode = crypto.randomBytes(6).toString('hex').toUpperCase();
-    
+    const inviteCode = crypto
+      .randomBytes(6)
+      .toString('hex')
+      .toUpperCase();
+
     const family = await this.prisma.family.create({
       data: {
         name,
@@ -32,7 +36,7 @@ export class FamilyService {
     });
 
     if (!family) {
-      throw new NotFoundException('Family not found');
+      throw new AppException('errors.familyNotFound', 404);
     }
 
     const existingMember = await this.prisma.familyMember.findUnique({
@@ -40,7 +44,7 @@ export class FamilyService {
     });
 
     if (existingMember) {
-      throw new BadRequestException('User already in a family');
+      throw new AppException('errors.alreadyInFamily', 400);
     }
 
     return this.prisma.familyMember.create({
@@ -55,7 +59,9 @@ export class FamilyService {
   async getMyFamily(userId: string) {
     const member = await this.prisma.familyMember.findUnique({
       where: { userId },
-      include: { family: { include: { members: { include: { user: true } } } } },
+      include: {
+        family: { include: { members: { include: { user: true } } } },
+      },
     });
 
     return member?.family;
@@ -67,7 +73,7 @@ export class FamilyService {
     });
 
     if (!member) {
-      throw new NotFoundException('User not in a family');
+      throw new AppException('errors.notInFamily', 404);
     }
 
     return this.prisma.familyMember.findMany({
@@ -82,16 +88,15 @@ export class FamilyService {
     });
 
     if (!member) {
-      throw new NotFoundException('User not in a family');
+      throw new AppException('errors.notInFamily', 404);
     }
 
-    // Get all transactions of family members
     const familyMembers = await this.prisma.familyMember.findMany({
       where: { familyId: member.familyId },
       select: { userId: true },
     });
 
-    const userIds = familyMembers.map(m => m.userId);
+    const userIds = familyMembers.map((m) => m.userId);
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -104,9 +109,8 @@ export class FamilyService {
       include: { category: true },
     });
 
-    // Group by user
-    const userSpending = familyMembers.map(fm => {
-      const userTx = transactions.filter(t => t.userId === fm.userId);
+    const userSpending = familyMembers.map((fm) => {
+      const userTx = transactions.filter((t) => t.userId === fm.userId);
       const total = userTx.reduce((sum, t) => sum + Number(t.amount), 0);
       return {
         userId: fm.userId,
@@ -116,7 +120,8 @@ export class FamilyService {
     });
 
     return {
-      totalSpent: transactions.reduce((sum, t) => sum + Number(t.amount), 0) / 100,
+      totalSpent:
+        transactions.reduce((sum, t) => sum + Number(t.amount), 0) / 100,
       memberSpending: userSpending,
       startOfMonth: startOfMonth.toISOString(),
     };

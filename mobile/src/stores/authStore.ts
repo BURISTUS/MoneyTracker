@@ -2,12 +2,13 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
 import authService from '../services/auth';
-import type { User, UserGamification, GamificationStatus } from '../types';
+import i18n from '../i18n';
+import type { User, UserGamification } from '../types';
 
 const MOCK_USER: User = {
   id: 'mock-user-123',
   email: 'mock@user.com',
-  name: 'Тестовый Пользователь',
+  name: i18n.t('common.defaultUser'),
   hourlyRate: 50000,
   monthlyHours: 160,
   createdAt: new Date().toISOString(),
@@ -17,10 +18,6 @@ const MOCK_USER: User = {
 const MOCK_GAMIFICATION: UserGamification = {
   id: 'mock-gamification-123',
   userId: MOCK_USER.id,
-  xp: 1250,
-  level: 5,
-  savedAmount: 5000000,
-  status: 'STRATEGIST' as GamificationStatus,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   hourlyRate: MOCK_USER.hourlyRate ?? undefined,
@@ -97,6 +94,8 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           await authService.logout();
+        } catch {
+          // ignore API errors — local cleanup is what matters
         } finally {
           set({ user: null, gamification: null, isAuthenticated: false, isDemoMode: false, isLoading: false });
         }

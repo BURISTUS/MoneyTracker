@@ -8,7 +8,7 @@ const POPULAR_CODES = new Set([
   'TRY', 'KRW', 'INR', 'BRL', 'MXN', 'KZT', 'AED',
 ]);
 
-const KNOWN_SYMBOLS: Record<string, string> = {
+export const KNOWN_SYMBOLS: Record<string, string> = {
   USD: '$', EUR: '€', RUB: '₽', GBP: '£', JPY: '¥', CNY: '¥',
   CHF: 'CHF', CAD: 'C$', AUD: 'A$', TRY: '₺', KRW: '₩', INR: '₹',
   BRL: 'R$', MXN: 'MX$', KZT: '₸', AED: 'د.إ', UAH: '₴', PLN: 'zł',
@@ -154,7 +154,9 @@ export class CurrencyService implements OnModuleInit {
             .then(() => {
               upserted++;
             })
-            .catch(() => {});
+            .catch((err: unknown) => {
+              this.logger.warn(`Upsert failed for ${upperCode}: ${err instanceof Error ? err.message : String(err)}`);
+            });
         }),
       );
     }
@@ -274,7 +276,10 @@ export class CurrencyService implements OnModuleInit {
     const from = (rates as Array<{ code: string; rate: number }>).find((r) => r.code === fromCode);
     const to = (rates as Array<{ code: string; rate: number }>).find((r) => r.code === toCode);
 
-    if (!from || !to) throw new Error(`Currency not found: ${fromCode} or ${toCode}`);
+    if (!from || !to) {
+      const { AppException } = await import('../common/app-exception');
+      throw new AppException('errors.currencyNotFound', 400, { from: fromCode, to: toCode });
+    }
 
     return (amount / from.rate) * to.rate;
   }

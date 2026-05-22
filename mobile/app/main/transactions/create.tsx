@@ -1,35 +1,38 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Pressable, Alert, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { View, Pressable, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDataStore } from '../../../src/stores/dataStore';
-import { Screen } from '../../../src/components/ui/Screen';
-import { Text } from '../../../src/components/ui/Text';
-import { Icon } from '../../../src/components/ui/Icon';
+import { useTheme } from '../../../src/stores/themeStore';
+import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
-import { useTheme } from '../../../src/theme';
 import type { TransactionType } from '../../../src/types';
 import { TransactionType as TransactionTypeEnum } from '../../../src/types';
-
-const EXPENSE_COLORS = {
-  primary: '#FF3B30',
-  background: 'rgba(255, 59, 48, 0.1)',
-  light: 'rgba(255, 59, 48, 0.05)',
-};
-
-const INCOME_COLORS = {
-  primary: '#34C759',
-  background: 'rgba(52, 199, 89, 0.1)',
-  light: 'rgba(52, 199, 89, 0.05)',
-};
+import { useToast } from '../../../src/components/ui/Toast';
 
 const AMOUNT_PRESETS = [100, 500, 1000, 5000, 10000, 50000];
 
 export default function CreateTransactionScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
-  const { spacing } = useTheme();
+  const insets = useSafeAreaInsets();
+  const C = useTheme();
   const addTransaction = useDataStore((s) => s.addTransaction);
   const accounts = useDataStore((s) => s.accounts);
   const categories = useDataStore((s) => s.categories);
+
+  const EXPENSE_COLORS = {
+    primary: C.red,
+    background: C.redBg,
+    light: C.redBg,
+  };
+
+  const INCOME_COLORS = {
+    primary: C.green,
+    background: C.greenBg,
+    light: C.greenBg,
+  };
 
   const [type, setType] = useState<TransactionType>(TransactionTypeEnum.EXPENSE);
   const [amount, setAmount] = useState('');
@@ -40,6 +43,7 @@ export default function CreateTransactionScreen() {
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showError, showSuccess } = useToast();
 
   const displayCategories = useMemo(() => {
     return categories.filter((c) =>
@@ -73,7 +77,7 @@ export default function CreateTransactionScreen() {
 
   const handleSubmit = useCallback(async () => {
     if (!amount || !selectedCategory || !selectedAccount) {
-      Alert.alert('Ошибка', 'Заполните все поля');
+      showError(t('transactions.fillFields'));
       return;
     }
 
@@ -94,11 +98,10 @@ export default function CreateTransactionScreen() {
         updatedAt: new Date().toISOString(),
       });
 
-      Alert.alert('Успешно!', 'Транзакция добавлена', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showSuccess(t("transactions.transactionAdded"));
+      setTimeout(() => router.back(), 600);
     } catch {
-      Alert.alert('Ошибка', 'Не удалось добавить транзакцию');
+      showError(t('transactions.createFailedMsg'));
       setIsSubmitting(false);
     }
   }, [amount, type, selectedCategory, selectedAccount, note, date, addTransaction, router]);
@@ -106,106 +109,60 @@ export default function CreateTransactionScreen() {
   const formattedAmount = amount ? parseFloat(amount).toLocaleString('ru-RU') : '0';
 
   return (
-    <Screen style={{ padding: 0 }}>
-      <View style={{ flex: 1 }}>
-        {/* Header with type toggle */}
-        <View style={{
-          flexDirection: 'row',
-          padding: 16,
-          gap: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-        }}>
+    <View className="flex-1 bg-background-0" style={{ paddingTop: insets.top }}>
+      <View className="flex-1">
+        <View style={{ position: 'relative' }}>
+        </View>
+        <View className="flex-row p-4 gap-3 border-b border-outline-200">
           <TouchableOpacity
             onPress={() => setType(TransactionTypeEnum.EXPENSE)}
-            style={{
-              flex: 1,
-              backgroundColor: type === 'EXPENSE' ? EXPENSE_COLORS.background : 'transparent',
-              borderRadius: 12,
-              paddingVertical: 12,
-              alignItems: 'center',
-              borderWidth: 2,
-              borderColor: type === 'EXPENSE' ? EXPENSE_COLORS.primary : 'transparent',
-            }}
+            className={`flex-1 rounded-xl py-3 items-center border-2 ${
+              type === 'EXPENSE' ? 'bg-error-500/10 border-error-400' : 'border-transparent'
+            }`}
           >
-            <Text size="lg" weight="semibold" style={{ color: EXPENSE_COLORS.primary }}>
-              − Расход
-            </Text>
+            <Text className="text-lg font-semibold text-error-400">{t("transactions.addExpenseBtnUc")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setType(TransactionTypeEnum.INCOME)}
-            style={{
-              flex: 1,
-              backgroundColor: type === 'INCOME' ? INCOME_COLORS.background : 'transparent',
-              borderRadius: 12,
-              paddingVertical: 12,
-              alignItems: 'center',
-              borderWidth: 2,
-              borderColor: type === 'INCOME' ? INCOME_COLORS.primary : 'transparent',
-            }}
+            className={`flex-1 rounded-xl py-3 items-center border-2 ${
+              type === 'INCOME' ? 'bg-success-500/10 border-success-400' : 'border-transparent'
+            }`}
           >
-            <Text size="lg" weight="semibold" style={{ color: INCOME_COLORS.primary }}>
-              + Доход
-            </Text>
+            <Text className="text-lg font-semibold text-success-400">{t("transactions.addIncomeBtnUc")}</Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 320 }}>
-          {/* Amount display */}
-          <View style={{
-            alignItems: 'center',
-            paddingVertical: 32,
-            borderBottomWidth: 1,
-            borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-          }}>
+          <View className="items-center py-8 border-b border-outline-200">
             <Text
-              size="display"
-              weight="bold"
-              style={{
-                color: colors.primary,
-                fontSize: 56,
-                lineHeight: 64,
-                letterSpacing: -1,
-              }}
+              className="font-bold text-[56px] leading-[64px] tracking-tight"
+              style={{ color: colors.primary }}
             >
               {formattedAmount}
             </Text>
-            <Text size="md" style={{ color: '#8E8E93', marginTop: 8 }}>
-              рублей
-            </Text>
+            <Text className="text-base text-typography-400 mt-2">{t("transactions.rubles")}</Text>
           </View>
 
-          {/* Account selector */}
-          <View style={{ padding: 16 }}>
-            <Text size="sm" weight="medium" style={{ color: '#8E8E93', marginBottom: 12 }}>
-              СЧЁТ
-            </Text>
+          <View className="p-4">
+            <Text className="text-sm font-medium text-typography-400 mb-3">{t("transactions.accountUc")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View className="flex-row gap-2">
                 {accounts.map((account) => (
                   <TouchableOpacity
                     key={account.id}
                     onPress={() => setSelectedAccount(account.id)}
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingVertical: 12,
-                      backgroundColor: selectedAccount === account.id
-                        ? colors.background
-                        : 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: selectedAccount === account.id
-                        ? colors.primary
-                        : 'rgba(255, 255, 255, 0.1)',
-                      minWidth: 120,
-                      alignItems: 'center',
-                    }}
+                    className={`px-4 py-3 rounded-xl border min-w-[120px] items-center ${
+                      selectedAccount === account.id
+                        ? 'bg-background-50/80 border-primary-400'
+                        : 'bg-background-50/30 border-outline-200'
+                    }`}
+                    style={selectedAccount === account.id ? { backgroundColor: colors.background, borderColor: colors.primary } : undefined}
                   >
-                    <Text size="sm" style={{ color: '#8E8E93', marginBottom: 4 }}>
+                    <Text className="text-sm text-typography-400 mb-1">
                       {account.name}
                     </Text>
-                    <Text size="md" weight="semibold" style={{ color: '#FFFFFF' }}>
+                    <Text className="text-base font-semibold" style={{ color: C.textMain }}>
                       {(account.balance / 100).toLocaleString('ru-RU')} ₽
                     </Text>
                   </TouchableOpacity>
@@ -214,44 +171,28 @@ export default function CreateTransactionScreen() {
             </ScrollView>
           </View>
 
-          {/* Categories */}
-          <View style={{ padding: 16 }}>
-            <Text size="sm" weight="medium" style={{ color: '#8E8E93', marginBottom: 12 }}>
-              КАТЕГОРИЯ
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <View className="p-4">
+            <Text className="text-sm font-medium text-typography-400 mb-3">{t("transactions.categoryUc")}</Text>
+            <View className="flex-row flex-wrap gap-2">
               {displayCategories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
                   onPress={() => setSelectedCategory(category.id)}
-                  style={{
-                    width: '31%',
-                    backgroundColor: selectedCategory === category.id
-                      ? colors.background
-                      : 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: 12,
-                    paddingVertical: 16,
-                    paddingHorizontal: 8,
-                    alignItems: 'center',
-                    borderWidth: 2,
-                    borderColor: selectedCategory === category.id
-                      ? colors.primary
-                      : 'transparent',
-                  }}
+                  className={`w-[31%] rounded-xl py-4 px-2 items-center border-2 ${
+                    selectedCategory === category.id
+                      ? 'bg-background-50/80'
+                      : 'bg-background-50/30 border-transparent'
+                  }`}
+                  style={selectedCategory === category.id ? { backgroundColor: colors.background, borderColor: colors.primary } : undefined}
                 >
                   <CategoryIcon
                     icon={category.icon}
-                    color={category.color || '#6366F1'}
+                    color={category.color || C.primary}
                     size={24}
                   />
                   <Text
-                    size="xs"
-                    weight="medium"
-                    style={{
-                      color: selectedCategory === category.id ? colors.primary : '#FFFFFF',
-                      textAlign: 'center',
-                      marginTop: 4,
-                    }}
+                    className="text-xs font-medium mt-1 text-center"
+                    style={{ color: C.textMain }}
                     numberOfLines={1}
                   >
                     {category.name}
@@ -261,59 +202,34 @@ export default function CreateTransactionScreen() {
             </View>
           </View>
 
-          {/* Note */}
-          <View style={{ padding: 16 }}>
-            <Text size="sm" weight="medium" style={{ color: '#8E8E93', marginBottom: 12 }}>
-              ЗАМЕТКА
-            </Text>
+          <View className="p-4">
+            <Text className="text-sm font-medium text-typography-400 mb-3">{t("transactions.noteUc")}</Text>
             <TextInput
               value={note}
               onChangeText={setNote}
-              placeholder="Добавить заметку..."
-              placeholderTextColor="#8E8E93"
+              placeholder={t('transactions.addNotePlaceholder')}
+              placeholderTextColor={C.textSec}
               multiline
               numberOfLines={3}
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: 12,
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                color: '#FFFFFF',
-                fontSize: 16,
-                minHeight: 80,
-                textAlignVertical: 'top',
-              }}
+              className="bg-background-0/50 rounded-xl border border-outline-200 px-4 py-3 text-base min-h-[80px]"
+              style={{ textAlignVertical: 'top', color: C.textMain }}
             />
           </View>
         </ScrollView>
 
-        {/* Fixed bottom section with Numpad and Save button */}
-        <View style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: '#0A0A0F',
-          borderTopWidth: 1,
-          borderTopColor: 'rgba(255, 255, 255, 0.1)',
-        }}>
-          {/* Quick amount presets */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ padding: 12 }}>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View
+          className="absolute bottom-0 left-0 right-0 bg-background-0 border-t border-outline-200"
+          style={{ paddingBottom: insets.bottom }}
+        >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="p-3">
+            <View className="flex-row gap-2">
               {AMOUNT_PRESETS.map((value) => (
                 <TouchableOpacity
                   key={value}
                   onPress={() => setAmount(String(value))}
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                  }}
+                  className="px-4 py-2 bg-background-50/50 rounded-lg border border-outline-200"
                 >
-                  <Text size="sm" weight="semibold" style={{ color: '#FFFFFF' }}>
+                  <Text className="text-sm font-semibold" style={{ color: C.textMain }}>
                     {value} ₽
                   </Text>
                 </TouchableOpacity>
@@ -321,13 +237,7 @@ export default function CreateTransactionScreen() {
             </View>
           </ScrollView>
 
-          {/* Numpad */}
-          <View style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            paddingHorizontal: 8,
-            paddingBottom: 16,
-          }}>
+          <View className="flex-row flex-wrap px-2 pb-4">
             {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'].map((key) => (
               <TouchableOpacity
                 key={key}
@@ -336,29 +246,13 @@ export default function CreateTransactionScreen() {
                   else if (key === '.') handleDecimalPress();
                   else handleNumberPress(key);
                 }}
-                style={{
-                  width: '33.33%',
-                  aspectRatio: 1.5,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                className="w-[33.33%] aspect-[1.5] items-center justify-center"
                 activeOpacity={0.7}
               >
-                <View style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: 30,
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
+                <View className="w-[60px] h-[60px] rounded-full bg-background-50/30 items-center justify-center">
                   <Text
-                    size="xxl"
-                    weight="semibold"
-                    style={{
-                      color: key === '⌫' ? '#FF3B30' : '#FFFFFF',
-                      lineHeight: 32,
-                    }}
+                    className="text-2xl font-semibold leading-8"
+                    style={{ color: key === '⌫' ? C.red : C.textMain }}
                   >
                     {key}
                   </Text>
@@ -367,28 +261,27 @@ export default function CreateTransactionScreen() {
             ))}
           </View>
 
-          {/* Save button */}
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={!amount || !selectedCategory || !selectedAccount || isSubmitting}
+            className={`mx-4 mb-4 rounded-2xl py-4 items-center ${
+              !amount || !selectedCategory || !selectedAccount
+                ? 'bg-background-50/30'
+                : ''
+            }`}
             style={{
-              marginHorizontal: 16,
-              marginBottom: 16,
               backgroundColor: !amount || !selectedCategory || !selectedAccount
-                ? 'rgba(255, 255, 255, 0.1)'
+                ? undefined
                 : colors.primary,
-              borderRadius: 16,
-              paddingVertical: 16,
-              alignItems: 'center',
               opacity: isSubmitting ? 0.6 : 1,
             }}
           >
-            <Text size="lg" weight="bold" style={{ color: '#FFFFFF' }}>
-              {isSubmitting ? 'Сохранение...' : 'Сохранить'}
+            <Text className="text-lg font-bold" style={{ color: C.textMain }}>
+              {isSubmitting ? t('transactions.savingBtn') : t('transactions.saveBtn')}
             </Text>
           </TouchableOpacity>
         </View>
       </View>
-    </Screen>
+    </View>
   );
 }

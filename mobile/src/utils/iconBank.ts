@@ -16,6 +16,27 @@ export interface IconGroup {
 
 export const ICON_BANK: IconGroup[] = [
   {
+    label: 'Доходы',
+    icons: [
+      { name: 'account-cash', family: 'material', label: 'Зарплата' },
+      { name: 'briefcase', family: 'material', label: 'Работа' },
+      { name: 'laptop', family: 'material', label: 'Фриланс' },
+      { name: 'chart-line', family: 'material', label: 'Инвестиции' },
+      { name: 'cash', family: 'material', label: 'Наличные' },
+      { name: 'credit-card', family: 'material', label: 'Перевод' },
+      { name: 'gift', family: 'material', label: 'Подарок' },
+      { name: 'hand-coin', family: 'material', label: 'Подработка' },
+      { name: 'piggy-bank', family: 'material', label: 'Накопления' },
+      { name: 'wallet', family: 'material', label: 'Кошелёк' },
+      { name: 'bank', family: 'material', label: 'Проценты' },
+      { name: 'currency-usd', family: 'material', label: 'Валюта' },
+      { name: 'bitcoin', family: 'material', label: 'Крипто' },
+      { name: 'star', family: 'material', label: 'Бонус' },
+      { name: 'charity', family: 'material', label: 'Помощь' },
+      { name: 'shield-check', family: 'material', label: 'Страховка' },
+    ],
+  },
+  {
     label: 'Еда и напитки',
     icons: [
       { name: 'food', family: 'material', label: 'Еда' },

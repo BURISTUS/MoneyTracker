@@ -1,38 +1,106 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   ScrollView,
   TouchableOpacity,
   TextInput,
-  KeyboardAvoidingView,
+  Switch,
+  StyleSheet,
   Platform,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDataStore } from '../../../src/stores/dataStore';
-import { Screen } from '../../../src/components/ui/Screen';
-import { Text } from '../../../src/components/ui/Text';
-import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
+import { useSubscriptionStore } from '../../../src/stores/subscriptionStore';
+import { useTheme } from '../../../src/stores/themeStore';
+import { Text } from '../../../components/ui/text';
+import { useTranslation } from 'react-i18next';
 import { ICON_BANK, serializeIcon } from '../../../src/utils/iconBank';
 import type { IconDef } from '../../../src/utils/iconBank';
 import type { CategoryType } from '../../../src/types';
 import { CategoryType as CategoryTypeEnum } from '../../../src/types';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-const EXPENSE_COLORS = [
-  '#FF3B30', '#FF9500', '#FFCC00', '#FF2D55', '#FF6B6B', '#FF8787',
-  '#34C759', '#30D158', '#5AC8FA', '#64D2FF', '#007AFF', '#5E5CE6',
-  '#5856D6', '#AF52DE', '#BF5AF2', '#FF453A', '#FF9F0A',
+const COLORS = [
+  '#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#007AFF',
+  '#5856D6', '#AF52DE', '#FF2D55', '#5AC8FA', '#FBBF24',
+  '#34D399', '#6366F1', '#EC4899', '#14B8A6', '#F97316',
 ];
 
-const INCOME_COLORS = [
-  '#34C759', '#30D158', '#32D74B', '#00C7BE', '#5AC8FA', '#64D2FF',
-  '#007AFF', '#0A84FF', '#5856D6', '#5E5CE6', '#AF52DE', '#BF5AF2',
-  '#FF2D55', '#FF453A', '#FF9F0A', '#FFCC00',
-];
+// ============================================================
+// Filter icons by category type
+// ============================================================
+
+function filterIconBank(type: CategoryType, t: (key: string) => string) {
+  if (type === 'INCOME') {
+    return ICON_BANK.filter((g) => g.label === t('categories.incomeLabel') || g.label === t('categories.income'));
+  }
+  return ICON_BANK.filter((g) => g.label !== t('categories.incomeLabel') && g.label !== t('categories.income'));
+}
+
+// ============================================================
+// Component
+// ============================================================
 
 export default function CreateCategoryScreen() {
+  const C = useTheme();
+  const S = StyleSheet.create({
+    screen: { flex: 1, backgroundColor: C.bg },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, paddingTop: 48, borderBottomWidth: 1, borderBottomColor: C.border },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: C.textMain },
+    closeBtn: { width: 32, height: 32, borderRadius: 10, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border },
+    scroll: { flex: 1 },
+    scrollContent: { paddingBottom: 120 },
+    preview: { alignItems: 'center', paddingVertical: 32, borderBottomWidth: 1, borderBottomColor: C.border },
+    previewCircle: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border },
+    previewName: { fontSize: 18, fontWeight: '700', color: C.textMain, marginBottom: 4 },
+    previewType: { fontSize: 14, color: C.textSec },
+    section: { paddingHorizontal: 20, marginBottom: 20 },
+    sectionTitle: { fontSize: 12, fontWeight: '600', color: C.textSec, marginBottom: 8, textTransform: 'uppercase' },
+    input: { backgroundColor: C.inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, fontSize: 16, color: C.textMain, borderWidth: 1, borderColor: C.border },
+    typeRow: { flexDirection: 'row', gap: 8 },
+    typeBtn: { flex: 1, paddingVertical: 14, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
+    typeBtnActive: { borderColor: 'transparent' },
+    typeLabel: { fontSize: 15, fontWeight: '600', color: C.textSec },
+    colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    colorDot: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: 'transparent' },
+    colorDotActive: { borderColor: '#FFF' },
+    groupWrap: { marginBottom: 12 },
+    groupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+    groupTitle: { fontSize: 11, fontWeight: '600', color: C.textSec, textTransform: 'uppercase' as const },
+    groupExpand: { fontSize: 12, color: C.primary },
+    iconRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    iconItem: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border },
+    iconItemActive: { borderColor: 'transparent' },
+    bottomBar: { position: 'absolute' as const, bottom: 0, left: 0, right: 0, backgroundColor: C.bg, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: 20, paddingVertical: 16 },
+    saveBtn: { paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
+    saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+    limitRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.inputBg, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingHorizontal: 14 },
+    limitInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: C.textMain },
+    clearLimit: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+    toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border },
+    toggleLabel: { fontSize: 14, fontWeight: '500', color: C.textMain },
+    toggleDesc: { fontSize: 11, color: C.textSec, marginTop: 2 },
+  });
+  const { t } = useTranslation();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const addCategory = useDataStore((s) => s.addCategory);
+  const categories = useDataStore((s) => s.categories);
+  const checkAccess = useSubscriptionStore((s) => s.checkAccess);
+  const showPaywall = useSubscriptionStore((s) => s.showPaywall);
+
+  const categoryLimit = checkAccess('PERSONAL_CATEGORIES');
+  const maxCategories = categoryLimit?.limit ?? Infinity;
+  const canCreate = categories.length < maxCategories;
+
+  React.useEffect(() => {
+    if (!canCreate) {
+      showPaywall('PERSONAL_CATEGORIES');
+      router.back();
+    }
+  }, []);
 
   const [name, setName] = useState('');
   const [type, setType] = useState<CategoryType>(CategoryTypeEnum.EXPENSE);
@@ -40,294 +108,247 @@ export default function CreateCategoryScreen() {
   const [selectedIconDef, setSelectedIconDef] = useState<IconDef | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<number>(0);
+  const [excludeFromTotal, setExcludeFromTotal] = useState(false);
+  const [monthlyLimitText, setMonthlyLimitText] = useState('');
 
-  const colors = type === 'EXPENSE' ? EXPENSE_COLORS : INCOME_COLORS;
+  const theme =
+    type === 'EXPENSE'
+      ? { primary: C.red, background: 'rgba(255,59,48,0.1)' }
+      : { primary: C.green, background: 'rgba(52,199,89,0.1)' };
 
-  const selectedIcon = selectedIconDef ? serializeIcon(selectedIconDef) : '';
+  const filteredIconBank = useMemo(() => filterIconBank(type, t), [type]);
 
   const handleSubmit = useCallback(async () => {
-    if (!name || !selectedColor || !selectedIcon) {
-      return;
-    }
-
+    if (!name || !selectedColor || !selectedIconDef) return;
     setIsSubmitting(true);
     try {
+      const limitRubles = monthlyLimitText ? parseFloat(monthlyLimitText) : NaN;
+      const monthlyLimit = !isNaN(limitRubles) && limitRubles > 0
+        ? Math.round(limitRubles * 100)
+        : null;
+
       await addCategory({
         name,
         type,
-        icon: selectedIcon,
+        icon: serializeIcon(selectedIconDef),
         color: selectedColor,
         isBaseNeed: false,
+        excludeFromTotal,
+        monthlyLimit,
       });
-
       router.back();
     } catch (error) {
       console.error('Failed to create category:', error);
     } finally {
       setIsSubmitting(false);
     }
-  }, [name, type, selectedColor, selectedIcon, addCategory, router]);
-
-  const themeColors = type === 'EXPENSE'
-    ? {
-        primary: '#FF3B30',
-        background: 'rgba(255, 59, 48, 0.1)',
-      }
-    : {
-        primary: '#34C759',
-        background: 'rgba(52, 199, 89, 0.1)',
-      };
+  }, [name, type, selectedColor, selectedIconDef, excludeFromTotal, monthlyLimitText, addCategory, router]);
 
   return (
-    <Screen style={{ padding: 0 }}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: 120 }}
-          keyboardShouldPersistTaps="handled"
-          nestedScrollEnabled
-        >
-          <View
-            style={{
-              alignItems: 'center',
-              paddingVertical: 32,
-              borderBottomWidth: 1,
-              borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-            }}
-          >
-            <View
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 60,
-                backgroundColor: selectedColor || 'rgba(255, 255, 255, 0.1)',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
-              }}
-            >
-              {selectedIconDef ? (
-                <CategoryIcon
-                  icon={selectedIcon}
-                  color="transparent"
-                  size={48}
-                  showBackground={false}
-                />
-              ) : (
-                <MaterialCommunityIcons name="shape" size={48} color="#8E8E93" />
-              )}
-            </View>
+    <View style={S.screen}>
+      {/* Header */}
+      <View style={[S.header, { paddingTop: insets.top + 8 }]}>
+        <Text style={S.headerTitle}>{t('categories.newCategory')}</Text>
+        <TouchableOpacity style={S.closeBtn} onPress={() => router.back()}>
+          <Ionicons name="close" size={18} color={C.textSec} />
+        </TouchableOpacity>
+      </View>
 
-            <Text
-              size="xl"
-              weight="bold"
-              style={{
-                color: '#FFFFFF',
-                marginBottom: 8,
-              }}
-            >
-              {name || 'Название категории'}
-            </Text>
-
-            <Text size="sm" style={{ color: '#8E8E93' }}>
-              {type === 'EXPENSE' ? 'Расход' : 'Доход'}
-            </Text>
+      <ScrollView style={S.scroll} contentContainerStyle={S.scrollContent} keyboardShouldPersistTaps="handled">
+        {/* ──── Preview ──── */}
+        <View style={S.preview}>
+          <View style={[S.previewCircle, selectedColor ? { backgroundColor: `${selectedColor}22`, borderColor: selectedColor } : undefined]}>
+            {selectedIconDef ? (
+              <MaterialCommunityIcons
+                name={selectedIconDef.name as any}
+                size={40}
+                color={selectedColor || '#8E8E93'}
+              />
+            ) : (
+              <Ionicons name="grid-outline" size={40} color="#8E8E93" />
+            )}
           </View>
+          <Text style={S.previewName}>{name || t('categories.categoryNamePlaceholder')}</Text>
+          <Text style={S.previewType}>
+            {type === 'EXPENSE' ? t('categories.expenseLabel') : t('categories.incomeLabel')}
+          </Text>
+        </View>
 
-          <View style={{ padding: 16 }}>
-            <Text
-              size="sm"
-              weight="medium"
-              style={{ color: '#8E8E93', marginBottom: 12 }}
-            >
-              НАЗВАНИЕ
-            </Text>
+        {/* ──── Название ──── */}
+        <View style={[S.section, { marginTop: 20 }]}>
+          <Text style={S.sectionTitle}>{t('categories.nameLabel')}</Text>
+          <TextInput
+            style={S.input}
+            value={name}
+            onChangeText={setName}
+            placeholder={t('categories.categoryNamePlaceholder')}
+            placeholderTextColor="#52525B"
+          />
+        </View>
+
+        {/* ──── Тип ──── */}
+        <View style={S.section}>
+          <Text style={S.sectionTitle}>{t('categories.typeLabel')}</Text>
+          <View style={S.typeRow}>
+            {[
+              { k: CategoryTypeEnum.EXPENSE, label: t('categories.expenseLabel') },
+              { k: CategoryTypeEnum.INCOME, label: t('categories.incomeLabel') },
+            ].map((tab) => (
+              <TouchableOpacity
+                key={tab.k}
+                onPress={() => {
+                  setType(tab.k as CategoryType);
+                  setSelectedColor('');
+                }}
+                style={[
+                  S.typeBtn,
+                  type === tab.k && { backgroundColor: theme.background, borderColor: theme.primary },
+                ]}
+              >
+                <Text style={[S.typeLabel, type === tab.k && { color: theme.primary }]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* ──── Цвет ──── */}
+        <View style={S.section}>
+          <Text style={S.sectionTitle}>{t('categories.colorLabel')}</Text>
+          <View style={S.colorRow}>
+            {COLORS.map((c) => (
+              <TouchableOpacity
+                key={c}
+                onPress={() => setSelectedColor(c)}
+                style={[
+                  S.colorDot,
+                  { backgroundColor: c },
+                  selectedColor === c && S.colorDotActive,
+                ]}
+              >
+                {selectedColor === c && (
+                  <Ionicons name="checkmark" size={20} color="#FFF" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* ──── Иконка ──── */}
+        <View style={S.section}>
+          <Text style={S.sectionTitle}>
+            {t('categories.iconCountLabel', { count: filteredIconBank.reduce((sum, g) => sum + g.icons.length, 0) })}
+          </Text>
+
+          {filteredIconBank.map((group, groupIndex) => {
+            const isExpanded = expandedGroup === groupIndex;
+            const visibleIcons = isExpanded ? group.icons : group.icons.slice(0, 8);
+
+            return (
+              <View key={group.label} style={S.groupWrap}>
+                <View style={S.groupHeader}>
+                  <Text style={S.groupTitle}>{group.label}</Text>
+                  {group.icons.length > 8 && (
+                    <TouchableOpacity onPress={() => setExpandedGroup(isExpanded ? -1 : groupIndex)}>
+                      <Text style={S.groupExpand}>
+                        {isExpanded ? t('categories.collapseUp') : t('categories.moreCountPlus', { count: group.icons.length - 8 })}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <View style={S.iconRow}>
+                  {visibleIcons.map((iconDef) => {
+                    const isSelected =
+                      selectedIconDef?.name === iconDef.name &&
+                      selectedIconDef?.family === iconDef.family;
+                    return (
+                      <TouchableOpacity
+                        key={`${iconDef.family}:${iconDef.name}`}
+                        onPress={() => setSelectedIconDef(iconDef)}
+                        style={[
+                          S.iconItem,
+                          isSelected && {
+                            backgroundColor: theme.background,
+                            borderColor: theme.primary,
+                          },
+                        ]}
+                      >
+                        <MaterialCommunityIcons
+                          name={iconDef.name as any}
+                          size={22}
+                          color={isSelected ? theme.primary : C.textSec}
+                        />
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* ──── Лимит ──── */}
+        <View style={S.section}>
+          <Text style={S.sectionTitle}>{t('categories.monthlyLimitLabel')}</Text>
+          <View style={S.limitRow}>
             <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="Введите название..."
-              placeholderTextColor="#8E8E93"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: 12,
-                paddingHorizontal: 16,
-                paddingVertical: 16,
-                color: '#FFFFFF',
-                fontSize: 18,
-                borderWidth: 1,
-                borderColor: name ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-              }}
+              style={S.limitInput}
+              value={monthlyLimitText}
+              onChangeText={setMonthlyLimitText}
+              placeholder={t('categories.noLimitPlaceholder')}
+              placeholderTextColor="#52525B"
+              keyboardType="numeric"
+            />
+            {monthlyLimitText !== '' && (
+              <TouchableOpacity style={S.clearLimit} onPress={() => setMonthlyLimitText('')}>
+                <Ionicons name="close-circle" size={18} color="#52525B" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* ──── Исключить из расчётов ──── */}
+        <View style={S.section}>
+          <View style={S.toggleRow}>
+            <View style={{ flex: 1, marginRight: 12 }}>
+              <Text style={S.toggleLabel}>{t('categories.excludeFromCalc')}</Text>
+              <Text style={S.toggleDesc}>{t('categories.excludeCalcDesc')}</Text>
+            </View>
+            <Switch
+              value={excludeFromTotal}
+              onValueChange={setExcludeFromTotal}
+              trackColor={{ false: 'rgba(255,255,255,0.08)', true: `${C.primary}40` }}
+              thumbColor={excludeFromTotal ? C.primary : '#52525B'}
             />
           </View>
-
-          <View style={{ padding: 16 }}>
-            <Text
-              size="sm"
-              weight="medium"
-              style={{ color: '#8E8E93', marginBottom: 12 }}
-            >
-              ТИП ОПЕРАЦИИ
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              {[
-                { key: CategoryTypeEnum.EXPENSE, label: 'Расход', icon: '−' },
-                { key: CategoryTypeEnum.INCOME, label: 'Доход', icon: '+' },
-              ].map((tab) => (
-                <TouchableOpacity
-                  key={tab.key}
-                  onPress={() => {
-                    setType(tab.key as CategoryType);
-                    setSelectedColor('');
-                  }}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 16,
-                    alignItems: 'center',
-                    backgroundColor: type === tab.key ? themeColors.background : 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: 12,
-                    borderWidth: 2,
-                    borderColor: type === tab.key ? themeColors.primary : 'transparent',
-                  }}
-                >
-                  <Text size="xl" style={{ color: type === tab.key ? themeColors.primary : '#8E8E93', marginBottom: 4 }}>
-                    {tab.icon}
-                  </Text>
-                  <Text size="md" weight="medium" style={{ color: type === tab.key ? '#FFFFFF' : '#8E8E93' }}>
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={{ padding: 16, marginBottom: 8 }}>
-            <Text
-              size="xs"
-              weight="medium"
-              style={{ color: '#8E8E93', marginBottom: 12, textTransform: 'uppercase' }}
-            >
-              Цвет
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-              {colors.map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  onPress={() => setSelectedColor(color)}
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 22,
-                    backgroundColor: color,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderWidth: 3,
-                    borderColor: selectedColor === color ? '#FFFFFF' : 'transparent',
-                  }}
-                >
-                  {selectedColor === color && (
-                    <MaterialCommunityIcons name="check" size={24} color="#FFFFFF" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={{ padding: 16, marginBottom: 8 }}>
-            <Text
-              size="xs"
-              weight="medium"
-              style={{ color: '#8E8E93', marginBottom: 12, textTransform: 'uppercase' }}
-            >
-              Иконка ({ICON_BANK.reduce((sum, g) => sum + g.icons.length, 0)} шт.)
-            </Text>
-
-            {ICON_BANK.map((group, groupIndex) => {
-              const isExpanded = expandedGroup === groupIndex;
-              const visibleIcons = isExpanded ? group.icons : group.icons.slice(0, 6);
-
-              return (
-                <View key={group.label} style={{ marginBottom: 12 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <Text
-                      size="xs"
-                      weight="medium"
-                      style={{ color: '#8E8E93', textTransform: 'uppercase' }}
-                    >
-                      {group.label}
-                    </Text>
-                    {group.icons.length > 6 && (
-                      <TouchableOpacity onPress={() => setExpandedGroup(isExpanded ? -1 : groupIndex)}>
-                        <Text size="xs" style={{ color: '#6366F1' }}>
-                          {isExpanded ? 'Свернуть' : `Ещё ${group.icons.length - 6}`}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                    {visibleIcons.map((iconDef) => {
-                      const isSelected = selectedIcon === serializeIcon(iconDef);
-                      return (
-                        <TouchableOpacity
-                          key={serializeIcon(iconDef)}
-                          onPress={() => setSelectedIconDef(iconDef)}
-                          style={{
-                            width: 52,
-                            height: 52,
-                            borderRadius: 14,
-                            backgroundColor: isSelected ? themeColors.background : 'rgba(255,255,255,0.05)',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderWidth: 2,
-                            borderColor: isSelected ? themeColors.primary : 'transparent',
-                          }}
-                        >
-                          <MaterialCommunityIcons
-                            name={iconDef.name as any}
-                            size={26}
-                            color={isSelected ? themeColors.primary : '#EBEBF5'}
-                          />
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        </ScrollView>
-
-        <View style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: '#0A0A0F',
-          borderTopWidth: 1,
-          borderTopColor: 'rgba(255, 255, 255, 0.1)',
-          padding: 16,
-        }}>
-          <TouchableOpacity
-            onPress={handleSubmit}
-            disabled={!name || !selectedColor || !selectedIcon || isSubmitting}
-            style={{
-              backgroundColor: !name || !selectedColor || !selectedIcon
-                ? 'rgba(255, 255, 255, 0.1)' : themeColors.primary,
-              borderRadius: 16,
-              paddingVertical: 16,
-              alignItems: 'center',
-              opacity: isSubmitting ? 0.6 : 1,
-            }}
-          >
-            <Text size="lg" weight="bold" style={{ color: '#FFFFFF' }}>
-              {isSubmitting ? 'Создание...' : 'Создать категорию'}
-            </Text>
-          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </Screen>
+
+        <View style={{ height: 80 }} />
+      </ScrollView>
+
+      {/* ──── Bottom bar ──── */}
+      <View style={[S.bottomBar, { bottom: insets.bottom + 62, paddingBottom: Math.max(16, insets.bottom + 16) }]}>
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={!name || !selectedColor || !selectedIconDef || isSubmitting}
+          style={[
+            S.saveBtn,
+            {
+              backgroundColor:
+                !name || !selectedColor || !selectedIconDef
+                  ? 'rgba(255,255,255,0.08)'
+                  : theme.primary,
+              opacity: isSubmitting ? 0.6 : 1,
+            },
+          ]}
+        >
+          <Text style={S.saveText}>
+            {isSubmitting ? t('categories.creatingBtn') : t('categories.createCategoryBtn')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }

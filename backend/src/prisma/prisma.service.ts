@@ -1,8 +1,10 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(PrismaService.name);
+
   async onModuleInit() {
     await this.$connect();
   }
@@ -15,7 +17,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     if (process.env.NODE_ENV === 'production') {
       throw new Error('Cannot clean database in production');
     }
-    // В тестах очищаем таблицы в правильном порядке (учитывая foreign keys)
     const tablenames = await this.$queryRaw<Array<{ tablename: string }>>`
       SELECT tablename FROM pg_tables WHERE schemaname = 'public'
     `;
@@ -25,7 +26,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         try {
           await this.$executeRawUnsafe(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
         } catch (error) {
-          console.log(`Error truncating ${tablename}:`, error);
+          this.logger.warn(`Error truncating ${tablename}: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
     }

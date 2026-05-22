@@ -5,14 +5,14 @@ import {
   Pressable,
   FlatList,
   TextInput,
+  StyleSheet,
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../theme';
-import { Text } from './Text';
-import { Icon } from './Icon';
-import { Chip } from './Chip';
+import { Ionicons } from '@expo/vector-icons';
+import { Text } from '../../../components/ui/text';
+import { useTheme } from '../../stores/themeStore';
 import currencyService, { type ExchangeRate } from '../../services/currency';
 
 interface CurrencyPickerProps {
@@ -40,53 +40,38 @@ const CurrencyItem = React.memo(
     onPress: () => void;
     localizedName: string;
   }) => {
-    const { spacing, borderRadius: br } = useTheme();
-
+    const C = useTheme();
     return (
       <Pressable
         onPress={onPress}
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.md,
-          backgroundColor: isSelected
-            ? 'rgba(99, 102, 241, 0.12)'
-            : 'transparent',
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          backgroundColor: isSelected ? C.primaryBg : 'transparent',
         }}
       >
         <View
           style={{
             width: 40,
             height: 40,
-            borderRadius: br.md,
-            backgroundColor: isSelected
-              ? 'rgba(99, 102, 241, 0.2)'
-              : 'rgba(255, 255, 255, 0.06)',
+            borderRadius: 12,
             alignItems: 'center',
             justifyContent: 'center',
-            marginRight: spacing.md,
+            marginRight: 12,
+            backgroundColor: isSelected ? C.primaryBorder : C.divider,
           }}
         >
-          <Text
-            size="sm"
-            weight="bold"
-            style={{
-              color: isSelected ? '#818CF8' : '#A1A1AA',
-            }}
-          >
+          <Text style={{ fontSize: 14, fontWeight: '700', color: isSelected ? C.tabActive : C.textSec }}>
             {item.symbol && item.symbol !== item.code ? item.symbol : item.code.slice(0, 2)}
           </Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text size="md" weight="medium">
-            {item.code}
-          </Text>
-          <Text size="xs" style={{ color: '#71717A', marginTop: 1 }}>
-            {localizedName}
-          </Text>
+          <Text style={{ fontSize: 16, fontWeight: '500', color: C.textMain }}>{item.code}</Text>
+          <Text style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>{localizedName}</Text>
         </View>
-        {isSelected && <Icon name="checkmark" size={20} color="#818CF8" />}
+        {isSelected && <Ionicons name="checkmark" size={20} color={C.tabActive} />}
       </Pressable>
     );
   },
@@ -95,10 +80,11 @@ const CurrencyItem = React.memo(
 CurrencyItem.displayName = 'CurrencyItem';
 
 export const CurrencyPicker: React.FC<CurrencyPickerProps> = React.memo(
-  ({ visible, onClose, onSelect, selectedCode, title = 'Выберите валюту', filterType }) => {
-    const { spacing, borderRadius: br } = useTheme();
+  ({ visible, onClose, onSelect, selectedCode, title, filterType }) => {
+    const C = useTheme();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
+    const defaultTitle = t('currencyPicker.selectTitle');
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState<CurrencyTab>(
       filterType || 'POPULAR',
@@ -205,32 +191,42 @@ export const CurrencyPicker: React.FC<CurrencyPickerProps> = React.memo(
 
     const keyExtractor = useCallback((item: ExchangeRate) => item.id, []);
 
+    const S = StyleSheet.create({
+      searchRow: {
+        flexDirection: 'row',
+        backgroundColor: C.inputBg,
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        alignItems: 'center',
+        height: 44,
+        marginBottom: 12,
+      },
+      searchInput: {
+        flex: 1,
+        color: C.textMain,
+        fontSize: 15,
+        padding: 0,
+        marginLeft: 8,
+      },
+      tabRow: { flexDirection: 'row', gap: 8 },
+      tab: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 100,
+        borderWidth: 1,
+      },
+      tabText: { fontSize: 12 },
+    });
+
     const listHeader = useMemo(
       () => (
-        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              borderRadius: br.md,
-              paddingHorizontal: spacing.md,
-              alignItems: 'center',
-              height: 44,
-              marginBottom: spacing.md,
-            }}
-          >
-            <Icon name="search" size={18} color="#71717A" />
+        <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
+          <View style={S.searchRow}>
+            <Ionicons name="search" size={18} color={C.textSec} />
             <TextInput
-              style={{
-                flex: 1,
-                color: '#FFFFFF',
-                fontSize: 15,
-                fontFamily: 'System',
-                padding: 0,
-                marginLeft: spacing.sm,
-              }}
+              style={S.searchInput}
               placeholder={t('currencyPicker.searchPlaceholder', 'Поиск по коду или названию...')}
-              placeholderTextColor="#71717A"
+              placeholderTextColor={C.textSec}
               value={search}
               onChangeText={handleSearch}
               autoCapitalize="characters"
@@ -238,45 +234,44 @@ export const CurrencyPicker: React.FC<CurrencyPickerProps> = React.memo(
             />
             {search.length > 0 && (
               <Pressable onPress={() => handleSearch('')}>
-                <Icon name="close-circle" size={18} color="#71717A" />
+                <Ionicons name="close-circle" size={18} color={C.textSec} />
               </Pressable>
             )}
           </View>
           {!filterType && (
-            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            <View style={S.tabRow}>
               {TAB_KEYS.map((tab) => (
-                <Chip
+                <Pressable
                   key={tab}
-                  label={t(`currencyPicker.tab_${tab}`, tab)}
-                  selected={activeTab === tab}
                   onPress={() => handleTabChange(tab)}
-                  size="sm"
-                />
+                  style={[
+                    S.tab,
+                    {
+                      backgroundColor: activeTab === tab ? C.primaryBg : C.inputBg,
+                      borderColor: activeTab === tab ? C.primary : 'transparent',
+                    },
+                  ]}
+                >
+                  <Text style={[S.tabText, { color: activeTab === tab ? C.primary : C.textSec, fontWeight: activeTab === tab ? '600' : '400' }]}>
+                    {t(`currencyPicker.tab_${tab}`, tab)}
+                  </Text>
+                </Pressable>
               ))}
             </View>
           )}
         </View>
       ),
-      [spacing, br, search, handleSearch, activeTab, handleTabChange, filterType],
+      [search, handleSearch, activeTab, handleTabChange, filterType, t, C],
     );
 
     return (
       <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
         <Pressable
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            justifyContent: 'flex-end',
-          }}
+          style={{ flex: 1, backgroundColor: C.overlay, justifyContent: 'flex-end' }}
           onPress={onClose}
         >
           <Pressable
-            style={{
-              backgroundColor: '#111118',
-              borderTopLeftRadius: br.xl,
-              borderTopRightRadius: br.xl,
-              maxHeight: '85%',
-            }}
+            style={{ backgroundColor: C.sheet, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%' }}
             onPress={(e) => e.stopPropagation()}
           >
             <View
@@ -284,26 +279,25 @@ export const CurrencyPicker: React.FC<CurrencyPickerProps> = React.memo(
                 width: 36,
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                backgroundColor: C.handle,
                 alignSelf: 'center',
-                marginTop: spacing.lg,
-                marginBottom: spacing.sm,
+                marginTop: 16,
+                marginBottom: 8,
               }}
             />
+
             <View
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                paddingHorizontal: spacing.xl,
-                marginBottom: spacing.sm,
+                paddingHorizontal: 20,
+                marginBottom: 8,
               }}
             >
-              <Text size="xl" weight="bold">
-                {title}
-              </Text>
+              <Text style={{ fontSize: 20, fontWeight: '700', color: C.textMain }}>{title || defaultTitle}</Text>
               <Pressable onPress={onClose} hitSlop={12}>
-                <Icon name="close" size={22} color="#A1A1AA" />
+                <Ionicons name="close" size={22} color={C.textSec} />
               </Pressable>
             </View>
 
@@ -314,16 +308,16 @@ export const CurrencyPicker: React.FC<CurrencyPickerProps> = React.memo(
               ListHeaderComponent={listHeader}
               ListFooterComponent={
                 loading ? (
-                  <View style={{ paddingVertical: spacing.xl, alignItems: 'center' }}>
-                    <ActivityIndicator color="#6366F1" />
+                  <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                    <ActivityIndicator color={C.primary} />
                   </View>
                 ) : null
               }
               ListEmptyComponent={
                 !loading ? (
-                  <View style={{ paddingVertical: spacing.huge, alignItems: 'center' }}>
-                    <Icon name="search-outline" size={40} color="#52525B" />
-                    <Text size="md" style={{ color: '#71717A', marginTop: spacing.md }}>
+                  <View style={{ paddingVertical: 48, alignItems: 'center' }}>
+                    <Ionicons name="search-outline" size={40} color={C.textMuted} />
+                    <Text style={{ fontSize: 16, color: C.textSec, marginTop: 12 }}>
                       {t('currencyPicker.notFound', 'Валюта не найдена')}
                     </Text>
                   </View>
@@ -333,7 +327,7 @@ export const CurrencyPicker: React.FC<CurrencyPickerProps> = React.memo(
               onEndReachedThreshold={0.3}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{
-                paddingBottom: Math.max(spacing.xl, insets.bottom + spacing.lg),
+                paddingBottom: Math.max(20, insets.bottom + 16),
               }}
               keyboardShouldPersistTaps="handled"
             />

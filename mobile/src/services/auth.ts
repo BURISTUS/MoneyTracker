@@ -1,66 +1,75 @@
 import * as SecureStore from 'expo-secure-store';
-import { apiGet, apiPost, apiDelete } from './api';
+import { apiGet, apiPost } from './api';
 import type { User, AuthResponse, LoginDto, RegisterDto } from '../types';
 
 const AUTH_TOKEN_KEY = 'authToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
 
 export const authService = {
-  // Login
   async login(data: LoginDto): Promise<AuthResponse> {
-    console.log('🔐 API login request:', data);
     const response = await apiPost<AuthResponse>('/auth/login', data);
-    console.log('✅ API login response:', response);
-    console.log('💾 Saving token to SecureStore');
     await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.token);
-    console.log('✅ Token saved');
+    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, response.refreshToken);
     return response;
   },
 
-  // Register
   async register(data: RegisterDto): Promise<AuthResponse> {
-    console.log('🔐 API register request:', data);
     const response = await apiPost<AuthResponse>('/auth/register', data);
-    console.log('✅ API register response:', response);
-    console.log('💾 Saving token to SecureStore');
     await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.token);
-    console.log('✅ Token saved');
+    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, response.refreshToken);
     return response;
   },
 
-  // Logout
   async logout(): Promise<void> {
     try {
-      await apiPost('/auth/logout');
+      const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+      await apiPost('/auth/logout', { refreshToken });
     } finally {
       await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
     }
   },
 
-  // Get current user
+  async refreshTokens(): Promise<AuthResponse | null> {
+    const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+    if (!refreshToken) return null;
+
+    try {
+      const response = await apiPost<AuthResponse>('/auth/refresh', {
+        refreshToken,
+      });
+      await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.token);
+      await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, response.refreshToken);
+      return response;
+    } catch {
+      await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+      return null;
+    }
+  },
+
   async getCurrentUser(): Promise<User> {
-    console.log('👤 API get current user request');
     const user = await apiGet<User>('/auth/me');
-    console.log('✅ API get current user response:', user);
     return user;
   },
 
-  // Check if logged in
   async isLoggedIn(): Promise<boolean> {
     const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-    console.log('🔑 Token exists:', !!token);
     return !!token;
   },
 
-  // Get token
   async getToken(): Promise<string | null> {
     const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-    console.log('🔑 Retrieved token:', !!token);
     return token;
   },
 
-  // Clear auth data
+  async getRefreshToken(): Promise<string | null> {
+    return SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+  },
+
   async clearAuth(): Promise<void> {
     await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+    await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
   },
 };
 

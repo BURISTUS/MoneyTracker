@@ -1,0 +1,208 @@
+{
+  "nav": {
+    "download": "Download"
+  },
+  "hero": {
+    "badge": "Persoonlijke Financiële Revolutie",
+    "title1": "Stop met het",
+    "title2": "Inruilen van",
+    "title3": " je Leven voor Spullen",
+    "subtitle": "Zie elke aankoop in uren van je leven. Elimineer impulsieve aankopen met de 7-daagse Wish Incubator. Neem de controle terug.",
+    "cta": "Gratis Proberen",
+    "learn": "Bekijk Functies",
+    "phone": {
+      "balance": "Saldo",
+      "today": "Vandaag",
+      "hours": "levensuren",
+      "t1": "-$15",
+      "t1cat": "Koffie",
+      "t2": "-$120",
+      "t2cat": "Boodschappen",
+      "t3": "-$250",
+      "t3cat": "Winkelen"
+    }
+  },
+  "lc": {
+    "badge": "Killer Functie",
+    "title": "Het Echte Prijkaartje",
+    "subtitle": "Elke prijs in de app wordt twee keer getoond — in je valuta en in uren van je leven.",
+    "card": {
+      "label": "Aankoop van vandaag",
+      "item": "PlayStation 5",
+      "hours": "31 uur van je leven",
+      "detail": "Een $400 console — bijna 4 volledige werkdagen. 40% van impulsieve aankopen wordt betreurd. Nog steeds de moeite waard?",
+      "coffee": "Dagelijkse $5 Latte",
+      "coffeeHours": "18 min/dag = 110 uur/jaar"
+    },
+    "how": "Hoe Het Werkt",
+    "s1": {
+      "t": "Voer je inkomen in",
+      "d": "Vertel ons je salaris en werkuren. Wij berekenen je echte uurtarief."
+    },
+    "s2": {
+      "t": "Zie de waarheid",
+      "d": "Elke transactie toont levensuren. Categorieën, grafieken, verlanglijst — overal."
+    },
+    "s3": {
+      "t": "Maak betere keuzes",
+      "d": "Als je \"40 uur werken\" ziet in plaats van \"$600\", worden beslissingen makkelijker."
+    }
+  },
+  "ai": {
+    "badge": "AI-Aangedreven",
+    "title": "Jouw AI Financieel Adviseur",
+    "subtitle": "Ingebouwde AI die je bestedingspatronen begrijpt en persoonlijk advies geeft.",
+    "q1": "Hoeveel heb ik deze maand aan eten uitgegeven?",
+    "a1": "Je hebt $280 aan eten uitgegeven deze maand, dat is 30% van je budget. Dat is $60 minder dan vorige maand!",
+    "q2": "Kan ik een $499 gitaar betalen?",
+    "a2": "Een $499 gitaar kost 40 uur van je leven. Je hebt nog $1,840 over in je budget deze maand.",
+    "f1": {
+      "t": "Slimme Inzichten",
+      "d": "AI analyseert je bestedingspatronen en identificeert waar je kunt besparen."
+    },
+    "f2": {
+      "t": "Natuurlijke Taal",
+      "d": "Stel vragen in gewone taal. Geen ingewikkelde menu's of filters."
+    },
+    "f3": {
+      "t": "Spraakinput",
+      "d": "Spreek je transacties in. SpendWise begrijpt en categoriseert ze."
+    },
+    "f4": {
+      "t": "Bonnetjes Scannen",
+      "d": "Maak een foto van je bonnetje. AI haalt artikelen, prijzen en categorieën eruit."
+    }
+  },
+  "inc": {
+    "badge": "Impulskiller",
+    "title": "De Wish Incubator",
+    "subtitle": "7 dagen bedenktijd voor elke aankoop. De meeste verlangens sterven vóór dag 7.",
+    "s1": {
+      "t": "Iets Willen?",
+      "d": "Voeg het toe aan de Incubator met een reden: \"Waarom heb ik dit nodig?\""
+    },
+    "s2": {
+      "t": "Bevries voor 7 Dagen",
+      "d": "De Koop-knop is vergrendeld. Kijk hoe de countdown wegtikt."
+    },
+    "s3": {
+      "t": "Nog Steeds Willen?",
+      "d": "Dag 7 — beslis. Koop het of weiger het trots. Zie hoeveel leven je bespaarde."
+    },
+    "r": {
+      "t": "Je zei \"Dit heb ik niet nodig\"",
+      "d": "Je bespaarde net 40 uur van je leven. Geïnvesteerd tegen 10%, is dat $2,400 over 10 jaar."
+    }
+  },
+  "an": {
+    "badge": "Slimme Analytics",
+    "title": "Begrijp Je Geld",
+    "subtitle": "Krachtige grafieken en rapporten die je financiële verhaal onthullen.",
+    "f1": {
+      "t": "Uitgavenoverzicht",
+      "d": "$12,480 dit jaar uitgegeven — 70% aan behoeften, 30% aan wensen. Prachtige donut-grafieken per categorie."
+    },
+    "f2": {
+      "t": "Trends en Patronen",
+      "d": "Volg bestedingstrends over weken, maanden en jaren. Ontdek patronen die je nooit eerder opvielen."
+    },
+    "f3": {
+      "t": "Levensuren-Rapporten",
+      "d": "Elk rapport toont kosten in levensuren. Dat $67.50/maand abonnement kost 5 uur van je leven."
+    },
+    "f4": {
+      "t": "Budgetopvolging",
+      "d": "Stel limieten per categorie in. Ontvang waarschuwingen bij 80% en blijf op schema de hele maand."
+    },
+    "f5": {
+      "t": "Inkomstenanalyse",
+      "d": "Volg alle inkomstenbronnen. Je $3,200 maandinkomen, gevisualiseerd. Zie je spaarpercentage."
+    },
+    "f6": {
+      "t": "Exporteer en Deel",
+      "d": "Exporteer rapporten als CSV. Deel financiële samenvattingen met je partner of adviseur."
+    }
+  },
+  "feat": {
+    "badge": "Volledige Toolkit",
+    "title": "Alles Wat Je Nodig Hebt",
+    "subtitle": "Een compleet financieel beheersysteem, niet zomaar een uitgaventracker.",
+    "f1": {
+      "t": "Multi-Rekening",
+      "d": "Contant, bank, creditcards, investeringen. Beheer al je rekeningen op één plek met multi-valuta ondersteuning."
+    },
+    "f2": {
+      "t": "Slimme Categorieën",
+      "d": "Automatisch gecategoriseerde uitgaven met prachtige donut-grafieken. Zie precies waar je geld naartoe gaat — in euro's en levensuren."
+    },
+    "f3": {
+      "t": "Budgetlimieten",
+      "d": "Stel maandelijkse limieten per categorie in. Ontvang waarschuwingen als je bij de grens bent. Blijf op schema zonder stress."
+    },
+    "f4": {
+      "t": "Doelen & Dromen",
+      "d": "Stel financiële doelen met deadlines. Volg je voortgang. Zie hoe dichtbij je bent — in geld en levensuren."
+    },
+    "f5": {
+      "t": "AI-Assistent",
+      "d": "Ingebouwde AI-chat voor financieel advies. Spraakinvoer voor snelle transacties. Bonnetjes scannen met AI."
+    },
+    "f6": {
+      "t": "300+ Valuta's",
+      "d": "Realtime wisselkoersen voor fiat, crypto en metalen. Converteer direct tussen elke valuta."
+    }
+  },
+  "how": {
+    "badge": "Aan de Slag",
+    "title": "Actief in 2 Minuten",
+    "s1": {
+      "t": "Download en Registreer",
+      "d": "Maak een account aan of probeer de volledige app in demomodus. Geen creditcard nodig."
+    },
+    "s2": {
+      "t": "Stel je Inkomen in",
+      "d": "Voer je salaris en werkschema in — of dat nu $3,200/maand of meer is. De app berekent automatisch je echte uurtarief."
+    },
+    "s3": {
+      "t": "Volg Alles",
+      "d": "Voeg transacties handmatig toe, met je stem of door bonnetjes te scannen. Zelfs een $5 aankoop toont zijn echte kost in levensuren."
+    },
+    "s4": {
+      "t": "Zie je Leven Veranderen",
+      "d": "Bespaar $150/maand op impulsieve aankopen. Meer besparingen. Duidelijke financiële doelen. Echte vrijheid."
+    }
+  },
+  "prem": {
+    "badge": "Premium",
+    "title": "Ontgrendel je Volledige Potentieel",
+    "subtitle": "De gratis versie is krachtig. Premium maakt het onoverwinnelijk — slechts $14.99/maand.",
+    "p1": "Onbeperkte Wish Incubator met analytics",
+    "p2": "AI financieel adviseur — onbeperkt chatten",
+    "p3": "Bonnetjes scannen met AI",
+    "p4": "Spraakinvoer voor transacties",
+    "p5": "Gezinsbudget delen",
+    "p6": "Geavanceerde analytics & voorspellingen",
+    "cta": "Probeer Premium Gratis"
+  },
+  "cta": {
+    "title": "Klaar om te Stoppen met je Leven Inruilen voor Spullen?",
+    "subtitle": "Sluit je aan bij duizenden mensen die hun financiën onder controle hebben.",
+    "as": "Download op de App Store",
+    "gp": "Verkrijgbaar bij Google Play"
+  },
+  "footer": {
+    "tag": "Ruil je leven niet in voor spullen.",
+    "product": "Product",
+    "features": "Functies",
+    "premium": "Premium",
+    "download": "Download",
+    "company": "Bedrijf",
+    "about": "Over Ons",
+    "blog": "Blog",
+    "contact": "Contact",
+    "legal": "Juridisch",
+    "privacy": "Privacybeleid",
+    "terms": "Servicevoorwaarden",
+    "rights": "Alle rechten voorbehouden."
+  }
+}

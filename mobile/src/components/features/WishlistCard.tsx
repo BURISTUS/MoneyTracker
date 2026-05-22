@@ -1,9 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { View, type StyleProp, type ViewStyle } from 'react-native';
-import { useTheme } from '../../theme';
-import { Text } from '../ui/Text';
-import { Card } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { View, Pressable, type StyleProp, type ViewStyle } from 'react-native';
+import { useTheme } from '../../stores/themeStore';
+import { Text } from '../../../components/ui/text';
 import { formatCurrency, getDaysRemaining } from '../../utils/formatters';
 import type { WishlistItem, WishlistStatus } from '../../types';
 
@@ -14,61 +13,52 @@ interface WishlistCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'primary' | 'success' | 'danger' | 'warning' }> = {
-  PENDING: { label: 'Охлаждение', variant: 'warning' },
-  READY: { label: 'Готово', variant: 'success' },
-  REJECTED: { label: 'Отклонено', variant: 'danger' },
-  PURCHASED: { label: 'Куплено', variant: 'default' },
-  EXPIRED: { label: 'Истекло', variant: 'default' },
+const statusConfig: Record<string, { labelKey: string; bgClass: string; textClass: string }> = {
+  PENDING: { labelKey: 'wishlist.cooling', bgClass: 'bg-warning-600/20', textClass: 'text-warning-400' },
+  READY: { labelKey: 'wishlist.ready', bgClass: 'bg-success-600/20', textClass: 'text-success-400' },
+  REJECTED: { labelKey: 'wishlist.rejected', bgClass: 'bg-error-600/20', textClass: 'text-error-400' },
+  PURCHASED: { labelKey: 'wishlist.purchased', bgClass: 'bg-[rgba(255,255,255,0.06)]', textClass: 'text-typography-400' },
+  EXPIRED: { labelKey: 'wishlist.expired', bgClass: 'bg-[rgba(255,255,255,0.06)]', textClass: 'text-typography-400' },
 };
 
 export const WishlistCard: React.FC<WishlistCardProps> = React.memo(
   ({ item, onPurchase, onReject, style }) => {
-    const { spacing } = useTheme();
+    const { t } = useTranslation();
+  const C = useTheme();
     const sc = statusConfig[item.status] || statusConfig.PENDING;
     const daysLeft = item.status === 'PENDING' ? getDaysRemaining(item.cooldownEnds) : 0;
 
     return (
-      <Card variant="glass" padding="lg" style={style}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.sm }}>
-          <Text size="lg" weight="semibold" numberOfLines={1} style={{ flex: 1, marginRight: spacing.md }}>
-            {item.name}
-          </Text>
-          <Badge label={sc.label} variant={sc.variant} />
+      <View className="bg-background-50 rounded-2xl border border-outline-200 p-6" style={style}>
+        <View className="flex-row justify-between items-start mb-2">
+          <Text className="text-lg font-semibold flex-1 mr-3" numberOfLines={1}>{item.name}</Text>
+          <View className={`${sc.bgClass} px-2.5 py-1 rounded-full`}>
+            <Text className={`text-xs font-medium ${sc.textClass}`}>{t(sc.labelKey)}</Text>
+          </View>
         </View>
-        <Text size="xl" weight="bold" style={{ marginBottom: spacing.sm }}>
-          {formatCurrency(item.price)}
-        </Text>
+        <Text className="text-xl font-bold mb-2">{formatCurrency(item.price)}</Text>
         {item.status === 'PENDING' && (
-          <Text size="xs" style={{ color: '#FBBF24', marginBottom: spacing.md }}>
-            Осталось {daysLeft} дн. до решения
+          <Text className="text-xs text-warning-400 mb-3">
+            {t('wishlist.daysLeft', { days: daysLeft })}
           </Text>
         )}
         {item.status === 'READY' && (
-          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <View style={{ flex: 1 }}>
-              <Text
-                size="sm"
-                weight="semibold"
-                onPress={() => onReject?.(item.id)}
-                style={{ color: '#34D399', textAlign: 'center', paddingVertical: spacing.sm, backgroundColor: 'rgba(52, 211, 153, 0.12)', borderRadius: 8 }}
-              >
-                Пожалел
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                size="sm"
-                weight="semibold"
-                onPress={() => onPurchase?.(item.id)}
-                style={{ color: '#F87171', textAlign: 'center', paddingVertical: spacing.sm, backgroundColor: 'rgba(248, 113, 113, 0.12)', borderRadius: 8 }}
-              >
-                Купил
-              </Text>
-            </View>
+          <View className="flex-row gap-2">
+            <Pressable
+              className="flex-1 py-2 rounded-lg bg-[rgba(52,211,153,0.12)] items-center justify-center"
+              onPress={() => onReject?.(item.id)}
+            >
+              <Text className="text-sm font-semibold text-success-400 text-center">{t("wishlist.regretted")}</Text>
+            </Pressable>
+            <Pressable
+              className="flex-1 py-2 rounded-lg bg-[rgba(248,113,113,0.12)] items-center justify-center"
+              onPress={() => onPurchase?.(item.id)}
+            >
+              <Text className="text-sm font-semibold text-error-400 text-center">{t("wishlist.bought")}</Text>
+            </Pressable>
           </View>
         )}
-      </Card>
+      </View>
     );
   },
 );

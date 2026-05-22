@@ -1,5 +1,3 @@
-// Prisma schema for Money Tracker - Escape from Consumer Society
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,63 +10,66 @@ datasource db {
 // === USER & AUTH ===
 
 model User {
-  id                String   @id @default(uuid())
-  email             String   @unique
-  password          String
-  name              String
-  currency          String   @default("RUB")  // Основная валюта пользователя (ISO 4217)
-  language          String   @default("en")   // Язык интерфейса
-  hourlyRate        Int?     // Стоимость часа в копейках ОСНОВНОЙ валюты
-  monthlyHours      Int?     @default(176) // Рабочих часов в месяц
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password     String
+  name         String
+  currency     String   @default("RUB")
+  language     String   @default("en")
+  hourlyRate   Int?
+  monthlyHours Int?     @default(176)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  // Relations
-  accounts          Account[]
-  transactions      Transaction[]
-  categories        Category[]
-  budgets           Budget[]
-  goals             Goal[]
-  wishlist          WishlistItem[]
-  gamification      UserGamification?
-  achievements      UserAchievement[]
-  familyMember      FamilyMember?
-  challenges        UserChallenge[]
-  notifications     Notification[]
-  deposits          Deposit[]
-  loans             Loan[]
-  savingsGoals      SavingsGoal[]
-  forecastScenarios ForecastScenario[]
+  accounts      Account[]
+  transactions  Transaction[]
+  categories    Category[]
+  goals         Goal[]
+  wishlist      WishlistItem[]
+  familyMember  FamilyMember?
+  notifications Notification[]
+  chatMessages  ChatMessage[]
+  subscription  Subscription?
+  sessions      Session[]
+  budgets       Budget[]
 
   @@map("users")
 }
 
 model Session {
-  id        String   @id @default(uuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  refreshToken String   @unique
+  expiresAt    DateTime
+  isRevoked    Boolean  @default(false)
+  deviceInfo   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@map("sessions")
 }
 
 // === ACCOUNTS & TRANSACTIONS ===
 
 model Account {
-  id          String   @id @default(uuid())
-  userId      String
-  name        String
-  type        AccountType
-  balance     BigInt   @default(0)
-  currency    String   @default("RUB")
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String      @id @default(uuid())
+  userId         String
+  name           String
+  type           AccountType
+  balance        BigInt      @default(0)
+  currency       String      @default("RUB")
+  isDefault      Boolean     @default(false)
+  includeInTotal Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -82,23 +83,24 @@ enum AccountType {
 
 // === CATEGORIES ===
 
-// Категории: системные (userId = NULL) и персональные (userId = user.id)
 model Category {
-  id          String   @id @default(uuid())
-  userId      String?  // NULL = системная категория, UUID = персональная
-  name        String
-  type        CategoryType
-  icon        String?
-  color       String?
-  isBaseNeed  Boolean  @default(false)
-  order       Int      @default(0)
-  images      String[] // Массив URL картинок категории (для 1money-стиля)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String       @id @default(uuid())
+  userId           String?
+  name             String
+  type             CategoryType
+  icon             String?
+  color            String?
+  isBaseNeed       Boolean      @default(false)
+  excludeFromTotal Boolean      @default(false)
+  monthlyLimit     BigInt?
+  order            Int          @default(0)
+  images           String[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
-  budgets     Budget[]
+  budgets      Budget[]
 
   @@index([userId])
   @@map("categories")
@@ -110,21 +112,25 @@ enum CategoryType {
 }
 
 model Transaction {
-  id          String   @id @default(uuid())
+  id          String          @id @default(uuid())
   userId      String
   accountId   String
   categoryId  String
   amount      BigInt
   type        TransactionType
   description String?
-  date        DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  date        DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
+  @@index([userId, date])
+  @@index([userId, type])
+  @@index([accountId])
+  @@index([categoryId])
   @@map("transactions")
 }
 
@@ -134,138 +140,61 @@ enum TransactionType {
   TRANSFER
 }
 
-// === BUDGET & GOALS ===
-
-model Budget {
-  id          String   @id @default(uuid())
-  userId      String
-  categoryId  String
-  amount      BigInt
-  period      BudgetPeriod
-  startDate   DateTime
-  endDate     DateTime
-  alertThreshold Int @default(80)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  @@map("budgets")
-}
-
-enum BudgetPeriod {
-  WEEKLY
-  MONTHLY
-  YEARLY
-}
+// === GOALS ===
 
 model Goal {
-  id          String   @id @default(uuid())
-  userId      String
-  name        String
-  targetAmount BigInt
-  currentAmount BigInt  @default(0)
-  deadline    DateTime
-  isCompleted Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(uuid())
+  userId        String
+  name          String
+  targetAmount  BigInt
+  currentAmount BigInt   @default(0)
+  currency      String   @default("RUB")
+  deadline      DateTime @default(now())
+  isCompleted   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions GoalContribution[]
 
+  @@index([userId])
   @@map("goals")
 }
 
-// === GAMIFICATION ===
+model GoalContribution {
+  id        String   @id @default(uuid())
+  goalId    String
+  amount    BigInt
+  note      String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
 
-model UserGamification {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  xp              Int      @default(0)
-  level           Int      @default(1)
-  savedAmount     BigInt   @default(0)
-  status          GamificationStatus @default(CONSUMER_DRONE)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("user_gamification")
+  @@index([goalId])
+  @@map("goal_contributions")
 }
 
-enum GamificationStatus {
-  CONSUMER_DRONE
-  AWAKENED
-  ASCETIC
-  STRATEGIST
-  CAPITALIST
-  FINANCIAL_ARCHITECT
-}
-
-model Achievement {
-  id              String   @id @default(uuid())
-  code            String   @unique
-  name            String
-  description     String
-  iconUrl         String?
-  xpReward        Int
-  conditionType   AchievementCondition
-  conditionValue  Json
-  tier            AchievementTier @default(BRONZE)
-  createdAt       DateTime @default(now())
-
-  users           UserAchievement[]
-
-  @@map("achievements")
-}
-
-model UserAchievement {
-  id              String   @id @default(uuid())
-  userId          String
-  achievementId   String
-  earnedAt        DateTime @default(now())
-
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  achievement     Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, achievementId])
-  @@map("user_achievements")
-}
-
-enum AchievementCondition {
-  NO_SPEND_CATEGORY_DAYS
-  WISHLIST_REJECTED
-  BUDGET_UNDER_LIMIT
-  STREAK_DAYS
-  TOTAL_SAVED_AMOUNT
-}
-
-enum AchievementTier {
-  BRONZE
-  SILVER
-  GOLD
-  PLATINUM
-}
-
-// === WISHLIST - Инкубатор желаний ===
+// === WISHLIST ===
 
 model WishlistItem {
-  id              String   @id @default(uuid())
-  userId          String
-  name            String
-  price           BigInt
-  description     String   @default("")
-  imageUrl        String?
-  category        String?
-  status          WishlistStatus @default(PENDING)
-  cooldownDays    Int      @default(7)
-  createdAt       DateTime @default(now())
-  cooldownEnds    DateTime
-  decidedAt       DateTime?
-  purchasedAt     DateTime?
+  id           String         @id @default(uuid())
+  userId       String
+  name         String
+  price        BigInt
+  description  String         @default("")
+  imageUrl     String?
+  category     String?
+  status       WishlistStatus @default(PENDING)
+  cooldownDays Int            @default(7)
+  createdAt    DateTime       @default(now())
+  cooldownEnds DateTime
+  decidedAt    DateTime?
+  purchasedAt  DateTime?
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, status])
   @@map("wishlist_items")
 }
 
@@ -277,75 +206,28 @@ enum WishlistStatus {
   EXPIRED
 }
 
-// === CHALLENGES ===
-
-model Challenge {
-  id              String   @id @default(uuid())
-  code            String   @unique
-  name            String
-  description     String
-  type            ChallengeType
-  config          Json
-  xpReward        Int
-  iconUrl         String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-
-  users           UserChallenge[]
-
-  @@map("challenges")
-}
-
-model UserChallenge {
-  id              String   @id @default(uuid())
-  userId          String
-  challengeId     String
-  status          ChallengeStatus @default(ACTIVE)
-  startDate       DateTime @default(now())
-  endDate         DateTime
-  progress        Json
-  completedAt     DateTime?
-  isWinner        Boolean?
-
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  challenge       Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, challengeId, startDate])
-  @@map("user_challenges")
-}
-
-enum ChallengeType {
-  PERSONAL
-  FAMILY
-  SOCIAL
-}
-
-enum ChallengeStatus {
-  ACTIVE
-  COMPLETED
-  FAILED
-}
-
 // === FAMILY ===
 
 model Family {
-  id          String   @id @default(uuid())
-  name        String
-  inviteCode  String   @unique
-  createdAt   DateTime @default(now())
+  id         String         @id @default(uuid())
+  name       String
+  inviteCode String         @unique
+  createdAt  DateTime       @default(now())
 
-  members     FamilyMember[]
+  members    FamilyMember[]
 }
 
 model FamilyMember {
-  id          String   @id @default(uuid())
-  familyId    String
-  userId      String   @unique
-  role        FamilyRole @default(MEMBER)
-  joinedAt    DateTime @default(now())
+  id             String      @id @default(uuid())
+  familyId       String
+  userId         String      @unique
+  role           FamilyRole  @default(MEMBER)
+  joinedAt       DateTime    @default(now())
+  subscriptionId String?
 
-  family      Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  family       Family       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
 
   @@unique([familyId, userId])
   @@map("family_members")
@@ -360,187 +242,45 @@ enum FamilyRole {
 // === NOTIFICATIONS ===
 
 model Notification {
-  id          String   @id @default(uuid())
-  userId      String
-  type        NotificationType
-  title       String
-  body        String
-  data        Json?
-  isRead      Boolean  @default(false)
-  sentAt      DateTime @default(now())
+  id     String           @id @default(uuid())
+  userId String
+  type   NotificationType
+  title  String
+  body   String
+  data   Json?
+  isRead Boolean          @default(false)
+  sentAt DateTime         @default(now())
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, isRead])
   @@map("notifications")
 }
 
 enum NotificationType {
   WISHLIST_READY
   BUDGET_ALERT
-  CHALLENGE_INVITE
-  LEVEL_UP
-  ACHIEVEMENT_EARNED
-  STREAK_WARNING
+  GOAL_COMPLETED
+  MONTHLY_SUMMARY
 }
 
-// === FINANCIAL FORECAST ===
+// === BUDGETS ===
 
-model Deposit {
-  id              String   @id @default(uuid())
-  userId          String
-  name            String
-  type            DepositType
-  principal       BigInt
-  currentAmount   BigInt   @default(0)
-  annualRate      Float
-  compounding     CompoundingType
-  termMonths      Int
-  startDate       DateTime
-  endDate         DateTime?
-  isActive        Boolean  @default(true)
-  autoRenew       Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+model Budget {
+  id         String   @id @default(uuid())
+  userId     String
+  categoryId String
+  amount     BigInt
+  month      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions    DepositTransaction[]
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@map("deposits")
-}
-
-enum DepositType {
-  SAVINGS_ACCOUNT
-  TERM_DEPOSIT
-  INVESTMENT
-  CRYPTO
-  STOCKS
-  BONDS
-}
-
-enum CompoundingType {
-  DAILY
-  WEEKLY
-  MONTHLY
-  QUARTERLY
-  ANNUALLY
-  NONE
-}
-
-model DepositTransaction {
-  id          String   @id @default(uuid())
-  depositId   String
-  amount      BigInt
-  type        DepositTransactionType
-  date        DateTime @default(now())
-  description String?
-
-  deposit     Deposit  @relation(fields: [depositId], references: [id], onDelete: Cascade)
-
-  @@map("deposit_transactions")
-}
-
-enum DepositTransactionType {
-  DEPOSIT
-  WITHDRAWAL
-  INTEREST
-  TAX
-  FEE
-}
-
-model Loan {
-  id              String   @id @default(uuid())
-  userId          String
-  name            String
-  type            LoanType
-  principal       BigInt
-  currentBalance  BigInt
-  annualRate      Float
-  termMonths      Int
-  monthlyPayment  BigInt
-  startDate       DateTime
-  endDate         DateTime
-  isPaidOff       Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payments        LoanPayment[]
-
-  @@map("loans")
-}
-
-enum LoanType {
-  MORTGAGE
-  CONSUMER
-  AUTO
-  STUDENT
-  CREDIT_CARD
-  MICROLOAN
-}
-
-model LoanPayment {
-  id          String   @id @default(uuid())
-  loanId      String
-  amount      BigInt
-  principal   BigInt
-  interest    BigInt
-  isPaid      Boolean  @default(false)
-  dueDate     DateTime
-  paidDate    DateTime?
-  createdAt   DateTime @default(now())
-
-  loan        Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
-
-  @@map("loan_payments")
-}
-
-model SavingsGoal {
-  id              String   @id @default(uuid())
-  userId          String
-  name            String
-  targetAmount    BigInt
-  currentAmount   BigInt   @default(0)
-  monthlySave     BigInt
-  startDate       DateTime
-  targetDate      DateTime
-  priority        Int      @default(0)
-  isCompleted     Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("savings_goals")
-}
-
-model ForecastScenario {
-  id              String   @id @default(uuid())
-  userId          String
-  name            String
-  description     String?
-  
-  // Параметры сценария
-  monthlyIncome   BigInt
-  monthlyExpenses BigInt
-  monthlySave     BigInt
-  
-  // Вклады для симуляции
-  deposits        Json
-  
-  // Кредиты для симуляции
-  loans           Json
-  
-  // Параметры инфляции и доходности
-  inflationRate   Float    @default(7.0)
-  investmentReturnRate Float @default(10.0)
-  
-  forecastYears   Int      @default(10)
-  
-  createdAt       DateTime @default(now())
-
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("forecast_scenarios")
+  @@unique([userId, categoryId, month])
+  @@index([userId, month])
+  @@map("budgets")
 }
 
 // === EXCHANGE RATES ===
@@ -553,14 +293,14 @@ enum CurrencyType {
 
 model ExchangeRate {
   id        String       @id @default(uuid())
-  code      String       @unique  // USD, EUR, RUB, BTC, XAU etc.
-  name      String                // "US Dollar", "Bitcoin", "Gold"
+  code      String       @unique
+  name      String
   symbol    String       @default("$")
-  type      CurrencyType @default(FIAT)  // FIAT, CRYPTO, METAL
-  popular   Boolean      @default(false) // Показывать в первой вкладке
-  rate      Float                // Exchange rate: 1 USD = X of this currency
+  type      CurrencyType @default(FIAT)
+  popular   Boolean      @default(false)
+  rate      Float
   source    String       @default("exchange-api")
-  date      String                // YYYY-MM-DD from API response
+  date      String
   fetchedAt DateTime     @default(now())
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
@@ -568,14 +308,98 @@ model ExchangeRate {
   @@map("exchange_rates")
 }
 
+// === SUBSCRIPTION ===
+
+enum SubscriptionPlan {
+  FREE
+  PREMIUM
+  PREMIUM_FAMILY
+}
+
+model Subscription {
+  id            String            @id @default(uuid())
+  userId        String            @unique
+  plan          SubscriptionPlan  @default(FREE)
+  expiresAt     DateTime?
+  startedAt     DateTime          @default(now())
+  cancelledAt   DateTime?
+  platform      String?
+  transactionId String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyMembers FamilyMember[]
+
+  @@map("subscriptions")
+}
+
+// === AI CHAT ===
+
+model ChatMessage {
+  id         String     @id @default(uuid())
+  userId     String
+  role       ChatRole
+  content    String
+  presetType PresetType?
+  createdAt  DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("chat_messages")
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+enum PresetType {
+  SPENDING_REPORT
+  BUDGET_ANALYSIS
+  SAVINGS_TIPS
+  DYNAMICS
+}
+
+// === ARTICLES ===
+
+model Article {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  tag       String
+  isPremium Boolean  @default(false)
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations ArticleTranslation[]
+
+  @@map("articles")
+}
+
+model ArticleTranslation {
+  id        String   @id @default(uuid())
+  articleId String
+  language  String
+  title     String
+  content   String
+  readTime  String
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, language])
+  @@map("article_translations")
+}
+
 // === TRANSLATIONS CACHE ===
 
 model Translation {
   id        String   @id @default(uuid())
-  language  String               // "en", "ru", "es"
-  group     String               // "common", "auth", "home"
-  key       String               // "login", "password"
-  value     String               // "Log In", "Пароль"
+  language  String
+  group     String
+  key       String
+  value     String
   updatedAt DateTime @updatedAt
 
   @@unique([language, group, key])
