@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   UseGuards,
   Request,
@@ -57,5 +58,11 @@ export class FamilyController {
   @ApiOperation({ summary: 'Get family budget overview' })
   async getBudget(@Request() req: { user: { id: string } }) {
     return this.familyService.getBudget(req.user.id);
+  }
+
+  @Delete('leave')
+  @ApiOperation({ summary: 'Leave family (members only, not owner)' })
+  async leave(@Request() req: { user: { id: string } }) {
+    return this.familyService.leave(req.user.id);
   }
 }

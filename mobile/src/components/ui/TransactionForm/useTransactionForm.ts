@@ -4,7 +4,7 @@ import { useDataStore } from '../../../stores/dataStore';
 import { useAuthStore } from '../../../stores/authStore';
 import { useTheme } from '../../../stores/themeStore';
 import type { TransactionType } from '../../../types';
-import { TransactionType as TransactionTypeEnum } from '../../../types';
+import { TransactionType as TransactionTypeEnum, RecurrencePeriod } from '../../../types';
 import type { AiTransactionResult, AiReceiptResult } from '../../../services/ai';
 
 export type MathOp = '+' | '−' | '×' | '÷' | null;
@@ -39,6 +39,7 @@ export function useTransactionForm({
   const C = useTheme();
 
   const addTransaction = useDataStore((s: any) => s.addTransaction);
+  const addRecurringRule = useDataStore((s: any) => s.addRecurringRule);
   const accounts = useDataStore((s: any) => s.accounts);
   const categories = useDataStore((s: any) => s.categories);
   const transactions = useDataStore((s: any) => s.transactions);
@@ -62,6 +63,9 @@ export function useTransactionForm({
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [showAiPreview, setShowAiPreview] = useState(false);
   const [aiResult, setAiResult] = useState<AiTransactionResult | AiReceiptResult | null>(null);
+  const [makeRecurring, setMakeRecurring] = useState(false);
+  const [recurringPeriod, setRecurringPeriod] = useState<RecurrencePeriod>(RecurrencePeriod.MONTHLY);
+  const [recurringDayOfMonth, setRecurringDayOfMonth] = useState(1);
   const deleteTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const EXPENSE_COLORS = { primary: C.red, background: C.redBg };
@@ -129,6 +133,9 @@ export function useTransactionForm({
     setPreviousValue('');
     setSelectedCategory(null);
     if (accounts.length > 0) setSelectedAccount(accounts[0].id);
+    setMakeRecurring(false);
+    setRecurringPeriod(RecurrencePeriod.MONTHLY);
+    setRecurringDayOfMonth(1);
   }, [initialType, accounts]);
 
   const cleanupTimer = useCallback(() => {
@@ -205,6 +212,18 @@ export function useTransactionForm({
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
+
+      if (makeRecurring) {
+        await addRecurringRule({
+          accountId: selectedAccount,
+          categoryId: selectedCategory,
+          amount: Math.round(numericAmount * 100),
+          type,
+          period: recurringPeriod,
+          dayOfMonth: recurringPeriod === RecurrencePeriod.MONTHLY ? recurringDayOfMonth : undefined,
+        });
+      }
+
       onClose();
       onComplete();
     } catch (error) {
@@ -249,6 +268,9 @@ export function useTransactionForm({
     selectedAccData,
     limitInfo,
     accounts,
+    makeRecurring,
+    recurringPeriod,
+    recurringDayOfMonth,
 
     setType: handleTypeChange,
     setAmount,
@@ -266,6 +288,9 @@ export function useTransactionForm({
     setShowVoiceModal,
     setShowAiPreview,
     setAiResult,
+    setMakeRecurring,
+    setRecurringPeriod,
+    setRecurringDayOfMonth,
 
     handleNumberPress,
     handleDelete,

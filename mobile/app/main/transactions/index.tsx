@@ -135,6 +135,7 @@ export default function TransactionsDashboardScreen() {
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [showRecurringOnly, setShowRecurringOnly] = useState(false);
   const [customRange, setCustomRange] = useState<DateRange | null>(null);
   const [showRangePicker, setShowRangePicker] = useState(false);
   const [showAccountPicker, setShowAccountPicker] = useState(false);
@@ -184,6 +185,11 @@ export default function TransactionsDashboardScreen() {
     if (selectedCategory) {
       return filtered.filter((t) => t.categoryId === selectedCategory);
     }
+
+    if (showRecurringOnly) {
+      return filtered.filter((t) => t.recurringRuleId != null);
+    }
+
     return filtered;
   }, [transactions, type, range, selectedCategory, currentAccountId]);
 
@@ -433,6 +439,23 @@ export default function TransactionsDashboardScreen() {
 
             {categoryData.length > 0 && (
               <View className="flex-row flex-wrap justify-center gap-2.5 mt-5">
+                <Pressable
+                  onPress={() => {
+                    setShowRecurringOnly(!showRecurringOnly);
+                    setSelectedCategory(null);
+                  }}
+                  className="flex-row items-center gap-2 px-3.5 py-2 rounded-full"
+                  style={{
+                    backgroundColor: showRecurringOnly ? C.divider : 'rgba(255,255,255,0.03)',
+                    borderWidth: 1,
+                    borderColor: showRecurringOnly ? C.primary : C.border,
+                  }}
+                >
+                  <Ionicons name="repeat" size={16} color={showRecurringOnly ? C.primary : C.textSec} />
+                  <Text className="text-sm" style={{ color: showRecurringOnly ? C.textMain : C.textSec }}>
+                    {t('recurring.filterChip')}
+                  </Text>
+                </Pressable>
                 {categoryData.slice(0, 6).map((item) => {
                   const isSelected = selectedCategory === item.category.id;
                   return (

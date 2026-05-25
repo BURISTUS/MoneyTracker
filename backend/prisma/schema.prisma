@@ -32,6 +32,10 @@ model User {
   subscription  Subscription?
   sessions      Session[]
   budgets       Budget[]
+  recurringRules RecurringRule[]
+  deposits      Deposit[]
+  loans         Loan[]
+  forecasts     ForecastScenario[]
 
   @@map("users")
 }
@@ -68,6 +72,7 @@ model Account {
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  recurringRules RecurringRule[]
 
   @@index([userId])
   @@map("accounts")
@@ -101,6 +106,7 @@ model Category {
   user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
   budgets      Budget[]
+  recurringRules RecurringRule[]
 
   @@index([userId])
   @@map("categories")
@@ -123,14 +129,18 @@ model Transaction {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  recurringRuleId String?
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account       Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category      Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  recurringRule RecurringRule? @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
 
   @@index([userId, date])
   @@index([userId, type])
   @@index([accountId])
   @@index([categoryId])
+  @@index([recurringRuleId])
   @@map("transactions")
 }
 
@@ -138,6 +148,38 @@ enum TransactionType {
   INCOME
   EXPENSE
   TRANSFER
+}
+
+enum RecurrencePeriod {
+  WEEKLY
+  MONTHLY
+}
+
+model RecurringRule {
+  id          String           @id @default(uuid())
+  userId      String
+  accountId   String
+  categoryId  String
+  amount      BigInt
+  type        TransactionType
+  period      RecurrencePeriod
+  dayOfWeek   Int?
+  dayOfMonth  Int?
+  description String?
+  isActive    Boolean          @default(true)
+  nextRunDate DateTime
+  lastRunDate DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account  Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([nextRunDate])
+  @@map("recurring_rules")
 }
 
 // === GOALS ===
@@ -404,4 +446,137 @@ model Translation {
 
   @@unique([language, group, key])
   @@map("translations")
+}
+
+// === DEPOSITS & LOANS ===
+
+enum DepositType {
+  SAVINGS_ACCOUNT
+  TERM_DEPOSIT
+  INVESTMENT
+  BONDS
+}
+
+enum CompoundingType {
+  DAILY
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+  NONE
+}
+
+model Deposit {
+  id            String          @id @default(uuid())
+  userId        String
+  name          String
+  type          DepositType
+  principal     BigInt
+  currentAmount BigInt
+  annualRate    Float
+  compounding   CompoundingType
+  termMonths    Int
+  startDate     DateTime
+  endDate       DateTime?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions DepositTransaction[]
+
+  @@index([userId])
+  @@map("deposits")
+}
+
+model DepositTransaction {
+  id          String                 @id @default(uuid())
+  depositId   String
+  amount      BigInt
+  type        DepositTransactionType
+  date        DateTime               @default(now())
+  description String?
+  createdAt   DateTime               @default(now())
+
+  deposit Deposit @relation(fields: [depositId], references: [id], onDelete: Cascade)
+
+  @@index([depositId])
+  @@map("deposit_transactions")
+}
+
+enum DepositTransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  INTEREST
+}
+
+enum LoanType {
+  MORTGAGE
+  CONSUMER
+  AUTO
+  STUDENT
+  CREDIT_CARD
+}
+
+model Loan {
+  id             String   @id @default(uuid())
+  userId         String
+  name           String
+  type           LoanType
+  principal      BigInt
+  currentBalance BigInt
+  annualRate     Float
+  termMonths     Int
+  monthlyPayment BigInt
+  startDate      DateTime
+  endDate        DateTime?
+  isPaidOff      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments LoanPayment[]
+
+  @@index([userId])
+  @@map("loans")
+}
+
+model LoanPayment {
+  id        String   @id @default(uuid())
+  loanId    String
+  amount    BigInt
+  principal BigInt
+  interest  BigInt
+  isPaid    Boolean  @default(false)
+  dueDate   DateTime
+  paidDate  DateTime?
+  createdAt DateTime @default(now())
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId])
+  @@map("loan_payments")
+}
+
+// === FORECAST ===
+
+model ForecastScenario {
+  id                  String   @id @default(uuid())
+  userId              String
+  name                String
+  description         String?
+  monthlyIncome       BigInt
+  monthlyExpenses     BigInt
+  monthlySave         BigInt
+  deposits            Json     @default("[]")
+  loans               Json     @default("[]")
+  inflationRate       Float    @default(7.0)
+  investmentReturnRate Float   @default(10.0)
+  forecastYears       Int      @default(10)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("forecast_scenarios")
 }

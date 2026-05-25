@@ -29,6 +29,7 @@ export default function FamilyScreen() {
   const fetchFamilyBudget = useSubscriptionStore((s) => s.fetchFamilyBudget);
   const createFamily = useSubscriptionStore((s) => s.createFamily);
   const joinFamily = useSubscriptionStore((s) => s.joinFamily);
+  const leaveFamily = useSubscriptionStore((s) => s.leaveFamily);
 
   const [familyName, setFamilyName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -177,7 +178,7 @@ export default function FamilyScreen() {
               </View>
               {familyBudget.memberSpending?.map((ms: any) => (
                 <View key={ms.userId} style={S.budgetRow}>
-                  <Text style={{ fontSize: 13, color: C.textSec }}>{ms.userId.slice(0, 8)}…</Text>
+                  <Text style={{ fontSize: 13, color: C.textSec }}>{ms.userName || ms.userId.slice(0, 8) + '…'}</Text>
                   <Text style={{ fontSize: 14, fontWeight: '600', color: C.textMain }}>{formatCurrency(ms.totalSpent * 100)}</Text>
                 </View>
               ))}
@@ -202,7 +203,15 @@ export default function FamilyScreen() {
           message={t('family.leaveDesc')}
           confirmText={t('family.leaveBtn')}
           variant="destructive"
-          onConfirm={() => { setShowLeaveModal(false); }}
+          onConfirm={async () => {
+            setShowLeaveModal(false);
+            try {
+              await leaveFamily();
+              toast.showSuccess(t('family.leftSuccess'));
+            } catch (e: any) {
+              toast.showError(e?.message || t('family.leaveFailed'));
+            }
+          }}
           onCancel={() => setShowLeaveModal(false)}
         />
       </View>

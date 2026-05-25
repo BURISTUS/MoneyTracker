@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { safeAsyncStorage } from '../utils/safeAsyncStorage';
-import type { Account, Transaction, Goal, Category, UserGamification, Challenge, WishlistItem, User, Article, Budget } from '../types';
-import { AccountType, CategoryType, TransactionType, WishlistStatus } from '../types';
+import type { Account, Transaction, Goal, Category, UserGamification, Challenge, WishlistItem, User, Article, Budget, RecurringRule, Deposit, Loan, ForecastScenario } from '../types';
+import { AccountType, CategoryType, TransactionType, WishlistStatus, RecurrencePeriod } from '../types';
 import { useAuthStore } from './authStore';
 import transactionsService from '../services/transactions';
 import accountsService from '../services/accounts';
@@ -14,6 +14,10 @@ import wishlistService from '../services/wishlist';
 import goalsService from '../services/goals';
 import articlesService from '../services/articles';
 import budgetsService from '../services/budgets';
+import recurringService, { CreateRecurringRuleData, UpdateRecurringRuleData } from '../services/recurring';
+import depositsService, { CreateDepositData } from '../services/deposits';
+import loansService, { CreateLoanData } from '../services/loans';
+import forecastService, { CreateForecastData } from '../services/forecast';
 import { useSubscriptionStore } from './subscriptionStore';
 import type { ExchangeRate } from '../services/currency';
 import { setCurrencyConfig } from '../utils/formatters';
@@ -130,6 +134,38 @@ interface DataState {
   updateBudget: (id: string, amount: number) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
   carryForwardBudgets: () => Promise<void>;
+
+  // Recurring Rules
+  recurringRules: RecurringRule[];
+  isLoadingRecurringRules: boolean;
+  fetchRecurringRules: () => Promise<void>;
+  addRecurringRule: (data: CreateRecurringRuleData) => Promise<RecurringRule | null>;
+  updateRecurringRule: (id: string, data: UpdateRecurringRuleData) => Promise<void>;
+  deleteRecurringRule: (id: string, keepTransactions?: boolean) => Promise<void>;
+  pauseRecurringRule: (id: string) => Promise<void>;
+  activateRecurringRule: (id: string) => Promise<void>;
+
+  // Deposits
+  deposits: Deposit[];
+  isLoadingDeposits: boolean;
+  fetchDeposits: () => Promise<void>;
+  addDeposit: (data: CreateDepositData) => Promise<void>;
+  deleteDeposit: (id: string) => Promise<void>;
+
+  // Loans
+  loans: Loan[];
+  isLoadingLoans: boolean;
+  fetchLoans: () => Promise<void>;
+  addLoan: (data: CreateLoanData) => Promise<void>;
+  recordLoanPayment: (id: string) => Promise<void>;
+  deleteLoan: (id: string) => Promise<void>;
+
+  // Forecast
+  forecasts: ForecastScenario[];
+  isLoadingForecasts: boolean;
+  fetchForecasts: () => Promise<void>;
+  addForecast: (data: CreateForecastData) => Promise<void>;
+  deleteForecast: (id: string) => Promise<void>;
 
   // Initialization
   initializeData: () => Promise<void>;
@@ -615,6 +651,179 @@ export const useDataStore = create<DataState>()(
         }
       },
 
+      // Recurring Rules
+      recurringRules: [],
+      isLoadingRecurringRules: false,
+      fetchRecurringRules: async () => {
+        set({ isLoadingRecurringRules: true });
+        try {
+          const response = await recurringService.getAll();
+          const rules = (response as any)?.data ?? response;
+          set({ recurringRules: Array.isArray(rules) ? rules : [], isLoadingRecurringRules: false });
+        } catch (e) {
+          if (__DEV__) console.error('Failed to fetch recurring rules:', e);
+          set({ isLoadingRecurringRules: false });
+        }
+      },
+      addRecurringRule: async (data: CreateRecurringRuleData) => {
+        try {
+          const response = await recurringService.create(data);
+          const rule = (response as any)?.data ?? response;
+          set((state) => ({ recurringRules: [rule, ...state.recurringRules] }));
+          return rule as RecurringRule;
+        } catch (e) {
+          if (__DEV__) console.error('Failed to create recurring rule:', e);
+          return null;
+        }
+      },
+      updateRecurringRule: async (id: string, data: UpdateRecurringRuleData) => {
+        try {
+          const response = await recurringService.update(id, data);
+          const updated = (response as any)?.data ?? response;
+          set((state) => ({
+            recurringRules: state.recurringRules.map((r) => (r.id === id ? { ...r, ...updated } : r)),
+          }));
+        } catch (e) {
+          if (__DEV__) console.error('Failed to update recurring rule:', e);
+        }
+      },
+      deleteRecurringRule: async (id: string, keepTransactions = true) => {
+        try {
+          await recurringService.delete(id, keepTransactions);
+          set((state) => ({
+            recurringRules: state.recurringRules.filter((r) => r.id !== id),
+          }));
+        } catch (e) {
+          if (__DEV__) console.error('Failed to delete recurring rule:', e);
+        }
+      },
+      pauseRecurringRule: async (id: string) => {
+        try {
+          const response = await recurringService.pause(id);
+          const updated = (response as any)?.data ?? response;
+          set((state) => ({
+            recurringRules: state.recurringRules.map((r) => (r.id === id ? { ...r, ...updated } : r)),
+          }));
+        } catch (e) {
+          if (__DEV__) console.error('Failed to pause recurring rule:', e);
+        }
+      },
+      activateRecurringRule: async (id: string) => {
+        try {
+          const response = await recurringService.activate(id);
+          const updated = (response as any)?.data ?? response;
+          set((state) => ({
+            recurringRules: state.recurringRules.map((r) => (r.id === id ? { ...r, ...updated } : r)),
+          }));
+        } catch (e) {
+          if (__DEV__) console.error('Failed to activate recurring rule:', e);
+        }
+      },
+
+      // Deposits
+      deposits: [],
+      isLoadingDeposits: false,
+      fetchDeposits: async () => {
+        set({ isLoadingDeposits: true });
+        try {
+          const response = await depositsService.getAll();
+          const deposits = (response as any)?.data ?? response;
+          set({ deposits: Array.isArray(deposits) ? deposits : [], isLoadingDeposits: false });
+        } catch (e) {
+          if (__DEV__) console.error('Failed to fetch deposits:', e);
+          set({ isLoadingDeposits: false });
+        }
+      },
+      addDeposit: async (data: CreateDepositData) => {
+        try {
+          const response = await depositsService.create(data);
+          const deposit = (response as any)?.data ?? response;
+          set((state) => ({ deposits: [deposit, ...state.deposits] }));
+        } catch (e) {
+          if (__DEV__) console.error('Failed to create deposit:', e);
+        }
+      },
+      deleteDeposit: async (id: string) => {
+        try {
+          await depositsService.delete(id);
+          set((state) => ({ deposits: state.deposits.filter((d) => d.id !== id) }));
+        } catch (e) {
+          if (__DEV__) console.error('Failed to delete deposit:', e);
+        }
+      },
+
+      // Loans
+      loans: [],
+      isLoadingLoans: false,
+      fetchLoans: async () => {
+        set({ isLoadingLoans: true });
+        try {
+          const response = await loansService.getAll();
+          const loans = (response as any)?.data ?? response;
+          set({ loans: Array.isArray(loans) ? loans : [], isLoadingLoans: false });
+        } catch (e) {
+          if (__DEV__) console.error('Failed to fetch loans:', e);
+          set({ isLoadingLoans: false });
+        }
+      },
+      addLoan: async (data: CreateLoanData) => {
+        try {
+          const response = await loansService.create(data);
+          const loan = (response as any)?.data ?? response;
+          set((state) => ({ loans: [loan, ...state.loans] }));
+        } catch (e) {
+          if (__DEV__) console.error('Failed to create loan:', e);
+        }
+      },
+      recordLoanPayment: async (id: string) => {
+        try {
+          await loansService.recordPayment(id);
+          await get().fetchLoans();
+        } catch (e) {
+          if (__DEV__) console.error('Failed to record loan payment:', e);
+        }
+      },
+      deleteLoan: async (id: string) => {
+        try {
+          await loansService.delete(id);
+          set((state) => ({ loans: state.loans.filter((l) => l.id !== id) }));
+        } catch (e) {
+          if (__DEV__) console.error('Failed to delete loan:', e);
+        }
+      },
+
+      // Forecast
+      forecasts: [],
+      isLoadingForecasts: false,
+      fetchForecasts: async () => {
+        set({ isLoadingForecasts: true });
+        try {
+          const response = await forecastService.getAll();
+          const forecasts = (response as any)?.data ?? response;
+          set({ forecasts: Array.isArray(forecasts) ? forecasts : [], isLoadingForecasts: false });
+        } catch (e) {
+          if (__DEV__) console.error('Failed to fetch forecasts:', e);
+          set({ isLoadingForecasts: false });
+        }
+      },
+      addForecast: async (data: CreateForecastData) => {
+        try {
+          const response = await forecastService.create(data);
+          const forecast = (response as any)?.data ?? response;
+          set((state) => ({ forecasts: [forecast, ...state.forecasts] }));
+        } catch (e) {
+          if (__DEV__) console.error('Failed to create forecast:', e);
+        }
+      },
+      deleteForecast: async (id: string) => {
+        try {
+          await forecastService.delete(id);
+          set((state) => ({ forecasts: state.forecasts.filter((f) => f.id !== id) }));
+        } catch (e) {
+          if (__DEV__) console.error('Failed to delete forecast:', e);
+        }
+      },
+
       // Initialize data from API
       initializeData: async () => {
         const isDemoMode = useAuthStore.getState().isDemoMode;
@@ -653,6 +862,10 @@ export const useDataStore = create<DataState>()(
         }
         if (isPremium) {
           promises.push(get().fetchBudgets());
+          promises.push(get().fetchRecurringRules());
+          promises.push(get().fetchDeposits());
+          promises.push(get().fetchLoans());
+          promises.push(get().fetchForecasts());
         }
 
         await Promise.all(promises);
@@ -673,6 +886,10 @@ export const useDataStore = create<DataState>()(
         userCurrency: state.userCurrency,
         currencySymbol: state.currencySymbol,
         budgets: state.budgets,
+        recurringRules: state.recurringRules,
+        deposits: state.deposits,
+        loans: state.loans,
+        forecasts: state.forecasts,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

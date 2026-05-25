@@ -10,6 +10,7 @@ import { useTheme } from '../../../src/stores/themeStore';
 import { Text } from '../../../components/ui/text';
 import { CategoryIcon } from '../../../src/components/ui/CategoryIcon';
 import { CategoryEditModal } from '../../../src/components/ui/CategoryEditModal';
+import { RecurringRulesModal } from '../../../src/components/ui/RecurringRulesModal';
 import { formatCurrency } from '../../../src/utils/formatters';
 import { useToast } from '../../../src/components/ui/Toast';
 import categoriesService from '../../../src/services/categories';
@@ -57,6 +58,7 @@ export default function CategoriesIndexScreen() {
   const canCreate = personalCount < maxCategories;
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [showRecurringModal, setShowRecurringModal] = useState(false);
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -239,6 +241,13 @@ export default function CategoriesIndexScreen() {
             </View>
             <Text style={S.actionText}>{t("categories.expenseChart")}</Text>
           </Pressable>
+
+          <Pressable onPress={() => setShowRecurringModal(true)} style={S.actionBtn}>
+            <View style={[S.actionIconWrap, { backgroundColor: `${C.primary}18` }]}>
+              <Ionicons name="repeat" size={18} color={C.primary} />
+            </View>
+            <Text style={S.actionText}>{t('recurring.title')}</Text>
+          </Pressable>
         </View>
 
         <View style={S.list}>
@@ -279,6 +288,11 @@ export default function CategoriesIndexScreen() {
           })()}
         />
       )}
+
+      <RecurringRulesModal
+        visible={showRecurringModal}
+        onClose={() => setShowRecurringModal(false)}
+      />
     </View>
   );
 }

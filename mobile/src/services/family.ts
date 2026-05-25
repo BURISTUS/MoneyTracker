@@ -23,7 +23,7 @@ export interface FamilyInfo {
 
 export interface FamilyBudget {
   totalSpent: number;
-  memberSpending: { userId: string; totalSpent: number; transactionCount: number }[];
+  memberSpending: { userId: string; userName: string; totalSpent: number; transactionCount: number }[];
   startOfMonth: string;
 }
 
@@ -55,5 +55,9 @@ export const familyService = {
   async getBudget(): Promise<FamilyBudget> {
     const { data } = await api.get('/family/budget');
     return data;
+  },
+
+  async leave(): Promise<void> {
+    await api.delete('/family/leave');
   },
 };

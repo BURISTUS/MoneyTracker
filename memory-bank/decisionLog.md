@@ -93,3 +93,10 @@
 - **Причина**: Карта символов валют дублировалась (5 валют в chat vs 60+ в currency). DRY принцип.
 - **Решение**: Оставить `POST /subscription/toggle` для dev/test/demo
 - **Причина**: Endpoint нужен для E2E тестов и демо-режима. В production нужно добавить payment validation guard.
+
+### D-18: RecurringRule — модель и cron-генерация
+- **Решение**: Отдельная модель `RecurringRule` с `nextRunDate`, cron задача `0 6 * * *` генерирует транзакции. Transaction получает `recurringRuleId` (SetNull при удалении правила).
+- **Почему**: Аналог паттерна «cron budget carry-forward» уже используется в проекте. nextRunDate позволяет эффективно искать правила для обработки. SetNull на recurringRuleId сохраняет историю транзакций при удалении правила.
+- **Периоды**: Только WEEKLY и MONTHLY — самые частые кейсы (аренда, подписки, зарплата). DAILY и CUSTOM добавят сложность UI без существенной ценности.
+- **UI размещение**: Кнопка на Categories → RecurringRulesModal (управление правилами). Тогл «Повторять» в AddTransactionModal (быстрое создание правила из транзакции). Фильтр-чип «Регулярные» на Transactions (фильтрация по recurringRuleId).
+

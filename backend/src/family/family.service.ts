@@ -82,6 +82,27 @@ export class FamilyService {
     });
   }
 
+  async leave(userId: string) {
+    const member = await this.prisma.familyMember.findUnique({
+      where: { userId },
+      include: { family: { include: { members: true } } },
+    });
+
+    if (!member) {
+      throw new AppException('errors.notInFamily', 404);
+    }
+
+    if (member.role === 'OWNER') {
+      throw new AppException('errors.ownerCannotLeave', 400);
+    }
+
+    await this.prisma.familyMember.delete({
+      where: { id: member.id },
+    });
+
+    return { success: true };
+  }
+
   async getBudget(userId: string) {
     const member = await this.prisma.familyMember.findUnique({
       where: { userId },
@@ -93,7 +114,7 @@ export class FamilyService {
 
     const familyMembers = await this.prisma.familyMember.findMany({
       where: { familyId: member.familyId },
-      select: { userId: true },
+      select: { userId: true, user: { select: { name: true, email: true } } },
     });
 
     const userIds = familyMembers.map((m) => m.userId);
@@ -114,6 +135,7 @@ export class FamilyService {
       const total = userTx.reduce((sum, t) => sum + Number(t.amount), 0);
       return {
         userId: fm.userId,
+        userName: fm.user?.name || fm.user?.email || 'User',
         totalSpent: total / 100,
         transactionCount: userTx.length,
       };

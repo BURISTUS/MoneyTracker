@@ -24,6 +24,10 @@ import { ExportModule } from './export/export.module';
 import { FamilyModule } from './family/family.module';
 import { BudgetModule } from './budget/budget.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { RecurringModule } from './recurring/recurring.module';
+import { DepositsModule } from './deposits/deposits.module';
+import { LoansModule } from './loans/loans.module';
+import { ForecastModule } from './forecast/forecast.module';
 
 @Module({
   imports: [
@@ -65,6 +69,10 @@ import { NotificationsModule } from './notifications/notifications.module';
     FamilyModule,
     BudgetModule,
     NotificationsModule,
+    RecurringModule,
+    DepositsModule,
+    LoansModule,
+    ForecastModule,
   ],
 })
 export class AppModule {}

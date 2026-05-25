@@ -42,6 +42,9 @@ export default function MainLayout() {
             <Stack.Screen name="chat/index" />
             <Stack.Screen name="notifications/index" />
             <Stack.Screen name="analytics/index" />
+            <Stack.Screen name="deposits/index" />
+            <Stack.Screen name="loans/index" />
+            <Stack.Screen name="forecast/index" />
             <Stack.Screen name="articles/[id]" />
           </Stack>
         </KeyboardAvoidingView>

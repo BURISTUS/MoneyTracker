@@ -281,6 +281,26 @@ export function AddTransactionModal({
                 </TouchableOpacity>
 
                 <TouchableOpacity
+                  onPress={() => form.setMakeRecurring(!form.makeRecurring)}
+                  style={S.actionBtn}
+                >
+                  <View
+                    style={[
+                      S.actionIconWrap,
+                      form.makeRecurring && {
+                        backgroundColor: `${C.primary}18`,
+                        borderColor: C.primary,
+                      },
+                    ]}
+                  >
+                    <Ionicons name="repeat" size={20} color={form.makeRecurring ? C.primary : C.textSec} />
+                  </View>
+                  <Text style={[S.actionLabel, form.makeRecurring && { color: C.primary }]}>
+                    {t('recurring.title')}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                   onPress={() => {
                     if (showPaywall('AI_VOICE')) return;
                     form.setShowVoiceModal(true);
@@ -311,6 +331,40 @@ export function AddTransactionModal({
                 />
               </View>
             </View>
+
+            {form.makeRecurring && (
+              <View style={S.section}>
+                <Text style={S.sectionTitle}>{t('recurring.period')}</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => form.setRecurringPeriod('MONTHLY' as any)}
+                    style={[S.actionIconWrap, { paddingHorizontal: 16, width: undefined, backgroundColor: form.recurringPeriod === 'MONTHLY' ? `${C.primary}18` : C.card, borderColor: form.recurringPeriod === 'MONTHLY' ? C.primary : C.border }]}
+                  >
+                    <Text style={{ fontSize: 13, color: form.recurringPeriod === 'MONTHLY' ? C.primary : C.textSec }}>{t('recurring.monthly')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => form.setRecurringPeriod('WEEKLY' as any)}
+                    style={[S.actionIconWrap, { paddingHorizontal: 16, width: undefined, backgroundColor: form.recurringPeriod === 'WEEKLY' ? `${C.primary}18` : C.card, borderColor: form.recurringPeriod === 'WEEKLY' ? C.primary : C.border }]}
+                  >
+                    <Text style={{ fontSize: 13, color: form.recurringPeriod === 'WEEKLY' ? C.primary : C.textSec }}>{t('recurring.weekly')}</Text>
+                  </TouchableOpacity>
+                </View>
+                {form.recurringPeriod === 'MONTHLY' && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                    <Text style={{ fontSize: 12, color: C.textSec }}>{t('recurring.dayOfMonth')}:</Text>
+                    {[1, 5, 10, 15, 20, 25].map((d) => (
+                      <TouchableOpacity
+                        key={d}
+                        onPress={() => form.setRecurringDayOfMonth(d)}
+                        style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: form.recurringDayOfMonth === d ? `${C.primary}18` : C.card, borderWidth: 1, borderColor: form.recurringDayOfMonth === d ? C.primary : C.border, alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Text style={{ fontSize: 12, color: form.recurringDayOfMonth === d ? C.primary : C.textSec }}>{d}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
 
             <TransactionNoteInput
               visible={form.showNoteInput}

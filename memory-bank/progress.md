@@ -395,6 +395,24 @@
 - [x] **Mobile**: Тап на премиум статью → PaywallModal (для free юзеров)
 - [x] **i18n**: premiumRequired, articleNotFound (EN+RU)
 
+### Регулярные транзакции (Recurring Rules) — 2026-05-24
+- [x] **Prisma**: `RecurringRule` модель (id, userId, accountId, categoryId, amount BigInt, type, period WEEKLY/MONTHLY, dayOfWeek?, dayOfMonth?, isActive, nextRunDate, lastRunDate) + `RecurrencePeriod` enum
+- [x] **Prisma**: `recurringRuleId` на Transaction (опциональное, onDelete SetNull)
+- [x] **Миграция**: `20260522140217_add_recurring_rules`
+- [x] **Backend RecurringModule**: controller, service, DTOs (CreateRecurringRuleDto, UpdateRecurringRuleDto)
+- [x] **Backend CRUD**: GET /recurring, POST /recurring, PATCH /recurring/:id, DELETE /recurring/:id (keepTransactions опция)
+- [x] **Backend pause/activate**: PATCH /recurring/:id/pause, PATCH /recurring/:id/activate (пересчёт nextRunDate)
+- [x] **Backend preview**: GET /recurring/:id/preview (следующие 3 даты)
+- [x] **Backend @Cron**: `0 6 * * *` — ежедневно создаёт транзакции для правил с nextRunDate <= сегодня
+- [x] **Backend i18n**: recurring.* ключи (EN+RU+18 языков)
+- [x] **Mobile types**: `RecurringRule`, `RecurrencePeriod` в `types/index.ts`
+- [x] **Mobile service**: `src/services/recurring.ts` — getAll, create, update, pause, activate, delete, getPreview
+- [x] **Mobile store**: dataStore — recurringRules[], fetchRecurringRules, addRecurringRule, updateRecurringRule, deleteRecurringRule, pauseRecurringRule, activateRecurringRule
+- [x] **Mobile UI — RecurringRulesModal**: полноэкранная модалка (доступ из кнопки на Categories), форма создания, список активных/паузированных правил, pause/activate/delete
+- [x] **Mobile UI — AddTransactionModal**: кнопка «Повторять» (repeat icon) в actionsRow → период MONTHLY/WEEKLY + выбор дня месяца
+- [x] **Mobile UI — Transactions**: фильтр-чип «Регулярные» (↻ иконка) фильтрует по recurringRuleId
+- [x] **Mobile i18n**: recurring.* секция (EN+RU)
+
 ## Бэклог
 
 ### Приоритет высокий — AI фичи (запрошено PM)
@@ -406,7 +424,7 @@
 - [ ] **Главный экран редизайн** — `home-screen-redesign`: переработка Home screen UX/UI (последняя очередь, после AI фич)
 
 ### Приоритет средний
-- [ ] **Регулярные транзакции** — `recurring-transactions`: шаблоны повторяющихся платежей (подписки, аренда), автосоздание по расписанию
+- [ ] ~~Регулярные транзакции~~ *(реализовано 2026-05-24)*
 - [ ] ~~Transfer между счетами~~ *(реализовано)*
 - [ ] ~~Редактирование категорий~~ *(реализовано)*
 

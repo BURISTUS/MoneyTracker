@@ -87,6 +87,7 @@ export interface Transaction {
   type: TransactionType;
   description: string | null;
   date: string;
+  recurringRuleId?: string | null;
   createdAt: string;
   updatedAt: string;
   account?: Account;
@@ -250,21 +251,19 @@ export interface Deposit {
   startDate: string;
   endDate: string | null;
   isActive: boolean;
-  autoRenew: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export enum DepositType {
   SAVINGS_ACCOUNT = 'SAVINGS_ACCOUNT',
   TERM_DEPOSIT = 'TERM_DEPOSIT',
   INVESTMENT = 'INVESTMENT',
-  CRYPTO = 'CRYPTO',
-  STOCKS = 'STOCKS',
   BONDS = 'BONDS',
 }
 
 export enum CompoundingType {
   DAILY = 'DAILY',
-  WEEKLY = 'WEEKLY',
   MONTHLY = 'MONTHLY',
   QUARTERLY = 'QUARTERLY',
   ANNUALLY = 'ANNUALLY',
@@ -282,8 +281,11 @@ export interface Loan {
   termMonths: number;
   monthlyPayment: number;
   startDate: string;
-  endDate: string;
+  endDate: string | null;
   isPaidOff: boolean;
+  createdAt: string;
+  updatedAt: string;
+  payments?: LoanPayment[];
 }
 
 export enum LoanType {
@@ -292,20 +294,18 @@ export enum LoanType {
   AUTO = 'AUTO',
   STUDENT = 'STUDENT',
   CREDIT_CARD = 'CREDIT_CARD',
-  MICROLOAN = 'MICROLOAN',
 }
 
-export interface SavingsGoal {
+export interface LoanPayment {
   id: string;
-  userId: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  monthlySave: number;
-  startDate: string;
-  targetDate: string;
-  priority: number;
-  isCompleted: boolean;
+  loanId: string;
+  amount: number;
+  principal: number;
+  interest: number;
+  isPaid: boolean;
+  dueDate: string;
+  paidDate: string | null;
+  createdAt: string;
 }
 
 export interface ForecastScenario {
@@ -316,11 +316,25 @@ export interface ForecastScenario {
   monthlyIncome: number;
   monthlyExpenses: number;
   monthlySave: number;
-  deposits: Array<{ depositId: string; monthlyContribution: number }>;
-  loans: Array<{ loanId: string; extraPayment: number }>;
+  deposits: unknown;
+  loans: unknown;
   inflationRate: number;
   investmentReturnRate: number;
   forecastYears: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ForecastProjection {
+  scenarioId: string;
+  monthlySave: number;
+  investmentReturnRate: number;
+  inflationRate: number;
+  currentNetWorth: number;
+  totalDeposits: number;
+  totalLoans: number;
+  projection: { year: number; savings: number; invested: number; netWorth: number }[];
+  summary: { totalSaved: number; totalInvested: number; realValue: number };
 }
 
 export interface QuickSummary {
@@ -456,4 +470,29 @@ export interface SubscriptionStatus {
   familyName?: string;
   familyCode?: string;
   familyRole?: 'OWNER' | 'MEMBER';
+}
+
+export enum RecurrencePeriod {
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY',
+}
+
+export interface RecurringRule {
+  id: string;
+  userId: string;
+  accountId: string;
+  categoryId: string;
+  amount: number;
+  type: TransactionType;
+  period: RecurrencePeriod;
+  dayOfWeek: number | null;
+  dayOfMonth: number | null;
+  description: string | null;
+  isActive: boolean;
+  nextRunDate: string;
+  lastRunDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  account?: Pick<Account, 'id' | 'name' | 'currency'>;
+  category?: Pick<Category, 'id' | 'name' | 'icon' | 'color' | 'type'>;
 }

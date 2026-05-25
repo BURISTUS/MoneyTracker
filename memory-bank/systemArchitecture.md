@@ -102,16 +102,18 @@
 | Loan | userId, type, principal, currentBalance, monthlyPayment |
 | SavingsGoal | userId, name, targetAmount, currentAmount |
 | ForecastScenario | userId, monthlyIncome, monthlyExpenses, forecastYears |
+| RecurringRule | userId, accountId, categoryId, amount(BigInt), type(TransactionType), period(WEEKLY/MONTHLY), dayOfWeek?, dayOfMonth?, description?, isActive, nextRunDate, lastRunDate |
+| Transaction | userId, accountId, categoryId, amount(BigInt), type(TransactionType), description?, date, recurringRuleId?(nullable) |
 | ExchangeRate | code(unique), name, symbol, rate(1USD=X), type(FIAT/CRYPTO/METAL), popular(bool), source, date(YYYY-MM-DD) |
 | Translation | language, group, key, value (unique combo) |
 
 ### Нереализованные модели (файлы есть, модули не подключены)
-Family, FamilyMember, Notification, DepositTransaction, LoanPayment
+Family, FamilyMember, DepositTransaction, LoanPayment
 
 ## Backend — структура папок
 ```
 backend/src/
-├── app.module.ts          # Root (PrismaModule, RedisModule, AuthModule, UsersModule, TransactionsModule, CategoriesModule, AccountsModule, BudgetModule, GoalsModule, WishlistModule, LifeCostModule)
+├── app.module.ts          # Root (PrismaModule, RedisModule, AuthModule, UsersModule, TransactionsModule, CategoriesModule, AccountsModule, BudgetModule, GoalsModule, WishlistModule, LifeCostModule, RecurringModule)
 ├── main.ts                # CORS, ValidationPipe, Swagger, BigInt.toJSON, port 3001
 ├── prisma/                # PrismaService
 ├── redis/                 # RedisService
@@ -128,7 +130,8 @@ backend/src/
 ├── currency/              # Currency rates (~300+ currencies, Redis cache, exchange-api, upsert on refresh)
 ├── i18n-controller/       # GET /api/i18n/translations/:lang, GET /api/i18n/languages
 ├── i18n/                  # Translation JSON files: en/, ru/, es/, pt/, fr/, de/, ja/, zh/
-└── (не подключены: notifications, family, deposits, loans)
+├── recurring/             # Recurring rules (CRUD, pause/activate, @Cron auto-generation)
+└── (не подключены: family, deposits, loans)
 ```
 
 ## Mobile — структура папок
@@ -228,6 +231,17 @@ mobile/
 |-------|------|----------|
 | GET | /life-cost/rate | Получить hourlyRate |
 | POST | /life-cost/calculate | Рассчитать часы |
+
+### Recurring
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | /recurring | Все recurring rules юзера |
+| POST | /recurring | Создать правило (WEEKLY/MONTHLY, dayOfWeek/dayOfMonth) |
+| PATCH | /recurring/:id | Обновить правило |
+| DELETE | /recurring/:id | Удалить (?keepTransactions=true/false) |
+| PATCH | /recurring/:id/pause | Поставить на паузу |
+| PATCH | /recurring/:id/activate | Активировать (пересчёт nextRunDate) |
+| GET | /recurring/:id/preview | Предпросмотр следующих N дат (?count=3) |
 
 ### Currency
 | Метод | Путь | Описание |

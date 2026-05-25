@@ -26,6 +26,7 @@ interface SubscriptionState {
   fetchFamilyBudget: () => Promise<void>;
   createFamily: (name: string) => Promise<void>;
   joinFamily: (inviteCode: string) => Promise<void>;
+  leaveFamily: () => Promise<void>;
   clearFamily: () => void;
 }
 
@@ -146,6 +147,12 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   joinFamily: async (inviteCode: string) => {
     await familyService.join(inviteCode);
     await get().fetchFamily();
+  },
+
+  leaveFamily: async () => {
+    await familyService.leave();
+    set({ family: null, familyBudget: null });
+    await get().fetchStatus();
   },
 
   clearFamily: () => {

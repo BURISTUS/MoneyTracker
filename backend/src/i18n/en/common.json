@@ -731,7 +731,15 @@
     "serverError": "Server error. Try again later.",
     "timeout": "Request timed out.",
     "premiumRequired": "Premium subscription required",
-    "articleNotFound": "Article not found"
+    "articleNotFound": "Article not found",
+    "familyNotFound": "Family not found",
+    "alreadyInFamily": "You are already in a family",
+    "notInFamily": "You are not in a family",
+    "ownerCannotLeave": "Family owner cannot leave. Transfer ownership or delete the family.",
+    "depositNotFound": "Deposit not found",
+    "loanNotFound": "Loan not found",
+    "forecastNotFound": "Forecast scenario not found",
+    "noPendingPayments": "No pending payments"
   },
   "currency": {
     "title": "Currency rates",
@@ -1015,5 +1023,17 @@
     "customDesc": "Create more than 3 categories for accurate expense tracking",
     "unlockPremium": "Unlock Premium",
     "notNow": "Not now"
+  },
+  "recurring": {
+    "notFound": "Recurring rule not found",
+    "alreadyPaused": "Rule is already paused",
+    "alreadyActive": "Rule is already active",
+    "dayOfWeekRequired": "Day of week is required for weekly rules",
+    "dayOfMonthRequired": "Day of month is required for monthly rules",
+    "created": "Recurring rule created",
+    "updated": "Recurring rule updated",
+    "deleted": "Recurring rule deleted",
+    "paused": "Recurring rule paused",
+    "activated": "Recurring rule activated"
   }
 }
